@@ -1,0 +1,39 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - FileManager</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">FileManager</h1>
+                <nav class="nav">
+                    <a href="/Files" class="nav-link">Мои документы</a>
+                    <a href="/Files/Upload" class="nav-link">Загрузить</a>
+                    @if (User.FindFirst("IsAdmin")?.Value == "True")
+                    {
+                        <a href="/Admin" class="nav-link">Администрирование</a>
+                    }
+                </nav>
+                <div class="user-menu">
+                    <span>@User.Identity?.Name</span>
+                    <a href="/Account/Logout" class="btn btn-secondary">Выход</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

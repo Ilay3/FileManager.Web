@@ -1,0 +1,48 @@
+﻿@page "/Account/Login"
+@model FileManager.Web.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Вход в систему";
+    Layout = "_LoginLayout";
+}
+
+<div class="login-container">
+    <div class="login-card">
+        <h2>FileManager</h2>
+        <p>Вход в систему</p>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error">
+                @Model.ErrorMessage
+            </div>
+        }
+
+        <form method="post">
+            <div class="form-group">
+                <label asp-for="LoginData.Email">Email:</label>
+                <input asp-for="LoginData.Email" class="form-input" />
+                <span asp-validation-for="LoginData.Email" class="text-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="LoginData.Password">Пароль:</label>
+                <input asp-for="LoginData.Password" type="password" class="form-input" />
+                <span asp-validation-for="LoginData.Password" class="text-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input asp-for="LoginData.RememberMe" type="checkbox" /> Запомнить меня
+                </label>
+            </div>
+
+            <input type="hidden" asp-for="LoginData.ReturnUrl" />
+
+            <button type="submit" class="btn btn-primary">Войти</button>
+        </form>
+
+        <div class="login-info">
+            <small>Для входа используйте ваш корпоративный email и пароль</small>
+        </div>
+    </div>
+</div>
