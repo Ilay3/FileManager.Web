@@ -3,7 +3,6 @@ using FileManager.Application.Interfaces;
 using FileManager.Domain.Entities;
 using FileManager.Domain.Enums;
 using FileManager.Domain.Interfaces;
-using FileManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -16,7 +15,7 @@ public class FilePreviewService : IFilePreviewService
     private readonly IYandexDiskService _yandexDiskService;
     private readonly IAuditService _auditService;
     private readonly IFileVersionService _fileVersionService;
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly ILogger<FilePreviewService> _logger;
 
     private readonly string[] _previewableExtensions = { ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".txt", ".docx", ".xlsx", ".pptx" };
@@ -27,7 +26,7 @@ public class FilePreviewService : IFilePreviewService
         IYandexDiskService yandexDiskService,
         IAuditService auditService,
         IFileVersionService fileVersionService,
-        AppDbContext context,
+        IAppDbContext context,
         ILogger<FilePreviewService> logger)
     {
         _filesRepository = filesRepository;
