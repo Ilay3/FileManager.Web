@@ -3,18 +3,16 @@ using FileManager.Application.Interfaces;
 using FileManager.Domain.Entities;
 using FileManager.Domain.Enums;
 using FileManager.Domain.Interfaces;
-using FileManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using FileManager.Infrastructure.Configuration;
 using System;
 
 namespace FileManager.Application.Services;
 
 public class FileVersionService : IFileVersionService
 {
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly IFilesRepository _filesRepository;
     private readonly IYandexDiskService _yandexDiskService;
     private readonly IAuditService _auditService;
@@ -22,7 +20,7 @@ public class FileVersionService : IFileVersionService
     private readonly ILogger<FileVersionService> _logger;
 
     public FileVersionService(
-        AppDbContext context,
+        IAppDbContext context,
         IFilesRepository filesRepository,
         IYandexDiskService yandexDiskService,
         IAuditService auditService,

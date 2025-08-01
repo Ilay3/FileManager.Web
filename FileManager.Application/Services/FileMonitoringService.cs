@@ -1,6 +1,5 @@
 ﻿using FileManager.Application.Interfaces;
 using FileManager.Domain.Interfaces;
-using FileManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -49,7 +48,7 @@ public class FileMonitoringService : BackgroundService
         var filesRepository = scope.ServiceProvider.GetRequiredService<IFilesRepository>();
         var yandexDiskService = scope.ServiceProvider.GetRequiredService<IYandexDiskService>();
         var fileVersionService = scope.ServiceProvider.GetRequiredService<IFileVersionService>();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         // Получаем все активные сессии редактирования
         var activeSessions = await context.FileEditSessions

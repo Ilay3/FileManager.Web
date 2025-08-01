@@ -18,6 +18,7 @@ public static class ServiceExtensions
         // База данных
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+        services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
 
         // Настройки конфигурации
         services.Configure<YandexDiskOptions>(configuration.GetSection(YandexDiskOptions.SectionName));
