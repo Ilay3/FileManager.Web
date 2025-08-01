@@ -2,89 +2,241 @@
 @model FileManager.Web.Pages.Files.IndexModel
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @{
-    ViewData["Title"] = "Мои документы";
+    ViewData["Title"] = "Документы";
 }
 
-<div class="files-content">
+<div class="files-wrapper">
+    <!-- Toolbar -->
     <div class="toolbar">
-        <button class="btn btn-primary" onclick="alert('Функция загрузки будет добавлена в следующем этапе')">
-            📤 Загрузить файл
-        </button>
-        <button class="btn btn-secondary" onclick="alert('Функция создания папки будет добавлена в следующем этапе')">
-            📁 Создать папку
-        </button>
-        <input type="text" placeholder="Поиск файлов..." class="search-input" />
+        <div class="toolbar-left">
+            <button class="btn btn-primary" onclick="alert('Загрузка файлов будет добавлена в следующем этапе')">
+                📤 Загрузить файл
+            </button>
+            <button class="btn btn-secondary" onclick="alert('Создание папки будет добавлено в следующем этапе')">
+                📁 Создать папку
+            </button>
+        </div>
+
+        <div class="toolbar-center">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Поиск файлов и папок..." class="search-input"
+                       value="@Model.SearchRequest.SearchTerm" />
+                <button type="button" id="searchBtn" class="btn btn-search">🔍</button>
+            </div>
+        </div>
+
+        <div class="toolbar-right">
+            <div class="view-controls">
+                <button class="btn @(Model.ViewMode == "list" ? "btn-active" : "")" onclick="changeView('list')" title="Список">
+                    📄
+                </button>
+                <button class="btn @(Model.ViewMode == "tree" ? "btn-active" : "")" onclick="changeView('tree')" title="Дерево">
+                    🌳
+                </button>
+                <button class="btn @(Model.ViewMode == "grid" ? "btn-active" : "")" onclick="changeView('grid')" title="Сетка">
+                    ⚏
+                </button>
+            </div>
+
+            <div class="filter-controls">
+                <select id="filterType" class="form-select">
+                    <option value="">Все типы</option>
+                    <option value="Document">Документы</option>
+                    <option value="Spreadsheet">Таблицы</option>
+                    <option value="Presentation">Презентации</option>
+                    <option value="Pdf">PDF</option>
+                    <option value="Image">Изображения</option>
+                    <option value="Archive">Архивы</option>
+                </select>
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="onlyMyFiles" @(Model.SearchRequest.OnlyMyFiles ? "checked" : "") />
+                    Только мои файлы
+                </label>
+            </div>
+        </div>
     </div>
 
-    <div class="files-list">
-        @if (Model.Files.Any())
-        {
-            <table class="files-table">
-                <thead>
-                    <tr>
-                        <th>📄 Название</th>
-                        <th>📊 Размер</th>
-                        <th>📅 Изменен</th>
-                        <th>👤 Автор</th>
-                        <th>⚙️ Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var file in Model.Files)
+    <!-- Breadcrumbs -->
+    @if (Model.Breadcrumbs.Any())
+    {
+        <div class="breadcrumbs">
+            @for (int i = 0; i < Model.Breadcrumbs.Count; i++)
+            {
+                var breadcrumb = Model.Breadcrumbs[i];
+                <span class="breadcrumb-item">
+                    @if (i == Model.Breadcrumbs.Count - 1)
                     {
-                        <tr>
-                            <td>
-                                <strong>@file.Name</strong>
-                                <small style="display: block; color: #666;">@file.Extension.ToUpper()</small>
-                            </td>
-                            <td>@FormatFileSize(file.SizeBytes)</td>
-                            <td>@file.UpdatedAt?.ToString("dd.MM.yyyy HH:mm")</td>
-                            <td>@file.UploadedBy.FullName</td>
-                            <td>
-                                <button class="btn btn-small" onclick="alert('Скачивание будет добавлено в следующем этапе')" title="Скачать">
-                                    ⬇️
-                                </button>
-                                <button class="btn btn-small" onclick="alert('Просмотр будет добавлен в следующем этапе')" title="Просмотр">
-                                    👁️
-                                </button>
-                                <button class="btn btn-small" onclick="confirmDelete('@file.Name', '@file.Id')" title="Удалить">
-                                    🗑️
-                                </button>
-                            </td>
-                        </tr>
+                        <span>@breadcrumb.Icon @breadcrumb.Name</span>
                     }
-                </tbody>
-            </table>
+                    else
+                    {
+                        <a href="?folderId=@breadcrumb.Id&view=@Model.ViewMode">@breadcrumb.Icon @breadcrumb.Name</a>
+                        <span class="breadcrumb-separator">/</span>
+                    }
+                </span>
+            }
+        </div>
+    }
+
+    <!-- Content Area -->
+    <div class="content-area">
+        @if (Model.ViewMode == "tree")
+        {
+            <div class="tree-view">
+                @if (Model.TreeStructure.Any())
+                {
+                    <div id="treeContainer" class="tree-container">
+                        @foreach (var node in Model.TreeStructure)
+                        {
+                            @await Html.PartialAsync("_TreeNode", node)
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div style="font-size: 64px; margin-bottom: 20px;">📁</div>
+                        <h3>Нет доступных папок</h3>
+                        <p>У вас пока нет доступа к папкам или они не созданы</p>
+                    </div>
+                }
+            </div>
+        }
+        else if (Model.ViewMode == "grid")
+        {
+            <div class="grid-view">
+                @await Html.PartialAsync("_FilesGrid", Model.FilesResult)
+            </div>
         }
         else
         {
-            <div class="empty-state">
-                <div style="font-size: 64px; margin-bottom: 20px;">📁</div>
-                <h3>У вас пока нет файлов</h3>
-                <p style="color: #999; margin-bottom: 30px;">Загрузите первый файл, чтобы начать работу с системой</p>
-                <button class="btn btn-primary" onclick="alert('Функция загрузки будет добавлена в следующем этапе')">
-                    📤 Загрузить первый файл
-                </button>
+            <div class="list-view">
+                @await Html.PartialAsync("_FilesList", Model.FilesResult)
             </div>
         }
     </div>
+
+    <!-- Pagination -->
+    @if (Model.FilesResult.TotalPages > 1)
+    {
+        <div class="pagination">
+            @if (Model.FilesResult.HasPreviousPage)
+            {
+                <a href="?page=@(Model.FilesResult.CurrentPage - 1)&folderId=@Model.CurrentFolderId&view=@Model.ViewMode" class="btn btn-pagination">← Предыдущая</a>
+            }
+
+            <span class="pagination-info">
+                Страница @Model.FilesResult.CurrentPage из @Model.FilesResult.TotalPages
+                (всего: @Model.FilesResult.TotalCount)
+            </span>
+
+            @if (Model.FilesResult.HasNextPage)
+            {
+                <a href="?page=@(Model.FilesResult.CurrentPage + 1)&folderId=@Model.CurrentFolderId&view=@Model.ViewMode" class="btn btn-pagination">Следующая →</a>
+            }
+        </div>
+    }
 </div>
 
 <script>
-    function confirmDelete(fileName, fileId) {
-        if (confirm('Вы уверены, что хотите удалить файл "' + fileName + '"?')) {
-            alert('Функция удаления будет добавлена в следующем этапе');
-            // TODO: Здесь будет запрос на удаление
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', performSearch);
+
+    function performSearch() {
+        const searchTerm = document.getElementById('searchInput').value;
+        const onlyMyFiles = document.getElementById('onlyMyFiles').checked;
+        const filterType = document.getElementById('filterType').value;
+
+        const params = new URLSearchParams(window.location.search);
+        if (searchTerm) params.set('SearchRequest.SearchTerm', searchTerm);
+        else params.delete('SearchRequest.SearchTerm');
+
+        if (onlyMyFiles) params.set('SearchRequest.OnlyMyFiles', 'true');
+        else params.delete('SearchRequest.OnlyMyFiles');
+
+        if (filterType) params.set('SearchRequest.FileType', filterType);
+        else params.delete('SearchRequest.FileType');
+
+        params.set('SearchRequest.Page', '1'); // Reset to first page
+
+        window.location.search = params.toString();
+    }
+
+    // View mode switching
+    function changeView(viewMode) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('view', viewMode);
+        window.location.search = params.toString();
+    }
+
+    // Tree node toggle
+    function toggleTreeNode(nodeId) {
+        const node = document.querySelector(`[data-node-id="${nodeId}"]`);
+        const children = node.querySelector('.tree-children');
+        const toggle = node.querySelector('.tree-toggle');
+
+        if (children.style.display === 'none') {
+            children.style.display = 'block';
+            toggle.textContent = '▼';
+
+            // Load children if not loaded
+            if (children.children.length === 0) {
+                loadFolderContents(nodeId, children);
+            }
+        } else {
+            children.style.display = 'none';
+            toggle.textContent = '▶';
         }
     }
-</script>
 
-@functions {
-    private string FormatFileSize(long bytes)
-    {
-        if (bytes < 1024) return $"{bytes} Б";
-        if (bytes < 1024 * 1024) return $"{bytes / 1024:F1} КБ";
-        if (bytes < 1024 * 1024 * 1024) return $"{bytes / (1024 * 1024):F1} МБ";
-        return $"{bytes / (1024 * 1024 * 1024):F1} ГБ";
+    // Load folder contents via AJAX
+    async function loadFolderContents(folderId, container) {
+        try {
+            const response = await fetch(`/api/folders/${folderId}/contents`);
+            if (response.ok) {
+                const data = await response.json();
+                // TODO: Render children nodes
+                console.log('Loaded folder contents:', data);
+            }
+        } catch (error) {
+            console.error('Error loading folder contents:', error);
+        }
     }
-}
+
+    // File actions
+    function viewFile(fileId) {
+        alert(`Просмотр файла ${fileId} будет добавлен в следующем этапе`);
+    }
+
+    function downloadFile(fileId) {
+        alert(`Скачивание файла ${fileId} будет добавлено в следующем этапе`);
+    }
+
+    function deleteFile(fileId, fileName) {
+        if (confirm(`Вы уверены, что хотите удалить файл "${fileName}"?`)) {
+            alert(`Удаление файла ${fileId} будет добавлено в следующем этапе`);
+        }
+    }
+
+    // Initialize filters from URL
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+
+        const filterType = params.get('SearchRequest.FileType');
+        if (filterType) {
+            document.getElementById('filterType').value = filterType;
+        }
+
+        const onlyMyFiles = params.get('SearchRequest.OnlyMyFiles');
+        if (onlyMyFiles === 'true') {
+            document.getElementById('onlyMyFiles').checked = true;
+        }
+    });
+</script>

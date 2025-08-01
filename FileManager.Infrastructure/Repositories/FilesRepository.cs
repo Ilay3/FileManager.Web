@@ -1,5 +1,6 @@
 ﻿using FileManager.Domain.Entities;
 using FileManager.Domain.Interfaces;
+using FileManager.Domain.Enums;
 using FileManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,7 @@ public class FilesRepository : IFilesRepository
         return await _context.Files
             .Where(f => f.FolderId == folderId && !f.IsDeleted)
             .Include(f => f.UploadedBy)
+            .Include(f => f.Folder)
             .OrderByDescending(f => f.CreatedAt)
             .ToListAsync();
     }
@@ -36,6 +38,7 @@ public class FilesRepository : IFilesRepository
         return await _context.Files
             .Where(f => f.UploadedById == userId && !f.IsDeleted)
             .Include(f => f.Folder)
+            .Include(f => f.UploadedBy)
             .OrderByDescending(f => f.CreatedAt)
             .Take(50)
             .ToListAsync();
@@ -75,6 +78,70 @@ public class FilesRepository : IFilesRepository
             .Include(f => f.Folder)
             .OrderByDescending(f => f.CreatedAt)
             .Take(100)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Files>> SearchAsync(string? searchTerm = null, Guid? folderId = null,
+        FileType? fileType = null, string? extension = null, DateTime? dateFrom = null,
+        DateTime? dateTo = null, Guid? userId = null)
+    {
+        var query = _context.Files
+            .Where(f => !f.IsDeleted)
+            .Include(f => f.UploadedBy)
+            .Include(f => f.Folder)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            query = query.Where(f => f.Name.Contains(searchTerm) ||
+                                   f.OriginalName.Contains(searchTerm) ||
+                                   (f.Tags != null && f.Tags.Contains(searchTerm)));
+        }
+
+        if (folderId.HasValue)
+        {
+            query = query.Where(f => f.FolderId == folderId.Value);
+        }
+
+        if (fileType.HasValue)
+        {
+            query = query.Where(f => f.FileType == fileType.Value);
+        }
+
+        if (!string.IsNullOrEmpty(extension))
+        {
+            query = query.Where(f => f.Extension.Equals(extension, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (dateFrom.HasValue)
+        {
+            query = query.Where(f => f.CreatedAt >= dateFrom.Value);
+        }
+
+        if (dateTo.HasValue)
+        {
+            query = query.Where(f => f.CreatedAt <= dateTo.Value);
+        }
+
+        if (userId.HasValue)
+        {
+            query = query.Where(f => f.UploadedById == userId.Value);
+        }
+
+        return await query
+            .OrderByDescending(f => f.UpdatedAt ?? f.CreatedAt)
+            .Take(200)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Files>> GetRecentFilesAsync(Guid userId, int count = 10)
+    {
+        return await _context.Files
+            .Where(f => f.UploadedById == userId && !f.IsDeleted)
+            .Include(f => f.Folder)
+            .Include(f => f.UploadedBy)
+            .OrderByDescending(f => f.UpdatedAt ?? f.CreatedAt)
+            .Take(count)
             .ToListAsync();
     }
 

@@ -1,0 +1,69 @@
+﻿@model FileManager.Application.DTOs.TreeNodeDto
+
+<div class="tree-node" data-node-id="@Model.Id" data-level="@Model.Level">
+    <div class="tree-node-content" style="padding-left: @(Model.Level * 20)px;">
+        @if (Model.Type == "folder")
+        {
+            @if (Model.HasChildren)
+            {
+                <span class="tree-toggle" onclick="toggleTreeNode('@Model.Id')">▶</span>
+            }
+            else
+            {
+                <span class="tree-spacer"></span>
+            }
+
+            <span class="tree-icon">@Model.Icon</span>
+            <a href="?folderId=@Model.Id&view=tree" class="tree-link folder-link">
+                @Model.Name
+            </a>
+
+            @if (Model.ItemsCount.HasValue && Model.ItemsCount > 0)
+            {
+                <span class="tree-count">(@Model.ItemsCount)</span>
+            }
+        }
+        else
+        {
+            <span class="tree-spacer"></span>
+            <span class="tree-icon">@Model.Icon</span>
+            <span class="tree-link file-link" onclick="viewFile('@Model.Id')">
+                @Model.Name
+            </span>
+
+            @if (Model.SizeBytes.HasValue)
+            {
+                <span class="tree-size">@FormatFileSize(Model.SizeBytes.Value)</span>
+            }
+
+            <div class="tree-file-actions">
+                <button class="btn btn-tiny" onclick="downloadFile('@Model.Id')" title="Скачать">⬇️</button>
+                <button class="btn btn-tiny" onclick="deleteFile('@Model.Id', '@Model.Name')" title="Удалить">🗑️</button>
+            </div>
+        }
+
+        <span class="tree-date">
+            @(Model.UpdatedAt?.ToString("dd.MM.yyyy") ?? Model.CreatedAt.ToString("dd.MM.yyyy"))
+        </span>
+    </div>
+
+    @if (Model.Type == "folder" && Model.HasChildren)
+    {
+        <div class="tree-children" style="display: none;">
+            @foreach (var child in Model.Children)
+            {
+                @await Html.PartialAsync("_TreeNode", child)
+            }
+        </div>
+    }
+</div>
+
+@functions {
+    private string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} Б";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024:F1} КБ";
+        if (bytes < 1024 * 1024 * 1024) return $"{bytes / (1024 * 1024):F1} МБ";
+        return $"{bytes / (1024 * 1024 * 1024):F1} ГБ";
+    }
+}

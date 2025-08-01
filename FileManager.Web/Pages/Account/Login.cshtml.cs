@@ -24,16 +24,15 @@ public class LoginModel : PageModel
 
     public string? ErrorMessage { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(string? returnUrl = null)
+    public void OnGet(string? returnUrl = null)
     {
-        // Если пользователь уже авторизован, перенаправляем
         if (User.Identity?.IsAuthenticated == true)
         {
-            return Redirect("/Files");
+            Response.Redirect("/Files");
+            return;
         }
 
         LoginData.ReturnUrl = returnUrl;
-        return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -45,67 +44,57 @@ public class LoginModel : PageModel
 
         try
         {
-            // Получаем IP адрес для логирования
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-
-            // Валидируем пользователя
-            var user = await _userService.ValidateUserAsync(LoginData.Email, LoginData.Password);
+            var user = await _userService.ValidateUserAsync(LoginData.Email, LoginData.Password,
+                HttpContext.Connection.RemoteIpAddress?.ToString());
 
             if (user == null)
             {
-                ErrorMessage = "Неверный email или пароль";
-                _logger.LogWarning("Неудачная попытка входа для {Email} с IP {IP}",
-                    LoginData.Email, ipAddress);
+                ErrorMessage = "Неверный email или пароль, либо аккаунт заблокирован";
                 return Page();
             }
 
-            // Проверяем, не заблокирован ли аккаунт
-            if (!user.IsActive)
-            {
-                ErrorMessage = "Ваш аккаунт заблокирован. Обратитесь к администратору.";
-                _logger.LogWarning("Попытка входа заблокированного пользователя {Email}", LoginData.Email);
-                return Page();
-            }
-
-            // Создаем claims для авторизации
+            // Create claims
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.FullName),
                 new(ClaimTypes.Email, user.Email),
-                new("IsAdmin", user.IsAdmin.ToString()),
-                new("Department", user.Department ?? "")
+                new("IsAdmin", user.IsAdmin.ToString())
             };
+
+            if (!string.IsNullOrEmpty(user.Department))
+            {
+                claims.Add(new("Department", user.Department));
+            }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var authProperties = new AuthenticationProperties
             {
                 IsPersistent = LoginData.RememberMe,
-                ExpiresUtc = LoginData.RememberMe
-                    ? DateTimeOffset.UtcNow.AddDays(30)
-                    : DateTimeOffset.UtcNow.AddHours(8)
+                ExpiresUtc = LoginData.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(8)
             };
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
-                authProperties);
+                authProperties
+            );
 
-            _logger.LogInformation("Успешный вход пользователя {Email} ({UserId})",
-                user.Email, user.Id);
+            _logger.LogInformation("Пользователь {Email} успешно вошел в систему", user.Email);
 
-            // Перенаправляем пользователя
-            if (!string.IsNullOrEmpty(LoginData.ReturnUrl) && Url.IsLocalUrl(LoginData.ReturnUrl))
+            // Redirect to files page or return URL
+            var returnUrl = LoginData.ReturnUrl;
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
-                return Redirect(LoginData.ReturnUrl);
+                return Redirect(returnUrl);
             }
 
-            return Redirect("/Files");
+            return RedirectToPage("/Files/Index");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ошибка при входе пользователя {Email}", LoginData.Email);
-            ErrorMessage = "Произошла ошибка при входе в систему. Попробуйте позже.";
+            ErrorMessage = "Произошла ошибка при входе. Попробуйте еще раз.";
             return Page();
         }
     }

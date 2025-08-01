@@ -18,6 +18,7 @@ public class FolderRepository : IFolderRepository
     {
         return await _context.Folders
             .Include(f => f.CreatedBy)
+            .Include(f => f.ParentFolder)
             .FirstOrDefaultAsync(f => f.Id == id && !f.IsDeleted);
     }
 
@@ -26,6 +27,7 @@ public class FolderRepository : IFolderRepository
         return await _context.Folders
             .Where(f => f.ParentFolderId == null && !f.IsDeleted)
             .Include(f => f.CreatedBy)
+            .OrderBy(f => f.Name)
             .ToListAsync();
     }
 
@@ -34,6 +36,7 @@ public class FolderRepository : IFolderRepository
         return await _context.Folders
             .Where(f => f.ParentFolderId == parentId && !f.IsDeleted)
             .Include(f => f.CreatedBy)
+            .OrderBy(f => f.Name)
             .ToListAsync();
     }
 
@@ -69,8 +72,51 @@ public class FolderRepository : IFolderRepository
             .FirstOrDefaultAsync(f => f.YandexPath == yandexPath && !f.IsDeleted);
     }
 
+    public async Task<IEnumerable<Folder>> GetFolderTreeAsync(Guid? rootFolderId = null)
+    {
+        var query = _context.Folders
+            .Where(f => !f.IsDeleted)
+            .Include(f => f.CreatedBy)
+            .Include(f => f.ParentFolder)
+            .AsQueryable();
+
+        if (rootFolderId.HasValue)
+        {
+            query = query.Where(f => f.ParentFolderId == rootFolderId.Value);
+        }
+        else
+        {
+            query = query.Where(f => f.ParentFolderId == null);
+        }
+
+        return await query.OrderBy(f => f.Name).ToListAsync();
+    }
+
+    public async Task<IEnumerable<Folder>> GetUserAccessibleFoldersAsync(Guid userId)
+    {
+        // TODO: Implement access control
+        // For now, return all folders
+        return await _context.Folders
+            .Where(f => !f.IsDeleted)
+            .Include(f => f.CreatedBy)
+            .OrderBy(f => f.Name)
+            .ToListAsync();
+    }
+
     public async Task<int> CountAsync()
     {
         return await _context.Folders.CountAsync(f => !f.IsDeleted);
+    }
+
+    public async Task<int> GetFilesCountInFolderAsync(Guid folderId)
+    {
+        return await _context.Files
+            .CountAsync(f => f.FolderId == folderId && !f.IsDeleted);
+    }
+
+    public async Task<int> GetSubFoldersCountAsync(Guid folderId)
+    {
+        return await _context.Folders
+            .CountAsync(f => f.ParentFolderId == folderId && !f.IsDeleted);
     }
 }

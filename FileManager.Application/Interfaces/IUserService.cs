@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FileManager.Application.DTOs;
 
-namespace FileManager.Application.Interfaces
+namespace FileManager.Application.Interfaces;
+
+public interface IUserService
 {
-    internal interface IUserService
-    {
-    }
+    Task<UserDto?> GetUserByIdAsync(Guid id);
+    Task<UserDto?> GetUserByEmailAsync(string email);
+    Task<List<UserDto>> GetAllUsersAsync();
+    Task<List<UserDto>> GetUsersByDepartmentAsync(string department);
 }

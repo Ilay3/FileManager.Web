@@ -1,5 +1,5 @@
-using FileManager.Application.Services;
 using FileManager.Application.Interfaces;
+using FileManager.Application.Services;
 using FileManager.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -27,7 +27,10 @@ public class ForgotPasswordModel : PageModel
 
     public void OnGet()
     {
-        // Просто показываем форму
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            Response.Redirect("/Files");
+        }
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -39,30 +42,27 @@ public class ForgotPasswordModel : PageModel
 
         try
         {
-            // Генерируем токен сброса (даже если пользователь не найден, для безопасности)
-            var resetToken = await _userService.GeneratePasswordResetTokenAsync(ResetRequest.Email);
+            var token = await _userService.GeneratePasswordResetTokenAsync(ResetRequest.Email);
 
-            if (resetToken != null)
+            if (token != null)
             {
-                // Получаем пользователя для отправки email
                 var user = await _userService.GetUserByEmailAsync(ResetRequest.Email);
                 if (user != null)
                 {
-                    await _emailService.SendPasswordResetEmailAsync(ResetRequest.Email, resetToken, user.FullName);
-                    _logger.LogInformation("Отправлен запрос сброса пароля для {Email}", ResetRequest.Email);
+                    await _emailService.SendPasswordResetEmailAsync(ResetRequest.Email, token, user.FullName);
+                    _logger.LogInformation("Токен сброса пароля отправлен для {Email}", ResetRequest.Email);
                 }
             }
 
-            // Всегда показываем успешное сообщение (для безопасности)
-            Message = "Если указанный email существует в системе, на него будет отправлена ссылка для сброса пароля.";
-            ResetRequest.Email = string.Empty; // Очищаем поле
+            // Всегда показываем успешное сообщение для безопасности
+            Message = "Если аккаунт с указанным email существует, на него будет отправлена ссылка для сброса пароля.";
+            return Page();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Ошибка при обработке запроса сброса пароля для {Email}", ResetRequest.Email);
-            ErrorMessage = "Произошла ошибка при обработке запроса. Попробуйте позже.";
+            _logger.LogError(ex, "Ошибка при запросе сброса пароля для {Email}", ResetRequest.Email);
+            ErrorMessage = "Произошла ошибка при отправке письма. Попробуйте позже.";
+            return Page();
         }
-
-        return Page();
     }
 }

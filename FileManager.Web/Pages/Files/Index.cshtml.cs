@@ -1,6 +1,7 @@
-using FileManager.Application.Services;
-using FileManager.Domain.Entities;
+using FileManager.Application.DTOs;
+using FileManager.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Security.Claims;
 
@@ -9,27 +10,72 @@ namespace FileManager.Web.Pages.Files;
 [Authorize]
 public class IndexModel : PageModel
 {
-    private readonly FilesService _filesService;
-    private readonly UserService _userService;
+    private readonly IFileService _fileService;
+    private readonly IFolderService _folderService;
 
-    public IndexModel(FilesService filesService, UserService userService)
+    public IndexModel(IFileService fileService, IFolderService folderService)
     {
-        _filesService = filesService;
-        _userService = userService;
+        _fileService = fileService;
+        _folderService = folderService;
     }
 
-    public IEnumerable<Domain.Entities.Files> Files { get; set; } = new List<Domain.Entities.Files>();
+    [BindProperty(SupportsGet = true)]
+    public SearchRequestDto SearchRequest { get; set; } = new();
 
-    public async Task OnGetAsync()
+    public SearchResultDto<FileDto> FilesResult { get; set; } = new();
+    public List<TreeNodeDto> TreeStructure { get; set; } = new();
+    public List<BreadcrumbDto> Breadcrumbs { get; set; } = new();
+    public TreeNodeDto? CurrentFolderContents { get; set; }
+
+    // View state
+    public string ViewMode { get; set; } = "list"; // list, tree, grid
+    public Guid CurrentFolderId { get; set; } = Guid.Empty;
+
+    public async Task OnGetAsync(Guid? folderId = null, string? view = null)
+    {
+        CurrentFolderId = folderId ?? Guid.Empty;
+        ViewMode = view ?? "list";
+
+        var userId = GetCurrentUserId();
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+
+        // Set folder context
+        if (CurrentFolderId != Guid.Empty)
+        {
+            SearchRequest.FolderId = CurrentFolderId;
+            Breadcrumbs = await _folderService.GetBreadcrumbsAsync(CurrentFolderId);
+        }
+
+        // Load data based on view mode
+        switch (ViewMode.ToLower())
+        {
+            case "tree":
+                TreeStructure = await _folderService.GetTreeStructureAsync(userId, isAdmin);
+                if (CurrentFolderId != Guid.Empty)
+                {
+                    CurrentFolderContents = await _folderService.GetFolderContentsAsync(CurrentFolderId, userId, SearchRequest);
+                }
+                break;
+
+            case "grid":
+            case "list":
+            default:
+                FilesResult = await _fileService.GetFilesAsync(SearchRequest, userId, isAdmin);
+                break;
+        }
+    }
+
+    public async Task<IActionResult> OnGetSearchAsync()
+    {
+        var userId = GetCurrentUserId();
+        FilesResult = await _fileService.SearchFilesAsync(SearchRequest, userId);
+
+        return Partial("_FilesList", FilesResult);
+    }
+
+    private Guid GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (Guid.TryParse(userIdClaim, out var userId))
-        {
-            Files = await _filesService.GetUserFilesAsync(userId);
-
-            // Обновляем последнюю активность пользователя
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            await _userService.UpdateLastActivityAsync(userId, ipAddress);
-        }
+        return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
     }
 }

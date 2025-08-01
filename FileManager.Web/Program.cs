@@ -21,9 +21,12 @@ builder.Services.AddScoped<IFilesRepository, FilesRepository>();
 builder.Services.AddScoped<IFolderRepository, FolderRepository>();
 
 // Регистрация сервисов Application layer
-builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<FilesService>();
-builder.Services.AddScoped<StatisticsService>();
+builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IFolderService, FolderService>();
+
+// ИСПРАВЛЕНИЕ: Регистрируем оба сервиса для пользователей
+builder.Services.AddScoped<UserService>(); // Оригинальный сервис для аутентификации и создания пользователей
+builder.Services.AddScoped<IUserService, UserDtoService>(); // DTO сервис для UI
 
 // Регистрация сервисов Infrastructure layer
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -72,6 +75,9 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizePage("/Admin", "AdminOnly");
 });
 
+// Добавляем поддержку контроллеров для API
+builder.Services.AddControllers();
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddLogging();
 
@@ -96,6 +102,7 @@ app.UseAuthorization();
 app.UseUserActivity();
 
 app.MapRazorPages();
+app.MapControllers(); // Добавляем маршруты для API контроллеров
 
 // Перенаправление с корня на страницу файлов для авторизованных пользователей
 app.MapGet("/", async context =>
@@ -114,7 +121,7 @@ app.MapGet("/", async context =>
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var userService = scope.ServiceProvider.GetRequiredService<UserService>();
+    var userService = scope.ServiceProvider.GetRequiredService<UserService>(); // Теперь работает!
 
     try
     {
