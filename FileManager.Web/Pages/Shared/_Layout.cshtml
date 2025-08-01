@@ -7,25 +7,30 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <h1 class="logo">FileManager</h1>
-                <nav class="nav">
-                    <a href="/Files" class="nav-link">Мои документы</a>
-                    <a href="/Files/Upload" class="nav-link">Загрузить</a>
-                    @if (User.FindFirst("IsAdmin")?.Value == "True")
-                    {
-                        <a href="/Admin" class="nav-link">Администрирование</a>
-                    }
-                </nav>
-                <div class="user-menu">
-                    <span>@User.Identity?.Name</span>
-                    <a href="/Account/Logout" class="btn btn-secondary">Выход</a>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <h1 class="logo">
+                        <a href="/Files" style="text-decoration: none; color: inherit;">FileManager</a>
+                    </h1>
+                    <nav class="nav">
+                        <a href="/Files" class="nav-link">📁 Мои документы</a>
+                        @if (User.FindFirst("IsAdmin")?.Value == "True")
+                        {
+                            <a href="/Admin" class="nav-link">⚙️ Администрирование</a>
+                        }
+                    </nav>
+                    <div class="user-menu">
+                        <span>👤 @User.Identity.Name</span>
+                        <span style="color: #999; font-size: 14px;">(@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value)</span>
+                        <a href="/Account/Logout" class="btn btn-secondary">Выход</a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </header>
+        </header>
+    }
 
     <main class="main">
         <div class="container">

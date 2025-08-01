@@ -26,6 +26,17 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Department)
             .HasMaxLength(100);
 
+        // Новые поля для блокировки
+        builder.Property(u => u.LockReason)
+            .HasMaxLength(500);
+
+        // Поля для сброса пароля
+        builder.Property(u => u.PasswordResetToken)
+            .HasMaxLength(256);
+
+        builder.Property(u => u.LastIpAddress)
+            .HasMaxLength(45); // IPv6
+
         // Индексы
         builder.HasIndex(u => u.Email)
             .IsUnique()
@@ -33,6 +44,15 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasIndex(u => u.IsActive)
             .HasDatabaseName("IX_Users_IsActive");
+
+        builder.HasIndex(u => u.IsLocked)
+            .HasDatabaseName("IX_Users_IsLocked");
+
+        builder.HasIndex(u => u.PasswordResetToken)
+            .HasDatabaseName("IX_Users_PasswordResetToken");
+
+        builder.HasIndex(u => u.LastActivityAt)
+            .HasDatabaseName("IX_Users_LastActivityAt");
 
         // Отношения
         builder.HasMany(u => u.UploadedFiles)

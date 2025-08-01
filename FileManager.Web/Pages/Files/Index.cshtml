@@ -1,28 +1,17 @@
 ﻿@page "/Files"
-@{
-    Response.Redirect("/");
-}
 @model FileManager.Web.Pages.Files.IndexModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @{
     ViewData["Title"] = "Мои документы";
 }
 
-<div class="files-header">
-    <h1>Мои документы</h1>
-    <div class="user-info">
-        Добро пожаловать, <strong>@User.Identity?.Name</strong>
-        (@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value)
-        <a href="/Account/Logout" class="btn btn-secondary">Выход</a>
-    </div>
-</div>
-
 <div class="files-content">
     <div class="toolbar">
         <button class="btn btn-primary" onclick="alert('Функция загрузки будет добавлена в следующем этапе')">
-            Загрузить файл
+            📤 Загрузить файл
         </button>
         <button class="btn btn-secondary" onclick="alert('Функция создания папки будет добавлена в следующем этапе')">
-            Создать папку
+            📁 Создать папку
         </button>
         <input type="text" placeholder="Поиск файлов..." class="search-input" />
     </div>
@@ -36,6 +25,7 @@
                         <th>📄 Название</th>
                         <th>📊 Размер</th>
                         <th>📅 Изменен</th>
+                        <th>👤 Автор</th>
                         <th>⚙️ Действия</th>
                     </tr>
                 </thead>
@@ -49,13 +39,16 @@
                             </td>
                             <td>@FormatFileSize(file.SizeBytes)</td>
                             <td>@file.UpdatedAt?.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>@file.UploadedBy.FullName</td>
                             <td>
-                                <button class="btn btn-small" onclick="alert('Скачивание будет добавлено в следующем этапе')">
-                                    Скачать
+                                <button class="btn btn-small" onclick="alert('Скачивание будет добавлено в следующем этапе')" title="Скачать">
+                                    ⬇️
                                 </button>
-                                <button class="btn btn-small" onclick="alert('Удаление будет добавлено в следующем этапе')"
-                                        data-confirm="Удалить файл @file.Name?">
-                                    Удалить
+                                <button class="btn btn-small" onclick="alert('Просмотр будет добавлен в следующем этапе')" title="Просмотр">
+                                    👁️
+                                </button>
+                                <button class="btn btn-small" onclick="confirmDelete('@file.Name', '@file.Id')" title="Удалить">
+                                    🗑️
                                 </button>
                             </td>
                         </tr>
@@ -66,16 +59,25 @@
         else
         {
             <div class="empty-state">
-                <div style="font-size: 48px; margin-bottom: 20px;">📁</div>
-                <p>У вас пока нет файлов</p>
-                <p style="color: #999; margin-bottom: 30px;">Загрузите первый файл, чтобы начать работу</p>
+                <div style="font-size: 64px; margin-bottom: 20px;">📁</div>
+                <h3>У вас пока нет файлов</h3>
+                <p style="color: #999; margin-bottom: 30px;">Загрузите первый файл, чтобы начать работу с системой</p>
                 <button class="btn btn-primary" onclick="alert('Функция загрузки будет добавлена в следующем этапе')">
-                    Загрузить первый файл
+                    📤 Загрузить первый файл
                 </button>
             </div>
         }
     </div>
 </div>
+
+<script>
+    function confirmDelete(fileName, fileId) {
+        if (confirm('Вы уверены, что хотите удалить файл "' + fileName + '"?')) {
+            alert('Функция удаления будет добавлена в следующем этапе');
+            // TODO: Здесь будет запрос на удаление
+        }
+    }
+</script>
 
 @functions {
     private string FormatFileSize(long bytes)

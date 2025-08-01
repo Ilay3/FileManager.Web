@@ -1,10 +1,21 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "FileManager";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div style="text-align: center; padding: 50px;">
+    <h1>FileManager</h1>
+    <p>Система управления файлами</p>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <p>Добро пожаловать, @User.Identity.Name!</p>
+        <a href="/Files" class="btn btn-primary">Перейти к файлам</a>
+    }
+    else
+    {
+        <p>Для работы с системой необходимо войти в систему</p>
+        <a href="/Account/Login" class="btn btn-primary">Войти в систему</a>
+    }
 </div>

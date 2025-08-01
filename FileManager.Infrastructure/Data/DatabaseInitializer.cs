@@ -12,55 +12,71 @@ public static class DatabaseInitializer
         if (await context.Users.AnyAsync())
             return;
 
-        // Создаем администратора по умолчанию
-        var admin = await userService.CreateUserAsync(
-            email: "admin@filemanager.com",
-            fullName: "Администратор",
-            password: "admin123",
-            department: "IT",
-            isAdmin: true
-        );
-
-        // Создаем тестового пользователя
-        await userService.CreateUserAsync(
-            email: "user@filemanager.com",
-            fullName: "Тестовый пользователь",
-            password: "user123",
-            department: "Общий отдел",
-            isAdmin: false
-        );
-
-        // Создаем корневую папку
-        var rootFolder = new Folder
+        try
         {
-            Name = "Корневая папка",
-            YandexPath = "/FileManager",
-            CreatedById = admin.Id
-        };
+            // Создаем администратора по умолчанию
+            var admin = await userService.CreateUserAsync(
+                email: "admin@filemanager.com",
+                fullName: "Системный администратор",
+                password: "Admin123!@#",
+                department: "IT отдел",
+                isAdmin: true
+            );
 
-        context.Folders.Add(rootFolder);
-        await context.SaveChangesAsync();
+            // Создаем тестового пользователя
+            var user = await userService.CreateUserAsync(
+                email: "user@filemanager.com",
+                fullName: "Тестовый пользователь",
+                password: "User123!@#",
+                department: "Общий отдел",
+                isAdmin: false
+            );
 
-        // Создаем папки отделов
-        var departments = new[] { "IT", "Бухгалтерия", "HR", "Общие документы" };
-
-        foreach (var dept in departments)
-        {
-            var folder = new Folder
+            // Создаем корневую папку
+            var rootFolder = new Folder
             {
-                Name = dept,
-                YandexPath = $"/FileManager/{dept}",
-                ParentFolderId = rootFolder.Id,
+                Name = "Корневая папка",
+                YandexPath = "/FileManager",
                 CreatedById = admin.Id
             };
 
-            context.Folders.Add(folder);
+            context.Folders.Add(rootFolder);
+            await context.SaveChangesAsync();
+
+            // Создаем папки отделов
+            var departments = new[] { "IT отдел", "Бухгалтерия", "HR отдел", "Общие документы" };
+
+            foreach (var dept in departments)
+            {
+                var folder = new Folder
+                {
+                    Name = dept,
+                    YandexPath = $"/FileManager/{dept}",
+                    ParentFolderId = rootFolder.Id,
+                    CreatedById = admin.Id
+                };
+
+                context.Folders.Add(folder);
+            }
+
+            await context.SaveChangesAsync();
+
+            Console.WriteLine("=== База данных инициализирована ===");
+            Console.WriteLine("Администратор:");
+            Console.WriteLine("  Email: admin@filemanager.com");
+            Console.WriteLine("  Пароль: Admin123!@#");
+            Console.WriteLine();
+            Console.WriteLine("Тестовый пользователь:");
+            Console.WriteLine("  Email: user@filemanager.com");
+            Console.WriteLine("  Пароль: User123!@#");
+            Console.WriteLine();
+            Console.WriteLine("ВАЖНО: Смените пароли после первого входа!");
+            Console.WriteLine("=====================================");
         }
-
-        await context.SaveChangesAsync();
-
-        Console.WriteLine("База данных инициализирована:");
-        Console.WriteLine("Администратор: admin@filemanager.com / admin123");
-        Console.WriteLine("Пользователь: user@filemanager.com / user123");
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка инициализации БД: {ex.Message}");
+            throw;
+        }
     }
 }

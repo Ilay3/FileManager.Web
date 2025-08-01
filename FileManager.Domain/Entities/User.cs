@@ -24,6 +24,25 @@ public class User : BaseEntity
     [StringLength(100)]
     public string? Department { get; set; }
 
+    // Поля для блокировки аккаунта
+    public bool IsLocked { get; set; } = false;
+    public DateTime? LockedAt { get; set; }
+    public string? LockReason { get; set; }
+    public Guid? LockedById { get; set; }
+
+    // Поля для попыток входа
+    public int FailedLoginAttempts { get; set; } = 0;
+    public DateTime? LastFailedLoginAt { get; set; }
+
+    // Поля для сброса пароля
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpires { get; set; }
+    public DateTime? PasswordResetAt { get; set; }
+
+    // Поля для последней активности
+    public DateTime? LastActivityAt { get; set; }
+    public string? LastIpAddress { get; set; }
+
     // Navigation properties
     public virtual ICollection<Files> UploadedFiles { get; set; } = new List<Files>();
     public virtual ICollection<Folder> CreatedFolders { get; set; } = new List<Folder>();
