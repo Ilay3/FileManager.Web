@@ -379,3 +379,44 @@ function sortBy(field) {
 document.addEventListener('DOMContentLoaded', function () {
     filesManager = new FilesManager();
 });
+
+
+// Upload modal functions (will be loaded from _UploadModal.cshtml)
+// These are just declarations to avoid errors
+window.openUploadModal = window.openUploadModal || function (folderId) {
+    console.log('Upload modal not loaded yet');
+};
+
+// Drag and drop for the main page
+document.addEventListener('DOMContentLoaded', function () {
+    const mainContent = document.querySelector('.content-area');
+    if (mainContent) {
+        mainContent.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            mainContent.classList.add('drag-over');
+        });
+
+        mainContent.addEventListener('dragleave', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            mainContent.classList.remove('drag-over');
+        });
+
+        mainContent.addEventListener('drop', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            mainContent.classList.remove('drag-over');
+
+            // Open upload modal with files
+            if (typeof openUploadModal === 'function') {
+                openUploadModal();
+                setTimeout(() => {
+                    if (typeof handleFiles === 'function') {
+                        handleFiles(Array.from(e.dataTransfer.files));
+                    }
+                }, 100);
+            }
+        });
+    }
+});

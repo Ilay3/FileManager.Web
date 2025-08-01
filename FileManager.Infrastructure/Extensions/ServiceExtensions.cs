@@ -15,11 +15,11 @@ public static class ServiceExtensions
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Database
+        // База-данных>
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
-        // Configuration options
+        // Настройки конфигурации
         services.Configure<YandexDiskOptions>(configuration.GetSection(YandexDiskOptions.SectionName));
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
         services.Configure<FileStorageOptions>(configuration.GetSection(FileStorageOptions.SectionName));
@@ -27,7 +27,10 @@ public static class ServiceExtensions
         services.Configure<VersioningOptions>(configuration.GetSection(VersioningOptions.SectionName));
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
 
-        // Repositories
+        // Адаптер
+        services.AddScoped<IFileStorageOptions, FileStorageOptionsAdapter>();
+
+        // Репозитории
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IFilesRepository, FilesRepository>();
         services.AddScoped<IFolderRepository, FolderRepository>();
@@ -40,6 +43,7 @@ public static class ServiceExtensions
         // Application services
         services.AddScoped<UserService>();
         services.AddScoped<StatisticsService>();
+        services.AddScoped<FileUploadService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped<IFolderService, FolderService>();
         services.AddScoped<IUserService, UserDtoService>();

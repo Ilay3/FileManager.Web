@@ -26,20 +26,50 @@ public class YandexDiskService : IYandexDiskService
     {
         try
         {
-            var fullPath = $"{_options.AppFolderName}{folderPath}/{fileName}";
+            // Убираем начальные и конечные слеши
+            folderPath = folderPath?.Trim('/') ?? "";
 
-            // Получаем URL для загрузки
+            // Формируем полный путь - НЕ добавляем _options.AppFolderName, он уже в folderPath
+            var fullPath = string.IsNullOrEmpty(folderPath)
+                ? $"/{_options.AppFolderName}/{fileName}"  // Только если folderPath пустой
+                : $"/{folderPath}/{fileName}";  // folderPath уже содержит /FileManager
+
+            _logger.LogDebug("Uploading file to path: {FullPath}", fullPath);
+
+            // Создаем папку если не существует
+            var folderToCreate = string.IsNullOrEmpty(folderPath)
+                ? $"/{_options.AppFolderName}"
+                : $"/{folderPath}";
+
+            await EnsureFolderExistsAsync(folderToCreate);
+
+            // Получаем URL для загрузки с параметром overwrite=true
             var uploadUrlResponse = await _httpClient.GetAsync(
                 $"{_options.ApiBaseUrl}/resources/upload?path={Uri.EscapeDataString(fullPath)}&overwrite=true");
 
             if (!uploadUrlResponse.IsSuccessStatusCode)
             {
-                throw new Exception($"Failed to get upload URL: {uploadUrlResponse.StatusCode}");
+                var errorContent = await uploadUrlResponse.Content.ReadAsStringAsync();
+                _logger.LogError("Failed to get upload URL. Status: {StatusCode}, Content: {Content}",
+                    uploadUrlResponse.StatusCode, errorContent);
+                throw new Exception($"Failed to get upload URL: {uploadUrlResponse.StatusCode} - {errorContent}");
             }
 
             var uploadUrlJson = await uploadUrlResponse.Content.ReadAsStringAsync();
             var uploadData = JsonSerializer.Deserialize<JsonElement>(uploadUrlJson);
-            var uploadUrl = uploadData.GetProperty("href").GetString();
+
+            if (!uploadData.TryGetProperty("href", out var hrefElement))
+            {
+                throw new Exception("Upload URL not found in response");
+            }
+
+            var uploadUrl = hrefElement.GetString();
+            if (string.IsNullOrEmpty(uploadUrl))
+            {
+                throw new Exception("Upload URL is empty");
+            }
+
+            _logger.LogDebug("Got upload URL: {UploadUrl}", uploadUrl);
 
             // Загружаем файл
             using var content = new StreamContent(fileStream);
@@ -47,18 +77,21 @@ public class YandexDiskService : IYandexDiskService
 
             if (!uploadResponse.IsSuccessStatusCode)
             {
-                throw new Exception($"Failed to upload file: {uploadResponse.StatusCode}");
+                var errorContent = await uploadResponse.Content.ReadAsStringAsync();
+                _logger.LogError("Failed to upload file. Status: {StatusCode}, Content: {Content}",
+                    uploadResponse.StatusCode, errorContent);
+                throw new Exception($"Failed to upload file: {uploadResponse.StatusCode} - {errorContent}");
             }
 
+            _logger.LogInformation("File uploaded successfully to: {FullPath}", fullPath);
             return fullPath;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to upload file {FileName} to {FolderPath}", fileName, folderPath);
+            _logger.LogError(ex, "Error uploading file {FileName} to {FolderPath}", fileName, folderPath);
             throw;
         }
     }
-
     public async Task<Stream> DownloadFileAsync(string filePath)
     {
         try
@@ -134,10 +167,16 @@ public class YandexDiskService : IYandexDiskService
             var response = await _httpClient.PutAsync(
                 $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(folderPath)}", null);
 
+            // 409 Conflict означает что папка уже существует - это нормально
             if (!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.Conflict)
             {
-                throw new Exception($"Failed to create folder: {response.StatusCode}");
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Failed to create folder. Status: {StatusCode}, Content: {Content}",
+                    response.StatusCode, errorContent);
+                throw new Exception($"Failed to create folder: {response.StatusCode} - {errorContent}");
             }
+
+            _logger.LogDebug("Folder ensured: {FolderPath}", folderPath);
         }
         catch (Exception ex)
         {
@@ -214,10 +253,33 @@ public class YandexDiskService : IYandexDiskService
         }
     }
 
+    private async Task EnsureFolderExistsAsync(string folderPath)
+    {
+        try
+        {
+            // Проверяем существование папки
+            var checkResponse = await _httpClient.GetAsync(
+                $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(folderPath)}");
+
+            if (checkResponse.IsSuccessStatusCode)
+            {
+                // Папка уже существует
+                return;
+            }
+
+            // Создаем папку
+            await CreateFolderAsync(folderPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to ensure folder exists: {FolderPath}", folderPath);
+            throw;
+        }
+    }
+
     private string ConvertToEditUrl(string publicUrl)
     {
         // Преобразуем публичную ссылку в ссылку для редактирования
-        // Например: https://disk.yandex.ru/i/xxx -> https://docs.yandex.ru/docs/view?url=ya-disk-public%3A%2F%2Fxxx
         if (publicUrl.Contains("disk.yandex.ru"))
         {
             var fileId = publicUrl.Split('/').Last();

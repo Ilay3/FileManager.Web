@@ -1,49 +1,13 @@
-using FileManager.Application.Services;
-using FileManager.Application.Interfaces;
-using FileManager.Domain.Interfaces;
-using FileManager.Infrastructure.Configuration;
+using FileManager.Infrastructure.Extensions; // ВАЖНО: добавить этот using
 using FileManager.Infrastructure.Data;
-using FileManager.Infrastructure.Repositories;
-using FileManager.Infrastructure.Services;
+using FileManager.Application.Services;
 using FileManager.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Настройка Entity Framework
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Регистрация репозиториев
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IFilesRepository, FilesRepository>();
-builder.Services.AddScoped<IFolderRepository, FolderRepository>();
-
-// Регистрация сервисов Application layer
-builder.Services.AddScoped<IFileService, FileService>();
-builder.Services.AddScoped<IFolderService, FolderService>();
-
-// ИСПРАВЛЕНИЕ: Регистрируем оба сервиса для пользователей
-builder.Services.AddScoped<UserService>(); // Оригинальный сервис для аутентификации и создания пользователей
-builder.Services.AddScoped<IUserService, UserDtoService>(); // DTO сервис для UI
-
-// Регистрация сервисов Infrastructure layer
-builder.Services.AddScoped<IEmailService, EmailService>();
-
-// Настройка конфигураций
-builder.Services.Configure<EmailOptions>(
-    builder.Configuration.GetSection(EmailOptions.SectionName));
-builder.Services.Configure<FileStorageOptions>(
-    builder.Configuration.GetSection(FileStorageOptions.SectionName));
-builder.Services.Configure<YandexDiskOptions>(
-    builder.Configuration.GetSection(YandexDiskOptions.SectionName));
-builder.Services.Configure<SecurityOptions>(
-    builder.Configuration.GetSection(SecurityOptions.SectionName));
-builder.Services.Configure<AuditOptions>(
-    builder.Configuration.GetSection(AuditOptions.SectionName));
-builder.Services.Configure<VersioningOptions>(
-    builder.Configuration.GetSection(VersioningOptions.SectionName));
+// ВСЕ сервисы регистрируются одной строкой!
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Настройка аутентификации
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -102,9 +66,9 @@ app.UseAuthorization();
 app.UseUserActivity();
 
 app.MapRazorPages();
-app.MapControllers(); // Добавляем маршруты для API контроллеров
+app.MapControllers();
 
-// Перенаправление с корня на страницу файлов для авторизованных пользователей
+// Перенаправление с корня
 app.MapGet("/", async context =>
 {
     if (context.User.Identity?.IsAuthenticated == true)
@@ -121,7 +85,7 @@ app.MapGet("/", async context =>
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var userService = scope.ServiceProvider.GetRequiredService<UserService>(); // Теперь работает!
+    var userService = scope.ServiceProvider.GetRequiredService<UserService>();
 
     try
     {
