@@ -10,10 +10,13 @@
     <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="2.3.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FileManager.Domain\FileManager.Domain.csproj" />
+	<ProjectReference Include="..\FileManager.Infrastructure\FileManager.Infrastructure.csproj" />
+
   </ItemGroup>
 
 </Project>

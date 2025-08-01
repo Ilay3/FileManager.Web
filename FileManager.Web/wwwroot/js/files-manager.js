@@ -420,3 +420,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+
+// Version management functions
+window.viewVersions = function (fileId) {
+    window.location.href = `/Files/${fileId}/Versions`;
+};
+
+// Add version button to file actions where appropriate
+document.addEventListener('DOMContentLoaded', function () {
+    // Add version history links to file context menus if they exist
+    const fileItems = document.querySelectorAll('.file-card, .files-table tr');
+    fileItems.forEach(item => {
+        const fileId = item.getAttribute('data-file-id');
+        if (fileId) {
+            // Add context menu or additional actions as needed
+            // This can be expanded based on UI requirements
+        }
+    });
+});

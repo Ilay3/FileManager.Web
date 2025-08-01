@@ -15,7 +15,7 @@ public static class ServiceExtensions
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // База-данных>
+        // База данных
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
@@ -48,6 +48,10 @@ public static class ServiceExtensions
         services.AddScoped<IFolderService, FolderService>();
         services.AddScoped<IUserService, UserDtoService>();
         services.AddScoped<IFilePreviewService, FilePreviewService>();
+        services.AddScoped<IFileVersionService, FileVersionService>();
+
+        // Background services
+        services.AddHostedService<FileMonitoringService>();
 
         return services;
     }

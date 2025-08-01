@@ -1,0 +1,507 @@
+﻿@page "/Files/{fileId:guid}/Versions"
+@model FileManager.Web.Pages.Files.VersionsModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = $"История версий - {Model.FileName}";
+}
+
+<div class="versions-container">
+    <div class="versions-header">
+        <div class="versions-title">
+            <button class="btn btn-secondary" onclick="history.back()">← Назад</button>
+            <div>
+                <h2>История версий</h2>
+                <p class="file-info">
+                    <span class="file-icon">@Model.FileIcon</span>
+                    <strong>@Model.FileName</strong>
+                    <span class="file-size">(@Model.FormattedSize)</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="versions-actions">
+            <button class="btn btn-primary" onclick="createManualVersion()">
+                💾 Создать версию
+            </button>
+        </div>
+    </div>
+
+    @if (Model.ActiveEditors.Any())
+    {
+        <div class="alert alert-warning">
+            <strong>⚠️ Внимание!</strong>
+            Файл сейчас редактируется: @string.Join(", ", Model.ActiveEditors)
+        </div>
+    }
+
+    <div class="versions-timeline">
+        @if (Model.Versions.Any())
+        {
+            @foreach (var version in Model.Versions)
+            {
+                <div class="version-item @(version.IsCurrentVersion ? "current-version" : "")">
+                    <div class="version-marker">
+                        <div class="version-number">v@version.VersionNumber</div>
+                        @if (version.IsCurrentVersion)
+                        {
+                            <div class="current-badge">Текущая</div>
+                        }
+                    </div>
+
+                    <div class="version-content">
+                        <div class="version-header">
+                            <div class="version-info">
+                                <strong>Версия @version.VersionNumber</strong>
+                                <span class="version-date">@version.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                            </div>
+                            <div class="version-author">@version.CreatedByName</div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(version.Comment))
+                        {
+                            <div class="version-comment">
+                                <em>@version.Comment</em>
+                            </div>
+                        }
+
+                        <div class="version-details">
+                            <span class="version-size">Размер: @version.FormattedSize</span>
+                        </div>
+
+                        <div class="version-actions">
+                            <button class="btn btn-small btn-secondary" onclick="downloadVersion('@version.Id')">
+                                ⬇️ Скачать
+                            </button>
+
+                            @if (!version.IsCurrentVersion)
+                            {
+                                <button class="btn btn-small btn-primary" onclick="restoreVersion('@version.Id', @version.VersionNumber)">
+                                    🔄 Восстановить
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="icon">📄</div>
+                <h3>Нет версий</h3>
+                <p>Для этого файла пока нет сохраненных версий.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal для создания версии -->
+<div id="createVersionModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Создать версию</h3>
+            <span class="modal-close" onclick="closeCreateVersionModal()">&times;</span>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="versionComment">Комментарий к версии:</label>
+                <textarea id="versionComment" class="form-textarea"
+                          placeholder="Опишите изменения в этой версии..."></textarea>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeCreateVersionModal()">Отмена</button>
+            <button type="button" class="btn btn-primary" onclick="saveVersion()">Создать версию</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fileId = '@Model.FileId';
+
+    async function downloadVersion(versionId) {
+        window.location.href = `/api/files/${fileId}/versions/${versionId}/content`;
+    }
+
+    async function restoreVersion(versionId, versionNumber) {
+        if (!confirm(`Вы уверены, что хотите восстановить версию ${versionNumber}?\n\nТекущая версия будет сохранена в истории.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/files/${fileId}/versions/${versionId}/restore`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                showNotification('Версия успешно восстановлена', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                const error = await response.text();
+                showNotification(`Ошибка восстановления: ${error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error restoring version:', error);
+            showNotification('Ошибка восстановления версии', 'error');
+        }
+    }
+
+    function createManualVersion() {
+        document.getElementById('createVersionModal').style.display = 'flex';
+    }
+
+    function closeCreateVersionModal() {
+        document.getElementById('createVersionModal').style.display = 'none';
+        document.getElementById('versionComment').value = '';
+    }
+
+    async function saveVersion() {
+        const comment = document.getElementById('versionComment').value;
+
+        try {
+            const response = await fetch(`/api/files/${fileId}/versions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ comment })
+            });
+
+            if (response.ok) {
+                showNotification('Версия создана успешно', 'success');
+                closeCreateVersionModal();
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                const error = await response.text();
+                showNotification(`Ошибка создания версии: ${error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error creating version:', error);
+            showNotification('Ошибка создания версии', 'error');
+        }
+    }
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+
+        Object.assign(notification.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '12px 16px',
+            borderRadius: '4px',
+            color: 'white',
+            backgroundColor: type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8',
+            zIndex: '9999'
+        });
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
+    // Автоматическое обновление информации об активных редакторах
+    setInterval(async function() {
+        try {
+            const response = await fetch(`/api/files/${fileId}/sessions`);
+            if (response.ok) {
+                const sessions = await response.json();
+                const activeEditors = sessions.filter(s => s.isActive);
+
+                // Обновляем информацию об активных редакторах
+                // TODO: Обновить UI с новой информацией
+            }
+        } catch (error) {
+            console.error('Error checking active sessions:', error);
+        }
+    }, 30000);
+</script>
+
+<style>
+    .versions-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .versions-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .versions-title h2 {
+        margin: 0 0 10px 0;
+        color: #333;
+    }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #666;
+        margin: 0;
+    }
+
+    .file-icon {
+        font-size: 18px;
+    }
+
+    .versions-timeline {
+        position: relative;
+    }
+
+        .versions-timeline::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+
+    .version-item {
+        position: relative;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .version-marker {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .version-number {
+        width: 60px;
+        height: 60px;
+        background: #f8f9fa;
+        border: 3px solid #dee2e6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
+        color: #495057;
+    }
+
+    .current-version .version-number {
+        background: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+
+    .current-badge {
+        background: #28a745;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: bold;
+    }
+
+    .version-content {
+        flex: 1;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .current-version .version-content {
+        border-color: #28a745;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+    }
+
+    .version-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .version-info strong {
+        font-size: 16px;
+        color: #333;
+    }
+
+    .version-date {
+        color: #666;
+        font-size: 14px;
+        margin-left: 10px;
+    }
+
+    .version-author {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .version-comment {
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        color: #495057;
+    }
+
+    .version-details {
+        margin-bottom: 15px;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .version-actions {
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid #e9ecef;
+        padding-top: 15px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+    .alert {
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+
+    .alert-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+    .modal-close {
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 20px;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+    .form-textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: inherit;
+        resize: vertical;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+
+    .btn-small {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+</style>

@@ -1,3 +1,4 @@
+п»їusing FileManager.Application.DTOs;
 using FileManager.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,38 +12,46 @@ public class PreviewModel : PageModel
 {
     private readonly IFileService _fileService;
     private readonly IFilePreviewService _filePreviewService;
+    private readonly IFileVersionService _fileVersionService;
 
-    public PreviewModel(IFileService fileService, IFilePreviewService filePreviewService)
+    public PreviewModel(
+        IFileService fileService,
+        IFilePreviewService filePreviewService,
+        IFileVersionService fileVersionService)
     {
         _fileService = fileService;
         _filePreviewService = filePreviewService;
+        _fileVersionService = fileVersionService;
     }
 
-    public Guid FileId { get; set; }
+    [BindProperty(SupportsGet = true)]
+    public Guid Id { get; set; }
+
+    public string FileId => Id.ToString();
     public string FileName { get; set; } = string.Empty;
-    public string FileIcon { get; set; } = string.Empty;
+    public string FileIcon { get; set; } = "рџ“„";
     public string FormattedSize { get; set; } = string.Empty;
     public string FileType { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public string UploadedBy { get; set; } = string.Empty;
     public string? Tags { get; set; }
     public string PreviewType { get; set; } = string.Empty;
+    public bool CanPreview { get; set; }
     public bool CanEdit { get; set; }
     public bool HasActiveEditors { get; set; }
     public List<string> ActiveEditors { get; set; } = new();
+    public int VersionsCount { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(Guid id)
+    public async Task<IActionResult> OnGetAsync()
     {
         var userId = GetCurrentUserId();
 
-        // Получаем информацию о файле
-        var file = await _fileService.GetFileByIdAsync(id, userId);
+        var file = await _fileService.GetFileByIdAsync(Id, userId);
         if (file == null)
         {
             return NotFound();
         }
 
-        FileId = file.Id;
         FileName = file.Name;
         FileIcon = file.FileIcon;
         FormattedSize = file.FormattedSize;
@@ -51,39 +60,42 @@ public class PreviewModel : PageModel
         UploadedBy = file.UploadedByName;
         Tags = file.Tags;
 
-        // Определяем тип предпросмотра
-        PreviewType = DeterminePreviewType(file.Extension);
+        // РћРїСЂРµРґРµР»СЏРµРј С‚РёРї РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂР°
+        var extension = file.Extension.ToLower();
+        if (new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" }.Contains(extension))
+        {
+            PreviewType = "image";
+        }
+        else if (extension == ".pdf")
+        {
+            PreviewType = "pdf";
+        }
+        else if (extension == ".txt")
+        {
+            PreviewType = "text";
+        }
+        else if (new[] { ".docx", ".xlsx", ".pptx" }.Contains(extension))
+        {
+            PreviewType = "office";
+        }
+        else
+        {
+            PreviewType = "none";
+        }
 
-        // Проверяем возможность редактирования
+        CanPreview = await _filePreviewService.CanPreviewAsync(file.Extension);
         CanEdit = await _filePreviewService.CanEditOnlineAsync(file.Extension);
 
-        // Получаем информацию об активных редакторах
-        var activeSessions = await _filePreviewService.GetActiveEditSessionsAsync(id);
-        var otherEditors = activeSessions.Where(s => s.UserId != userId).ToList();
+        // РџРѕР»СѓС‡Р°РµРј РёРЅС„РѕСЂРјР°С†РёСЋ РѕР± Р°РєС‚РёРІРЅС‹С… СЂРµРґР°РєС‚РѕСЂР°С…
+        var activeSessions = await _filePreviewService.GetActiveEditSessionsAsync(Id);
+        ActiveEditors = activeSessions.Where(s => s.UserId != userId).Select(s => s.UserName).ToList();
+        HasActiveEditors = ActiveEditors.Any();
 
-        HasActiveEditors = otherEditors.Any();
-        ActiveEditors = otherEditors.Select(s => s.UserName).ToList();
+        // РџРѕР»СѓС‡Р°РµРј РєРѕР»РёС‡РµСЃС‚РІРѕ РІРµСЂСЃРёР№
+        var versions = await _fileVersionService.GetFileVersionsAsync(Id);
+        VersionsCount = versions.Count;
 
         return Page();
-    }
-
-    private string DeterminePreviewType(string extension)
-    {
-        var ext = extension.ToLower();
-
-        if (new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" }.Contains(ext))
-            return "image";
-
-        if (ext == ".pdf")
-            return "pdf";
-
-        if (ext == ".txt")
-            return "text";
-
-        if (new[] { ".docx", ".xlsx", ".pptx" }.Contains(ext))
-            return "office";
-
-        return "none";
     }
 
     private Guid GetCurrentUserId()

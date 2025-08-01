@@ -28,6 +28,13 @@
             <button class="btn btn-secondary" onclick="downloadFile('@Model.FileId')">
                 ⬇️ Скачать
             </button>
+
+            @if (Model.VersionsCount > 0)
+            {
+                <a href="/Files/@Model.FileId/Versions" class="btn btn-secondary">
+                    📋 История версий (@Model.VersionsCount)
+                </a>
+            }
         </div>
     </div>
 

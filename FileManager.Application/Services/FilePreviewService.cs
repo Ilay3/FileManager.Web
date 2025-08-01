@@ -15,6 +15,7 @@ public class FilePreviewService : IFilePreviewService
     private readonly IFilesRepository _filesRepository;
     private readonly IYandexDiskService _yandexDiskService;
     private readonly IAuditService _auditService;
+    private readonly IFileVersionService _fileVersionService;
     private readonly AppDbContext _context;
     private readonly ILogger<FilePreviewService> _logger;
 
@@ -25,12 +26,14 @@ public class FilePreviewService : IFilePreviewService
         IFilesRepository filesRepository,
         IYandexDiskService yandexDiskService,
         IAuditService auditService,
+        IFileVersionService fileVersionService,
         AppDbContext context,
         ILogger<FilePreviewService> logger)
     {
         _filesRepository = filesRepository;
         _yandexDiskService = yandexDiskService;
         _auditService = auditService;
+        _fileVersionService = fileVersionService;
         _context = context;
         _logger = logger;
     }
@@ -46,35 +49,29 @@ public class FilePreviewService : IFilePreviewService
                 return null;
             }
 
-            // TODO: Implement access control check
-
             if (!CanPreviewAsync(file.Extension).Result)
             {
                 _logger.LogWarning("File {FileId} with extension {Extension} cannot be previewed", fileId, file.Extension);
                 return null;
             }
 
-            // Логируем действие предпросмотра
             await _auditService.LogAsync(
                 AuditAction.FilePreview,
                 userId,
                 fileId,
                 description: $"Preview requested for {file.Name}");
 
-            // Для изображений и PDF возвращаем URL для скачивания
             if (IsImageFile(file.Extension) || file.Extension.ToLower() == ".pdf")
             {
                 return $"/api/files/{fileId}/content";
             }
 
-            // Для документов Office возвращаем ссылку на Yandex.Docs
             if (_editableExtensions.Contains(file.Extension.ToLower()))
             {
                 var editUrl = await _yandexDiskService.GetEditLinkAsync(file.YandexPath);
                 return editUrl;
             }
 
-            // Для текстовых файлов возвращаем URL для получения содержимого
             if (file.Extension.ToLower() == ".txt")
             {
                 return $"/api/files/{fileId}/content";
@@ -100,18 +97,17 @@ public class FilePreviewService : IFilePreviewService
                 return null;
             }
 
-            // TODO: Implement access control check
-
             if (!CanEditOnlineAsync(file.Extension).Result)
             {
                 _logger.LogWarning("File {FileId} with extension {Extension} cannot be edited online", fileId, file.Extension);
                 return null;
             }
 
-            // Получаем ссылку для редактирования
+            // Создаем версию перед началом редактирования
+            await _fileVersionService.CreateVersionAsync(fileId, userId, "Версия перед началом редактирования");
+
             var editUrl = await _yandexDiskService.GetEditLinkAsync(file.YandexPath);
 
-            // Создаем сессию редактирования
             var editSession = new FileEditSession
             {
                 FileId = fileId,
@@ -124,7 +120,6 @@ public class FilePreviewService : IFilePreviewService
             _context.FileEditSessions.Add(editSession);
             await _context.SaveChangesAsync();
 
-            // Логируем действие открытия в редакторе
             await _auditService.LogAsync(
                 AuditAction.FileOpenForEdit,
                 userId,
@@ -155,9 +150,6 @@ public class FilePreviewService : IFilePreviewService
                 return null;
             }
 
-            // TODO: Implement access control check
-
-            // Логируем действие просмотра
             await _auditService.LogAsync(
                 AuditAction.FileView,
                 userId,
@@ -182,8 +174,6 @@ public class FilePreviewService : IFilePreviewService
             {
                 return null;
             }
-
-            // TODO: Implement access control check
 
             return new FileInfoDto
             {
@@ -242,6 +232,9 @@ public class FilePreviewService : IFilePreviewService
             {
                 session.EndedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
+
+                // Создаем версию после завершения редактирования
+                await _fileVersionService.CreateVersionAsync(session.FileId, userId, "Версия после завершения редактирования");
 
                 _logger.LogInformation("Edit session {SessionId} ended by user {UserId}", sessionId, userId);
             }
