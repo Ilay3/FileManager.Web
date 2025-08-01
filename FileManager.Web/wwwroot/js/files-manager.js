@@ -178,7 +178,7 @@ class FilesManager {
             content.innerHTML = `
                 <span class="tree-spacer"></span>
                 <span class="tree-icon">${nodeData.icon}</span>
-                <span class="tree-link file-link" onclick="filesManager.viewFile('${nodeData.id}')">${nodeData.name}</span>
+                <span class="tree-link file-link" onclick="filesManager.previewFile('${nodeData.id}')">${nodeData.name}</span>
                 ${nodeData.sizeBytes ? '<span class="tree-size">' + this.formatFileSize(nodeData.sizeBytes) + '</span>' : ''}
                 <div class="tree-file-actions">
                     <button class="btn btn-tiny" onclick="filesManager.downloadFile('${nodeData.id}')" title="Скачать">⬇️</button>
@@ -193,16 +193,59 @@ class FilesManager {
     }
 
     // File actions
+    async previewFile(fileId) {
+        try {
+            // Переходим на страницу предпросмотра
+            window.location.href = `/Files/Preview/${fileId}`;
+        } catch (error) {
+            console.error('Error opening file preview:', error);
+            alert('Ошибка при открытии предпросмотра файла');
+        }
+    }
+
+    async editFile(fileId) {
+        try {
+            const response = await fetch(`/api/files/${fileId}/edit`);
+            const data = await response.json();
+
+            if (data.hasActiveEditors && !data.canProceed) {
+                alert('Файл сейчас редактируется другим пользователем. Попробуйте позже.');
+                return;
+            }
+
+            if (data.hasActiveEditors && data.warnings) {
+                const warningMessage = 'Внимание! ' + data.warnings.join('\n') + '\n\nПродолжить редактирование?';
+                if (!confirm(warningMessage)) {
+                    return;
+                }
+            }
+
+            if (data.editUrl) {
+                // Открываем в новой вкладке
+                window.open(data.editUrl, '_blank');
+
+                // Показываем уведомление
+                this.showNotification('Файл открыт для редактирования в новой вкладке', 'success');
+            }
+        } catch (error) {
+            console.error('Error opening file for edit:', error);
+            alert('Ошибка при открытии файла для редактирования');
+        }
+    }
+
     async viewFile(fileId) {
-        // TODO: Implement file viewing
-        console.log('Viewing file:', fileId);
-        alert(`Просмотр файла ${fileId} будет добавлен в следующем этапе`);
+        // Переадресация на новую функцию предпросмотра
+        return this.previewFile(fileId);
     }
 
     async downloadFile(fileId) {
-        // TODO: Implement file download
-        console.log('Downloading file:', fileId);
-        alert(`Скачивание файла ${fileId} будет добавлено в следующем этапе`);
+        try {
+            // Прямое скачивание файла
+            window.location.href = `/api/files/${fileId}/content`;
+        } catch (error) {
+            console.error('Error downloading file:', error);
+            alert('Ошибка при скачивании файла');
+        }
     }
 
     async deleteFile(fileId, fileName) {
@@ -238,6 +281,30 @@ class FilesManager {
         window.location.search = params.toString();
     }
 
+    // Utility method for notifications
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+
+        Object.assign(notification.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '12px 16px',
+            borderRadius: '4px',
+            color: 'white',
+            backgroundColor: type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8',
+            zIndex: '9999'
+        });
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
     // Utility functions
     formatFileSize(bytes) {
         if (bytes < 1024) return `${bytes} Б`;
@@ -269,6 +336,18 @@ function toggleTreeNode(nodeId) {
 function viewFile(fileId) {
     if (filesManager) {
         filesManager.viewFile(fileId);
+    }
+}
+
+function previewFile(fileId) {
+    if (filesManager) {
+        filesManager.previewFile(fileId);
+    }
+}
+
+function editFile(fileId) {
+    if (filesManager) {
+        filesManager.editFile(fileId);
     }
 }
 

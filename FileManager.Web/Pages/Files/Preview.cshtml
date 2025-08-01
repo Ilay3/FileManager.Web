@@ -1,0 +1,365 @@
+﻿@page "/Files/Preview/{id:guid}"
+@model FileManager.Web.Pages.Files.PreviewModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = $"Предпросмотр - {Model.FileName}";
+}
+
+<div class="preview-container">
+    <div class="preview-header">
+        <div class="preview-title">
+            <span class="file-icon">@Model.FileIcon</span>
+            <h2>@Model.FileName</h2>
+            <span class="file-size">(@Model.FormattedSize)</span>
+        </div>
+
+        <div class="preview-actions">
+            <button class="btn btn-secondary" onclick="history.back()">
+                ← Назад
+            </button>
+
+            @if (Model.CanEdit)
+            {
+                <button class="btn btn-primary" onclick="openForEdit('@Model.FileId')">
+                    ✏️ Редактировать
+                </button>
+            }
+
+            <button class="btn btn-secondary" onclick="downloadFile('@Model.FileId')">
+                ⬇️ Скачать
+            </button>
+        </div>
+    </div>
+
+    @if (Model.HasActiveEditors)
+    {
+        <div class="alert alert-warning">
+            <strong>⚠️ Внимание!</strong>
+            Файл сейчас редактируется: @string.Join(", ", Model.ActiveEditors)
+        </div>
+    }
+
+    <div class="preview-content">
+        @if (Model.PreviewType == "image")
+        {
+            <div class="image-preview">
+                <img src="/api/files/@Model.FileId/content" alt="@Model.FileName" class="preview-image" />
+            </div>
+        }
+        else if (Model.PreviewType == "pdf")
+        {
+            <div class="pdf-preview">
+                <iframe src="/api/files/@Model.FileId/content" class="preview-frame"></iframe>
+            </div>
+        }
+        else if (Model.PreviewType == "text")
+        {
+            <div class="text-preview">
+                <pre id="textContent" class="text-content">Загрузка...</pre>
+            </div>
+        }
+        else if (Model.PreviewType == "office")
+        {
+            <div class="office-preview">
+                <div class="office-preview-message">
+                    <div class="icon">📄</div>
+                    <h3>Документ Office</h3>
+                    <p>Для просмотра и редактирования документа нажмите кнопку ниже:</p>
+                    <button class="btn btn-primary btn-large" onclick="openExternalPreview('@Model.FileId')">
+                        🔗 Открыть в Яндекс.Документах
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="no-preview">
+                <div class="icon">📄</div>
+                <h3>Предпросмотр недоступен</h3>
+                <p>Для данного типа файла предпросмотр не поддерживается.</p>
+                <button class="btn btn-primary" onclick="downloadFile('@Model.FileId')">
+                    ⬇️ Скачать файл
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- Информация о файле -->
+    <div class="file-info-panel">
+        <h4>Информация о файле</h4>
+        <table class="info-table">
+            <tr>
+                <td><strong>Имя файла:</strong></td>
+                <td>@Model.FileName</td>
+            </tr>
+            <tr>
+                <td><strong>Размер:</strong></td>
+                <td>@Model.FormattedSize</td>
+            </tr>
+            <tr>
+                <td><strong>Тип:</strong></td>
+                <td>@Model.FileType</td>
+            </tr>
+            <tr>
+                <td><strong>Загружен:</strong></td>
+                <td>@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+            </tr>
+            <tr>
+                <td><strong>Автор:</strong></td>
+                <td>@Model.UploadedBy</td>
+            </tr>
+            @if (!string.IsNullOrEmpty(Model.Tags))
+            {
+                <tr>
+                    <td><strong>Теги:</strong></td>
+                    <td>
+                        @foreach (var tag in Model.Tags.Split(','))
+                        {
+                            <span class="tag">@tag.Trim()</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+</div>
+
+<script>
+    let fileId = '@Model.FileId';
+
+    // Загрузка текстового содержимого
+    @if (Model.PreviewType == "text")
+    {
+        <text>
+            fetch(`/api/files/${fileId}/content`)
+                .then(response => response.text())
+                .then(text => {
+                    document.getElementById('textContent').textContent = text;
+                })
+                .catch(error => {
+                    document.getElementById('textContent').textContent = 'Ошибка загрузки содержимого файла';
+                    console.error('Error loading text content:', error);
+                });
+        </text>
+    }
+
+    async function openForEdit(fileId) {
+        try {
+            const response = await fetch(`/api/files/${fileId}/edit`);
+            const data = await response.json();
+
+            if (data.hasActiveEditors && !data.canProceed) {
+                alert('Файл сейчас редактируется другим пользователем. Попробуйте позже.');
+                return;
+            }
+
+            if (data.hasActiveEditors && data.warnings) {
+                const warningMessage = 'Внимание! ' + data.warnings.join('\n') + '\n\nПродолжить редактирование?';
+                if (!confirm(warningMessage)) {
+                    return;
+                }
+            }
+
+            if (data.editUrl) {
+                // Открываем в новой вкладке
+                window.open(data.editUrl, '_blank');
+
+                // Показываем уведомление о том, что файл открыт для редактирования
+                showNotification('Файл открыт для редактирования в новой вкладке', 'success');
+            }
+        } catch (error) {
+            console.error('Error opening file for edit:', error);
+            alert('Ошибка при открытии файла для редактирования');
+        }
+    }
+
+    async function openExternalPreview(fileId) {
+        try {
+            const response = await fetch(`/api/files/${fileId}/preview`);
+            const data = await response.json();
+
+            if (data.previewUrl && data.external) {
+                window.open(data.previewUrl, '_blank');
+            } else {
+                alert('Не удалось получить ссылку для предпросмотра');
+            }
+        } catch (error) {
+            console.error('Error opening external preview:', error);
+            alert('Ошибка при открытии предпросмотра');
+        }
+    }
+
+    function downloadFile(fileId) {
+        window.location.href = `/api/files/${fileId}/content`;
+    }
+
+    function showNotification(message, type = 'info') {
+        // Простая реализация уведомлений
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+
+        Object.assign(notification.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '12px 16px',
+            borderRadius: '4px',
+            color: 'white',
+            backgroundColor: type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8',
+            zIndex: '9999'
+        });
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
+    // Периодическая проверка активных редакторов
+    setInterval(async function() {
+        try {
+            const response = await fetch(`/api/files/${fileId}/sessions`);
+            const sessions = await response.json();
+
+            const currentEditors = sessions.filter(s => s.isActive).map(s => s.userName);
+
+            // Обновляем информацию об активных редакторах
+            // TODO: Обновить UI с новой информацией
+        } catch (error) {
+            console.error('Error checking active sessions:', error);
+        }
+    }, 30000); // Проверяем каждые 30 секунд
+</script>
+
+<style>
+    .preview-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .preview-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .preview-title .file-icon {
+            font-size: 24px;
+        }
+
+        .preview-title h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+    .file-size {
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    .preview-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .preview-content {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .preview-image {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .preview-frame {
+        width: 100%;
+        height: 600px;
+        border: none;
+    }
+
+    .text-content {
+        padding: 20px;
+        margin: 0;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        background: #f8f9fa;
+    }
+
+    .office-preview-message, .no-preview {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+        .office-preview-message .icon, .no-preview .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+    .file-info-panel {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .info-table {
+        width: 100%;
+        margin-top: 15px;
+    }
+
+        .info-table td {
+            padding: 8px 0;
+            vertical-align: top;
+        }
+
+            .info-table td:first-child {
+                width: 150px;
+                color: #6c757d;
+            }
+
+    .alert {
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+
+    .alert-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+    }
+
+    .tag {
+        display: inline-block;
+        background: #007bff;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        margin-right: 5px;
+    }
+
+    .btn-large {
+        padding: 12px 24px;
+        font-size: 16px;
+    }
+</style>

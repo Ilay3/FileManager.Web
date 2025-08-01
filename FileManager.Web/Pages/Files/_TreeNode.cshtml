@@ -36,10 +36,12 @@
                 <span class="tree-size">@FormatFileSize(Model.SizeBytes.Value)</span>
             }
 
-            <div class="tree-file-actions">
-                <button class="btn btn-tiny" onclick="downloadFile('@Model.Id')" title="Скачать">⬇️</button>
-                <button class="btn btn-tiny" onclick="deleteFile('@Model.Id', '@Model.Name')" title="Удалить">🗑️</button>
-            </div>
+               <div class="tree-file-actions">
+                    <button class="btn btn-tiny" onclick="previewFile('@Model.Id')" title="Предпросмотр">👁️</button>
+                    <button class="btn btn-tiny" onclick="editFile('@Model.Id')" title="Редактировать">✏️</button>
+                    <button class="btn btn-tiny" onclick="downloadFile('@Model.Id')" title="Скачать">⬇️</button>
+                    <button class="btn btn-tiny" onclick="deleteFile('@Model.Id', '@Model.Name')" title="Удалить">🗑️</button>
+                </div>
         }
 
         <span class="tree-date">

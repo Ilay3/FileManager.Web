@@ -18,6 +18,8 @@ public class AppDbContext : DbContext
     public DbSet<AccessRule> AccessRules => Set<AccessRule>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<FileEditSession> FileEditSessions => Set<FileEditSession>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -13,6 +13,8 @@ public enum AuditAction
     FileEdit,
     FileDelete,
     FileRestore,    // откат к версии
+    FilePreview,    // предпросмотр файла
+    FileOpenForEdit, // открытие в редакторе
 
     // Операции с папками
     FolderCreate,
