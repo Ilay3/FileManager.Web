@@ -12,8 +12,11 @@
             <button class="btn btn-primary" onclick="openUploadModal('@Model.CurrentFolderId')">
                 📤 Загрузить файл
             </button>
-            <button class="btn btn-secondary" onclick="alert('Создание папки будет добавлено в следующем этапе')">
+            <button class="btn btn-secondary" onclick="createFolder('@Model.CurrentFolderId')">
                 📁 Создать папку
+            </button>
+            <button class="btn btn-secondary" id="downloadSelected" onclick="downloadSelected()" disabled>
+                ⬇️ Скачать выбранные
             </button>
         </div>
 
@@ -53,8 +56,39 @@
                     <input type="checkbox" id="onlyMyFiles" @(Model.SearchRequest.OnlyMyFiles ? "checked" : "") />
                     Только мои файлы
                 </label>
+                <button class="btn btn-secondary" type="button" onclick="toggleAdvanced()">Фильтры</button>
             </div>
         </div>
+    </div>
+
+    <div id="advancedFilters" style="display:none" class="advanced-filters">
+        <div>
+            <label>Дата создания от:</label>
+            <input type="date" id="dateFrom" value="@Model.SearchRequest.DateFrom?.ToString("yyyy-MM-dd")" />
+            <label>до:</label>
+            <input type="date" id="dateTo" value="@Model.SearchRequest.DateTo?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div>
+            <label>Дата изменения от:</label>
+            <input type="date" id="updatedFrom" value="@Model.SearchRequest.UpdatedFrom?.ToString("yyyy-MM-dd")" />
+            <label>до:</label>
+            <input type="date" id="updatedTo" value="@Model.SearchRequest.UpdatedTo?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div>
+            <label>Расширение:</label>
+            <input type="text" id="extension" value="@Model.SearchRequest.Extension" />
+            <label>Размер от (байт):</label>
+            <input type="number" id="minSize" value="@Model.SearchRequest.MinSizeBytes" />
+            <label>до:</label>
+            <input type="number" id="maxSize" value="@Model.SearchRequest.MaxSizeBytes" />
+        </div>
+        <div>
+            <label>Теги:</label>
+            <input type="text" id="tags" value="@Model.SearchRequest.Tags" />
+            <label>Владелец (GUID):</label>
+            <input type="text" id="ownerId" value="@Model.SearchRequest.OwnerId" />
+        </div>
+        <button class="btn btn-primary" type="button" onclick="applyFilters()">Применить</button>
     </div>
 
     <!-- Breadcrumbs -->
@@ -140,105 +174,3 @@
 </div>
 
 @await Html.PartialAsync("_UploadModal")
-
-<script>
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            performSearch();
-        }
-    });
-
-    document.getElementById('searchBtn').addEventListener('click', performSearch);
-
-    function performSearch() {
-        const searchTerm = document.getElementById('searchInput').value;
-        const onlyMyFiles = document.getElementById('onlyMyFiles').checked;
-        const filterType = document.getElementById('filterType').value;
-
-        const params = new URLSearchParams(window.location.search);
-        if (searchTerm) params.set('SearchRequest.SearchTerm', searchTerm);
-        else params.delete('SearchRequest.SearchTerm');
-
-        if (onlyMyFiles) params.set('SearchRequest.OnlyMyFiles', 'true');
-        else params.delete('SearchRequest.OnlyMyFiles');
-
-        if (filterType) params.set('SearchRequest.FileType', filterType);
-        else params.delete('SearchRequest.FileType');
-
-        params.set('SearchRequest.Page', '1'); // Reset to first page
-
-        window.location.search = params.toString();
-    }
-
-    // View mode switching
-    function changeView(viewMode) {
-        const params = new URLSearchParams(window.location.search);
-        params.set('view', viewMode);
-        window.location.search = params.toString();
-    }
-
-    // Tree node toggle
-    function toggleTreeNode(nodeId) {
-        const node = document.querySelector(`[data-node-id="${nodeId}"]`);
-        const children = node.querySelector('.tree-children');
-        const toggle = node.querySelector('.tree-toggle');
-
-        if (children.style.display === 'none') {
-            children.style.display = 'block';
-            toggle.textContent = '▼';
-
-            // Load children if not loaded
-            if (children.children.length === 0) {
-                loadFolderContents(nodeId, children);
-            }
-        } else {
-            children.style.display = 'none';
-            toggle.textContent = '▶';
-        }
-    }
-
-    // Load folder contents via AJAX
-    async function loadFolderContents(folderId, container) {
-        try {
-            const response = await fetch(`/api/folders/${folderId}/contents`);
-            if (response.ok) {
-                const data = await response.json();
-                // TODO: Render children nodes
-                console.log('Loaded folder contents:', data);
-            }
-        } catch (error) {
-            console.error('Error loading folder contents:', error);
-        }
-    }
-
-    // File actions
-    function viewFile(fileId) {
-        alert(`Просмотр файла ${fileId} будет добавлен в следующем этапе`);
-    }
-
-    function downloadFile(fileId) {
-        alert(`Скачивание файла ${fileId} будет добавлено в следующем этапе`);
-    }
-
-    function deleteFile(fileId, fileName) {
-        if (confirm(`Вы уверены, что хотите удалить файл "${fileName}"?`)) {
-            alert(`Удаление файла ${fileId} будет добавлено в следующем этапе`);
-        }
-    }
-
-    // Initialize filters from URL
-    document.addEventListener('DOMContentLoaded', function() {
-        const params = new URLSearchParams(window.location.search);
-
-        const filterType = params.get('SearchRequest.FileType');
-        if (filterType) {
-            document.getElementById('filterType').value = filterType;
-        }
-
-        const onlyMyFiles = params.get('SearchRequest.OnlyMyFiles');
-        if (onlyMyFiles === 'true') {
-            document.getElementById('onlyMyFiles').checked = true;
-        }
-    });
-</script>

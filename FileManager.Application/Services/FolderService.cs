@@ -2,6 +2,7 @@
 using FileManager.Application.Interfaces;
 using FileManager.Domain.Entities;
 using FileManager.Domain.Interfaces;
+using FileManager.Domain.Enums;
 
 namespace FileManager.Application.Services;
 
@@ -10,12 +11,17 @@ public class FolderService : IFolderService
     private readonly IFolderRepository _folderRepository;
     private readonly IFilesRepository _filesRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IAuditService _auditService;
+    private readonly IYandexDiskService _yandexDiskService;
 
-    public FolderService(IFolderRepository folderRepository, IFilesRepository filesRepository, IUserRepository userRepository)
+    public FolderService(IFolderRepository folderRepository, IFilesRepository filesRepository, IUserRepository userRepository,
+        IAuditService auditService, IYandexDiskService yandexDiskService)
     {
         _folderRepository = folderRepository;
         _filesRepository = filesRepository;
         _userRepository = userRepository;
+        _auditService = auditService;
+        _yandexDiskService = yandexDiskService;
     }
 
     public async Task<List<TreeNodeDto>> GetTreeStructureAsync(Guid userId, bool isAdmin = false)
@@ -128,6 +134,13 @@ public class FolderService : IFolderService
             ? await _folderRepository.GetRootFoldersAsync()
             : await _folderRepository.GetSubFoldersAsync(folderId);
 
+        if (!string.IsNullOrEmpty(searchRequest?.SearchTerm))
+        {
+            subFolders = subFolders
+                .Where(f => f.Name.Contains(searchRequest.SearchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
         foreach (var subFolder in subFolders)
         {
             var filesCount = (await _filesRepository.GetByFolderIdAsync(subFolder.Id)).Count();
@@ -150,6 +163,13 @@ public class FolderService : IFolderService
         // Get files
         var files = folderId == Guid.Empty ? new List<Files>() : await _filesRepository.GetByFolderIdAsync(folderId);
 
+        if (!string.IsNullOrEmpty(searchRequest?.SearchTerm))
+        {
+            files = files
+                .Where(f => f.Name.Contains(searchRequest.SearchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
         foreach (var file in files)
         {
             node.Children.Add(new TreeNodeDto
@@ -169,6 +189,112 @@ public class FolderService : IFolderService
         }
 
         return node;
+    }
+
+    public async Task<FolderDto> CreateFolderAsync(string name, Guid? parentId, Guid userId)
+    {
+        var siblings = parentId.HasValue
+            ? await _folderRepository.GetSubFoldersAsync(parentId.Value)
+            : await _folderRepository.GetRootFoldersAsync();
+
+        if (siblings.Any(f => f.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Имя папки должно быть уникальным");
+
+        string yandexPath;
+        if (parentId.HasValue)
+        {
+            var parent = await _folderRepository.GetByIdAsync(parentId.Value)
+                ?? throw new InvalidOperationException("Родительская папка не найдена");
+            yandexPath = $"{parent.YandexPath}/{name}";
+        }
+        else
+        {
+            yandexPath = $"/FileManager/{name}";
+        }
+
+        await _yandexDiskService.CreateFolderAsync(yandexPath);
+
+        var folder = new Folder
+        {
+            Name = name,
+            ParentFolderId = parentId,
+            CreatedById = userId,
+            YandexPath = yandexPath
+        };
+
+        var created = await _folderRepository.CreateAsync(folder);
+        await _auditService.LogAsync(AuditAction.FolderCreate, userId, folderId: created.Id,
+            description: $"Создал папку {name}");
+
+        return await MapToFolderDtoAsync(created);
+    }
+
+    public async Task<FolderDto?> RenameFolderAsync(Guid id, string newName, Guid userId)
+    {
+        var folder = await _folderRepository.GetByIdAsync(id);
+        if (folder == null) return null;
+
+        var siblings = folder.ParentFolderId.HasValue
+            ? await _folderRepository.GetSubFoldersAsync(folder.ParentFolderId.Value)
+            : await _folderRepository.GetRootFoldersAsync();
+
+        if (siblings.Any(f => f.Id != id && f.Name.Equals(newName, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Имя папки должно быть уникальным");
+
+        folder.Name = newName;
+        var parentPath = folder.ParentFolder?.YandexPath ?? "/FileManager";
+        folder.YandexPath = $"{parentPath}/{newName}";
+
+        await _folderRepository.UpdateAsync(folder);
+        await _auditService.LogAsync(AuditAction.FolderRename, userId, folderId: folder.Id,
+            description: $"Переименовал папку в {newName}");
+
+        return await MapToFolderDtoAsync(folder);
+    }
+
+    public async Task<bool> DeleteFolderAsync(Guid id, Guid userId)
+    {
+        var filesCount = await _folderRepository.GetFilesCountInFolderAsync(id);
+        var subFoldersCount = await _folderRepository.GetSubFoldersCountAsync(id);
+        if (filesCount > 0 || subFoldersCount > 0)
+            return false;
+
+        await _folderRepository.DeleteAsync(id);
+        await _auditService.LogAsync(AuditAction.FolderDelete, userId, folderId: id, description: "Удалил папку");
+        return true;
+    }
+
+    public async Task<bool> MoveFolderAsync(Guid id, Guid? newParentId, Guid userId)
+    {
+        var folder = await _folderRepository.GetByIdAsync(id);
+        if (folder == null) return false;
+
+        if (newParentId == id) return false;
+
+        IEnumerable<Folder> siblings;
+        string newPath;
+        if (newParentId.HasValue)
+        {
+            var parent = await _folderRepository.GetByIdAsync(newParentId.Value);
+            if (parent == null) return false;
+            siblings = await _folderRepository.GetSubFoldersAsync(newParentId.Value);
+            newPath = $"{parent.YandexPath}/{folder.Name}";
+            folder.ParentFolderId = newParentId.Value;
+        }
+        else
+        {
+            siblings = await _folderRepository.GetRootFoldersAsync();
+            newPath = $"/FileManager/{folder.Name}";
+            folder.ParentFolderId = null;
+        }
+
+        if (siblings.Any(f => f.Id != id && f.Name.Equals(folder.Name, StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        folder.YandexPath = newPath;
+        await _folderRepository.UpdateAsync(folder);
+        await _auditService.LogAsync(AuditAction.FolderMove, userId, folderId: folder.Id, description: "Переместил папку");
+        return true;
     }
 
     private async Task<TreeNodeDto> BuildTreeNodeAsync(Folder folder, Guid userId, int level)

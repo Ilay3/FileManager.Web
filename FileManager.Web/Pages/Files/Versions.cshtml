@@ -75,7 +75,7 @@
 
                             @if (!version.IsCurrentVersion)
                             {
-                                <button class="btn btn-small btn-primary" onclick="restoreVersion('@version.Id', @version.VersionNumber)">
+                                <button class="btn btn-small btn-primary" onclick="openRestoreModal('@version.Id', @version.VersionNumber)">
                                     🔄 Восстановить
                                 </button>
                             }
@@ -115,6 +115,29 @@
             <button type="button" class="btn btn-secondary" onclick="closeCreateVersionModal()">Отмена</button>
             <button type="button" class="btn btn-primary" onclick="saveVersion()">Создать версию</button>
         </div>
+</div>
+</div>
+
+<!-- Modal для восстановления версии -->
+<div id="restoreVersionModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Восстановить версию</h3>
+            <span class="modal-close" onclick="closeRestoreVersionModal()">&times;</span>
+        </div>
+
+        <div class="modal-body">
+            <p id="restoreVersionInfo"></p>
+            <div class="form-group">
+                <label for="restoreComment">Причина отката:</label>
+                <textarea id="restoreComment" class="form-textarea" placeholder="Опишите причину отката..."></textarea>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeRestoreVersionModal()">Отмена</button>
+            <button type="button" class="btn btn-primary" onclick="confirmRestore()">Восстановить</button>
+        </div>
     </div>
 </div>
 
@@ -125,18 +148,37 @@
         window.location.href = `/api/files/${fileId}/versions/${versionId}/content`;
     }
 
-    async function restoreVersion(versionId, versionNumber) {
-        if (!confirm(`Вы уверены, что хотите восстановить версию ${versionNumber}?\n\nТекущая версия будет сохранена в истории.`)) {
-            return;
-        }
+    let selectedVersionId = null;
+
+    function openRestoreModal(versionId, versionNumber) {
+        selectedVersionId = versionId;
+        document.getElementById('restoreVersionInfo').textContent = `Восстановить версию ${versionNumber}? Текущая версия будет сохранена в истории.`;
+        document.getElementById('restoreVersionModal').style.display = 'flex';
+    }
+
+    function closeRestoreVersionModal() {
+        document.getElementById('restoreVersionModal').style.display = 'none';
+        document.getElementById('restoreComment').value = '';
+        selectedVersionId = null;
+    }
+
+    async function confirmRestore() {
+        if (!selectedVersionId) return;
+
+        const comment = document.getElementById('restoreComment').value;
 
         try {
-            const response = await fetch(`/api/files/${fileId}/versions/${versionId}/restore`, {
-                method: 'POST'
+            const response = await fetch(`/api/files/${fileId}/versions/${selectedVersionId}/restore`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ comment })
             });
 
             if (response.ok) {
                 showNotification('Версия успешно восстановлена', 'success');
+                closeRestoreVersionModal();
                 setTimeout(() => window.location.reload(), 1500);
             } else {
                 const error = await response.text();

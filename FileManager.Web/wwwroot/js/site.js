@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Автофокус на первое поле ввода в формах
     const firstInput = document.querySelector('input[type="text"], input[type="email"]');
     if (firstInput) {
@@ -26,6 +26,19 @@
                 // Здесь будет логика поиска
                 console.log('Поиск:', this.value);
             }, 300);
+        });
+    }
+
+    const themeToggle = document.getElementById('themeToggle');
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+    }
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+            document.body.classList.toggle('dark-theme');
+            const mode = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+            localStorage.setItem('theme', mode);
         });
     }
 });

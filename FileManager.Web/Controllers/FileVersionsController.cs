@@ -55,10 +55,10 @@ public class FileVersionsController : ControllerBase
     }
 
     [HttpPost("{versionId}/restore")]
-    public async Task<ActionResult> RestoreVersion(Guid fileId, Guid versionId)
+    public async Task<ActionResult> RestoreVersion(Guid fileId, Guid versionId, [FromBody] RestoreVersionRequest request)
     {
         var userId = GetCurrentUserId();
-        var success = await _fileVersionService.RestoreVersionAsync(fileId, versionId, userId);
+        var success = await _fileVersionService.RestoreVersionAsync(fileId, versionId, userId, request?.Comment);
 
         if (!success)
             return BadRequest("Не удалось восстановить версию файла");
@@ -67,13 +67,13 @@ public class FileVersionsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> CreateVersion(Guid fileId, [FromBody] CreateVersionRequest request)
+    public async Task<ActionResult> CreateVersion(Guid fileId, [FromBody] CreateVersionRequest? request)
     {
         var userId = GetCurrentUserId();
 
         try
         {
-            var version = await _fileVersionService.CreateVersionAsync(fileId, userId, request.Comment);
+            var version = await _fileVersionService.CreateVersionAsync(fileId, userId, request?.Comment);
             return Ok(version);
         }
         catch (InvalidOperationException ex)
@@ -105,6 +105,11 @@ public class FileVersionsController : ControllerBase
     }
 
     public class CreateVersionRequest
+    {
+        public string? Comment { get; set; }
+    }
+
+    public class RestoreVersionRequest
     {
         public string? Comment { get; set; }
     }

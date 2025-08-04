@@ -75,9 +75,63 @@ public class FoldersApiController : ControllerBase
         return Ok(contents);
     }
 
+    [HttpPost]
+    public async Task<ActionResult<FolderDto>> CreateFolder([FromBody] CreateFolderRequest request)
+    {
+        var userId = GetCurrentUserId();
+        try
+        {
+            var folder = await _folderService.CreateFolderAsync(request.Name, request.ParentId, userId);
+            return Ok(folder);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPut("{id}/rename")]
+    public async Task<ActionResult<FolderDto>> RenameFolder(Guid id, [FromBody] RenameFolderRequest request)
+    {
+        var userId = GetCurrentUserId();
+        try
+        {
+            var folder = await _folderService.RenameFolderAsync(id, request.Name, userId);
+            return folder == null ? NotFound() : Ok(folder);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteFolder(Guid id)
+    {
+        var userId = GetCurrentUserId();
+        var result = await _folderService.DeleteFolderAsync(id, userId);
+        if (!result)
+            return BadRequest("Невозможно удалить папку");
+        return NoContent();
+    }
+
+    [HttpPost("{id}/move")]
+    public async Task<IActionResult> MoveFolder(Guid id, [FromBody] MoveFolderRequest request)
+    {
+        var userId = GetCurrentUserId();
+        var result = await _folderService.MoveFolderAsync(id, request.NewParentId, userId);
+        if (!result)
+            return BadRequest("Не удалось переместить папку");
+        return NoContent();
+    }
+
     private Guid GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
     }
+
+    public record CreateFolderRequest(string Name, Guid? ParentId);
+    public record RenameFolderRequest(string Name);
+    public record MoveFolderRequest(Guid? NewParentId);
 }

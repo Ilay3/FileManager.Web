@@ -21,10 +21,12 @@
                         {
                             <a href="/Admin" class="nav-link">⚙️ Администрирование</a>
                         }
+                        <a href="/Docs" class="nav-link">📖 Документация</a>
                     </nav>
                     <div class="user-menu">
                         <span>👤 @User.Identity.Name</span>
                         <span style="color: #999; font-size: 14px;">(@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value)</span>
+                        <button id="themeToggle" class="btn btn-secondary" type="button">🌓</button>
                         <a href="/Account/Logout" class="btn btn-secondary">Выход</a>
                     </div>
                 </div>

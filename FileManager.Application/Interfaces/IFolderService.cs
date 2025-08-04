@@ -10,4 +10,8 @@ public interface IFolderService
     Task<List<FolderDto>> GetSubFoldersAsync(Guid parentId, Guid userId);
     Task<List<BreadcrumbDto>> GetBreadcrumbsAsync(Guid folderId);
     Task<TreeNodeDto?> GetFolderContentsAsync(Guid folderId, Guid userId, SearchRequestDto? searchRequest = null);
+    Task<FolderDto> CreateFolderAsync(string name, Guid? parentId, Guid userId);
+    Task<FolderDto?> RenameFolderAsync(Guid id, string newName, Guid userId);
+    Task<bool> DeleteFolderAsync(Guid id, Guid userId);
+    Task<bool> MoveFolderAsync(Guid id, Guid? newParentId, Guid userId);
 }

@@ -3,6 +3,8 @@ using FileManager.Application.Interfaces;
 using FileManager.Domain.Entities;
 using FileManager.Domain.Interfaces;
 using FileManager.Domain.Enums;
+using System.IO;
+using System.IO.Compression;
 
 namespace FileManager.Application.Services;
 
@@ -11,12 +13,14 @@ public class FileService : IFileService
     private readonly IFilesRepository _filesRepository;
     private readonly IFolderRepository _folderRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IYandexDiskService _yandexDiskService;
 
-    public FileService(IFilesRepository filesRepository, IFolderRepository folderRepository, IUserRepository userRepository)
+    public FileService(IFilesRepository filesRepository, IFolderRepository folderRepository, IUserRepository userRepository, IYandexDiskService yandexDiskService)
     {
         _filesRepository = filesRepository;
         _folderRepository = folderRepository;
         _userRepository = userRepository;
+        _yandexDiskService = yandexDiskService;
     }
 
     public async Task<SearchResultDto<FileDto>> GetFilesAsync(SearchRequestDto request, Guid userId, bool isAdmin = false)
@@ -65,10 +69,20 @@ public class FileService : IFileService
 
     public async Task<SearchResultDto<FileDto>> SearchFilesAsync(SearchRequestDto request, Guid userId)
     {
-        if (string.IsNullOrWhiteSpace(request.SearchTerm))
-            return await GetFilesAsync(request, userId);
+        var files = await _filesRepository.SearchAsync(
+            request.SearchTerm,
+            request.FolderId,
+            request.FileType,
+            request.Extension,
+            request.DateFrom,
+            request.DateTo,
+            request.OwnerId,
+            request.Tags,
+            request.UpdatedFrom,
+            request.UpdatedTo,
+            request.MinSizeBytes,
+            request.MaxSizeBytes);
 
-        var files = await _filesRepository.SearchByNameAsync(request.SearchTerm);
         var user = await _userRepository.GetByIdAsync(userId);
 
         if (user == null) return new SearchResultDto<FileDto>();
@@ -113,6 +127,36 @@ public class FileService : IFileService
             .ToList();
     }
 
+    public async Task UpdateTagsAsync(Guid fileId, string tags, Guid userId)
+    {
+        var file = await _filesRepository.GetByIdAsync(fileId) ?? throw new InvalidOperationException("Файл не найден");
+        if (file.UploadedById != userId)
+            throw new InvalidOperationException("Недостаточно прав для изменения тегов");
+
+        file.Tags = tags;
+        await _filesRepository.UpdateAsync(file);
+    }
+
+    public async Task<Stream> DownloadFilesZipAsync(IEnumerable<Guid> ids, Guid userId)
+    {
+        var memory = new MemoryStream();
+        using (var archive = new ZipArchive(memory, ZipArchiveMode.Create, true))
+        {
+            foreach (var id in ids)
+            {
+                var file = await _filesRepository.GetByIdAsync(id);
+                if (file == null || file.UploadedById != userId) continue;
+
+                using var fileStream = await _yandexDiskService.DownloadFileAsync(file.YandexPath);
+                var entry = archive.CreateEntry(file.OriginalName ?? file.Name);
+                using var entryStream = entry.Open();
+                await fileStream.CopyToAsync(entryStream);
+            }
+        }
+        memory.Position = 0;
+        return memory;
+    }
+
     private IEnumerable<Files> FilterFiles(IEnumerable<Files> files, SearchRequestDto request, User user)
     {
         var filtered = files.AsQueryable();
@@ -132,11 +176,35 @@ public class FileService : IFileService
         if (request.DateTo.HasValue)
             filtered = filtered.Where(f => f.CreatedAt <= request.DateTo.Value);
 
+        if (request.UpdatedFrom.HasValue)
+            filtered = filtered.Where(f => (f.UpdatedAt ?? f.CreatedAt) >= request.UpdatedFrom.Value);
+
+        if (request.UpdatedTo.HasValue)
+            filtered = filtered.Where(f => (f.UpdatedAt ?? f.CreatedAt) <= request.UpdatedTo.Value);
+
         if (request.OnlyMyFiles)
             filtered = filtered.Where(f => f.UploadedById == user.Id);
 
         if (!string.IsNullOrEmpty(request.Department) && !string.IsNullOrEmpty(user.Department))
             filtered = filtered.Where(f => f.UploadedBy.Department == request.Department);
+
+        if (request.OwnerId.HasValue)
+            filtered = filtered.Where(f => f.UploadedById == request.OwnerId.Value);
+
+        if (request.MinSizeBytes.HasValue)
+            filtered = filtered.Where(f => f.SizeBytes >= request.MinSizeBytes.Value);
+
+        if (request.MaxSizeBytes.HasValue)
+            filtered = filtered.Where(f => f.SizeBytes <= request.MaxSizeBytes.Value);
+
+        if (!string.IsNullOrEmpty(request.Tags))
+        {
+            var tagList = request.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            foreach (var tag in tagList)
+            {
+                filtered = filtered.Where(f => f.Tags != null && f.Tags.Contains(tag, StringComparison.OrdinalIgnoreCase));
+            }
+        }
 
         return filtered;
     }

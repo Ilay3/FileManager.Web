@@ -1,4 +1,6 @@
 ﻿using FileManager.Application.DTOs;
+using System.Collections.Generic;
+using System.IO;
 
 namespace FileManager.Application.Interfaces;
 
@@ -10,4 +12,6 @@ public interface IFileService
     Task<SearchResultDto<FileDto>> SearchFilesAsync(SearchRequestDto request, Guid userId);
     Task<List<FileDto>> GetRecentFilesAsync(Guid userId, int count = 10);
     Task<List<FileDto>> GetMyFilesAsync(Guid userId, int count = 50);
+    Task UpdateTagsAsync(Guid fileId, string tags, Guid userId);
+    Task<Stream> DownloadFilesZipAsync(IEnumerable<Guid> ids, Guid userId);
 }

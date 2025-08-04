@@ -50,9 +50,11 @@ public static class ServiceExtensions
         services.AddScoped<IUserService, UserDtoService>();
         services.AddScoped<IFilePreviewService, FilePreviewService>();
         services.AddScoped<IFileVersionService, FileVersionService>();
+        services.AddScoped<IAccessService, AccessService>();
 
         // Background services
         services.AddHostedService<FileMonitoringService>();
+        services.AddHostedService<AuditCleanupService>();
 
         return services;
     }
