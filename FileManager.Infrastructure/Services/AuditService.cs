@@ -2,6 +2,7 @@
 using FileManager.Domain.Enums;
 using FileManager.Domain.Interfaces;
 using FileManager.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace FileManager.Infrastructure.Services;
@@ -51,7 +52,11 @@ public class AuditService : IAuditService
     public async Task<IEnumerable<AuditLog>> GetLogsAsync(DateTime? from = null, DateTime? to = null,
                                                          Guid? userId = null, AuditAction? action = null)
     {
-        var query = _context.AuditLogs.AsQueryable();
+        var query = _context.AuditLogs
+            .Include(l => l.User)
+            .Include(l => l.File)
+            .Include(l => l.Folder)
+            .AsQueryable();
 
         if (from.HasValue)
             query = query.Where(log => log.CreatedAt >= from.Value);

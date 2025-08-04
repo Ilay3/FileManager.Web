@@ -115,18 +115,13 @@
                 <td><strong>Автор:</strong></td>
                 <td>@Model.UploadedBy</td>
             </tr>
-            @if (!string.IsNullOrEmpty(Model.Tags))
-            {
-                <tr>
-                    <td><strong>Теги:</strong></td>
-                    <td>
-                        @foreach (var tag in Model.Tags.Split(','))
-                        {
-                            <span class="tag">@tag.Trim()</span>
-                        }
-                    </td>
-                </tr>
-            }
+            <tr>
+                <td><strong>Теги:</strong></td>
+                <td>
+                    <input type="text" id="tagsInput" value="@Model.Tags" class="form-control" />
+                    <button class="btn btn-primary" style="margin-top:5px" onclick="saveTags()">Сохранить</button>
+                </td>
+            </tr>
         </table>
     </div>
 </div>
@@ -198,6 +193,20 @@
 
     function downloadFile(fileId) {
         window.location.href = `/api/files/${fileId}/content`;
+    }
+
+    async function saveTags() {
+        const tags = document.getElementById('tagsInput').value;
+        try {
+            await fetch(`/api/files/${fileId}/tags`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tags })
+            });
+            alert('Теги обновлены');
+        } catch (e) {
+            alert('Ошибка при обновлении тегов');
+        }
     }
 
     function showNotification(message, type = 'info') {

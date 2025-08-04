@@ -3,6 +3,7 @@ using FileManager.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Collections.Generic;
 
 namespace FileManager.Web.Controllers;
 
@@ -72,9 +73,35 @@ public class FilesApiController : ControllerBase
         return Ok(files);
     }
 
+    [HttpPut("{id}/tags")]
+    public async Task<IActionResult> UpdateTags(Guid id, [FromBody] TagsRequest request)
+    {
+        var userId = GetCurrentUserId();
+        await _fileService.UpdateTagsAsync(id, request.Tags, userId);
+        return NoContent();
+    }
+
+    [HttpPost("download-zip")]
+    public async Task<IActionResult> DownloadZip([FromBody] IdsRequest request)
+    {
+        var userId = GetCurrentUserId();
+        var stream = await _fileService.DownloadFilesZipAsync(request.Ids, userId);
+        return File(stream, "application/zip", "files.zip");
+    }
+
     private Guid GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
+    }
+
+    public class TagsRequest
+    {
+        public string Tags { get; set; } = string.Empty;
+    }
+
+    public class IdsRequest
+    {
+        public List<Guid> Ids { get; set; } = new();
     }
 }

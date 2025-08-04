@@ -1,4 +1,4 @@
-﻿@model FileManager.Application.DTOs.SearchResultDto<FileManager.Application.DTOs.FileDto>
+@model FileManager.Application.DTOs.SearchResultDto<FileManager.Application.DTOs.FileDto>
 
 @if (Model.Items.Any())
 {
@@ -13,6 +13,7 @@
     <table class="files-table">
         <thead>
             <tr>
+                <th><input type="checkbox" id="selectAll" /></th>
                 <th>Название</th>
                 <th>Размер</th>
                 <th>Изменен</th>
@@ -25,6 +26,7 @@
             @foreach (var file in Model.Items)
             {
                 <tr>
+                    <td><input type="checkbox" class="file-select" data-file-id="@file.Id" /></td>
                     <td>
                         <span class="file-icon">@file.FileIcon</span>
                         <strong>@file.Name</strong>
@@ -46,15 +48,9 @@
                     </td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn btn-small" onclick="viewFile('@file.Id')" title="Просмотр">
-                                👁️
-                            </button>
-                            <button class="btn btn-small" onclick="downloadFile('@file.Id')" title="Скачать">
-                                ⬇️
-                            </button>
-                            <button class="btn btn-small" onclick="deleteFile('@file.Id', '@file.Name')" title="Удалить">
-                                🗑️
-                            </button>
+                            <button class="btn btn-small" onclick="viewFile('@file.Id')" title="Просмотр">👁️</button>
+                            <button class="btn btn-small" onclick="downloadFile('@file.Id')" title="Скачать">⬇️</button>
+                            <button class="btn btn-small" onclick="deleteFile('@file.Id', '@file.Name')" title="Удалить">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -77,9 +73,7 @@ else
                 <span>В данной папке пока нет файлов. Загрузите первый файл, чтобы начать работу.</span>
             }
         </p>
-        <button class="btn btn-primary" onclick="alert('Функция загрузки будет добавлена в следующем этапе')">
-            📤 Загрузить файл
-        </button>
+        <button class="btn btn-primary" onclick="alert('Функция загрузки будет добавлена в следующем этапе')">📤 Загрузить файл</button>
     </div>
 }
 
@@ -88,14 +82,10 @@ else
         const params = new URLSearchParams(window.location.search);
         const currentSort = params.get('SearchRequest.SortBy');
         const currentDirection = params.get('SearchRequest.SortDirection') || 'asc';
-
-        // Toggle direction if same field
         const newDirection = (currentSort === field && currentDirection === 'asc') ? 'desc' : 'asc';
-
         params.set('SearchRequest.SortBy', field);
         params.set('SearchRequest.SortDirection', newDirection);
-        params.set('SearchRequest.Page', '1'); // Reset to first page
-
+        params.set('SearchRequest.Page', '1');
         window.location.search = params.toString();
     }
 </script>

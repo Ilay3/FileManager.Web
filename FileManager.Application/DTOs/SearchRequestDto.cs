@@ -10,9 +10,14 @@ public class SearchRequestDto
     public string? Extension { get; set; }
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
+    public DateTime? UpdatedFrom { get; set; }
+    public DateTime? UpdatedTo { get; set; }
+    public long? MinSizeBytes { get; set; }
+    public long? MaxSizeBytes { get; set; }
     public string? Tags { get; set; }
     public bool OnlyMyFiles { get; set; } = false;
     public string? Department { get; set; }
+    public Guid? OwnerId { get; set; }
 
     // Sorting
     public string SortBy { get; set; } = "name"; // name, date, size, type

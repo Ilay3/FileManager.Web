@@ -1,0 +1,89 @@
+@page "/Admin/Logs"
+@model FileManager.Web.Pages.Admin.LogsModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using FileManager.Domain.Enums
+@{
+    ViewData["Title"] = "Журнал действий";
+
+    if (User.FindFirst("IsAdmin")?.Value != "True")
+    {
+        Response.Redirect("/Files");
+        return;
+    }
+}
+
+<h1>Журнал действий</h1>
+
+<form method="get" class="mb-3">
+    <div class="row g-2">
+        <div class="col-md-3">
+            <label class="form-label">С даты</label>
+            <input type="date" class="form-control" name="From" value="@Model.From?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">По дату</label>
+            <input type="date" class="form-control" name="To" value="@Model.To?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Пользователь</label>
+            <select class="form-select" name="UserId">
+                <option value="">Все</option>
+                @foreach (var u in Model.Users)
+                {
+                    <option value="@u.Id" selected="@(Model.UserId == u.Id ? "selected" : null)">@u.Email</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Действие</label>
+            <select class="form-select" name="Action">
+                <option value="">Все</option>
+                @foreach (var act in Enum.GetValues(typeof(AuditAction)).Cast<AuditAction>())
+                {
+                    <option value="@act" selected="@(Model.Action == act ? "selected" : null)">@act</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Фильтровать</button>
+    </div>
+</form>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Дата</th>
+            <th>Пользователь</th>
+            <th>Действие</th>
+            <th>Объект</th>
+            <th>Описание</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var log in Model.Logs)
+        {
+            <tr>
+                <td>@log.CreatedAt.ToLocalTime()</td>
+                <td>@(log.User?.Email ?? "-")</td>
+                <td>@log.Action</td>
+                <td>
+                    @if (log.File != null)
+                    {
+                        @("Файл: " + log.File.Name)
+                    }
+                    else if (log.Folder != null)
+                    {
+                        @("Папка: " + log.Folder.Name)
+                    }
+                    else
+                    {
+                        @("-")
+                    }
+                </td>
+                <td>@log.Description</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
