@@ -22,6 +22,13 @@
             {
                 <span class="tree-count">(@Model.ItemsCount)</span>
             }
+
+            <div class="tree-file-actions">
+                <button class="btn btn-tiny" onclick="renameFolder('@Model.Id', '@Model.Name')" title="Переименовать">✏️</button>
+                <button class="btn btn-tiny" onclick="moveFolder('@Model.Id')" title="Переместить">📁</button>
+                <button class="btn btn-tiny" onclick="deleteFolder('@Model.Id', '@Model.Name')" title="Удалить">🗑️</button>
+                <button class="btn btn-tiny" onclick="shareAccess('folder', '@Model.Id')" title="Права">🔑</button>
+            </div>
         }
         else
         {
@@ -41,6 +48,7 @@
                     <button class="btn btn-tiny" onclick="editFile('@Model.Id')" title="Редактировать">✏️</button>
                     <button class="btn btn-tiny" onclick="downloadFile('@Model.Id')" title="Скачать">⬇️</button>
                     <button class="btn btn-tiny" onclick="deleteFile('@Model.Id', '@Model.Name')" title="Удалить">🗑️</button>
+                    <button class="btn btn-tiny" onclick="shareAccess('file', '@Model.Id')" title="Права">🔑</button>
                 </div>
         }
 

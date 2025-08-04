@@ -1,4 +1,4 @@
-/* Общие стили */
+/* ГЋГЎГ№ГЁГҐ Г±ГІГЁГ«ГЁ */
 * {
     box-sizing: border-box;
 }
@@ -16,7 +16,7 @@ body {
     padding: 0 20px;
 }
 
-/* Стили для страниц входа */
+/* Г‘ГІГЁГ«ГЁ Г¤Г«Гї Г±ГІГ°Г Г­ГЁГ¶ ГўГµГ®Г¤Г  */
 .login-body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
@@ -50,7 +50,7 @@ body {
         color: #666;
     }
 
-/* Формы */
+/* Г”Г®Г°Г¬Г» */
 .form-group {
     margin-bottom: 20px;
     text-align: left;
@@ -85,7 +85,7 @@ body {
     font-size: 14px;
 }
 
-/* Кнопки */
+/* ГЉГ­Г®ГЇГЄГЁ */
 .btn {
     display: inline-block;
     padding: 12px 24px;
@@ -124,7 +124,7 @@ body {
     margin-right: 5px;
 }
 
-/* Уведомления */
+/* Г“ГўГҐГ¤Г®Г¬Г«ГҐГ­ГЁГї */
 .alert {
     padding: 12px;
     border-radius: 4px;
@@ -154,7 +154,7 @@ body {
     font-size: 14px;
 }
 
-/* Ссылки на странице входа */
+/* Г‘Г±Г»Г«ГЄГЁ Г­Г  Г±ГІГ°Г Г­ГЁГ¶ГҐ ГўГµГ®Г¤Г  */
 .login-links {
     margin: 20px 0;
 }
@@ -179,7 +179,7 @@ body {
         line-height: 1.4;
     }
 
-/* Заголовок приложения */
+/* Г‡Г ГЈГ®Г«Г®ГўГ®ГЄ ГЇГ°ГЁГ«Г®Г¦ГҐГ­ГЁГї */
 .header {
     background: white;
     border-bottom: 1px solid #eee;
@@ -220,13 +220,13 @@ body {
     gap: 15px;
 }
 
-/* Основное содержимое */
+/* ГЋГ±Г­Г®ГўГ­Г®ГҐ Г±Г®Г¤ГҐГ°Г¦ГЁГ¬Г®ГҐ */
 .main {
     min-height: calc(100vh - 80px);
     padding: 30px 0;
 }
 
-/* Страница файлов */
+/* Г‘ГІГ°Г Г­ГЁГ¶Г  ГґГ Г©Г«Г®Гў */
 .files-header {
     display: flex;
     justify-content: space-between;
@@ -258,7 +258,7 @@ body {
     margin-left: auto;
 }
 
-/* Таблица файлов */
+/* Г’Г ГЎГ«ГЁГ¶Г  ГґГ Г©Г«Г®Гў */
 .files-table {
     width: 100%;
     background: white;
@@ -284,7 +284,7 @@ body {
         background-color: #f8f9fa;
     }
 
-/* Пустое состояние */
+/* ГЏГіГ±ГІГ®ГҐ Г±Г®Г±ГІГ®ГїГ­ГЁГҐ */
 .empty-state {
     text-align: center;
     padding: 80px 20px;
@@ -305,7 +305,7 @@ body {
         font-size: 16px;
     }
 
-/* Админ панель */
+/* ГЂГ¤Г¬ГЁГ­ ГЇГ Г­ГҐГ«Гј */
 .admin-header {
     text-align: center;
     margin-bottom: 40px;
@@ -368,7 +368,7 @@ body {
     flex-wrap: wrap;
 }
 
-/* Адаптивность */
+/* ГЂГ¤Г ГЇГІГЁГўГ­Г®Г±ГІГј */
 @media (max-width: 768px) {
     .header-content {
         flex-direction: column;
@@ -1592,9 +1592,9 @@ body {
     }
 }
 
-/* Дополнительные стили для предпросмотра файлов */
+/* Г„Г®ГЇГ®Г«Г­ГЁГІГҐГ«ГјГ­Г»ГҐ Г±ГІГЁГ«ГЁ Г¤Г«Гї ГЇГ°ГҐГ¤ГЇГ°Г®Г±Г¬Г®ГІГ°Г  ГґГ Г©Г«Г®Гў */
 
-/* Общие стили для кнопок */
+/* ГЋГЎГ№ГЁГҐ Г±ГІГЁГ«ГЁ Г¤Г«Гї ГЄГ­Г®ГЇГ®ГЄ */
 .btn {
     display: inline-block;
     padding: 8px 16px;
@@ -1640,7 +1640,7 @@ body {
     font-size: 16px;
 }
 
-/* Стили для списка файлов */
+/* Г‘ГІГЁГ«ГЁ Г¤Г«Гї Г±ГЇГЁГ±ГЄГ  ГґГ Г©Г«Г®Гў */
 .files-table {
     width: 100%;
     border-collapse: collapse;
@@ -1669,7 +1669,7 @@ body {
     gap: 4px;
 }
 
-/* Стили для грид-вида */
+/* Г‘ГІГЁГ«ГЁ Г¤Г«Гї ГЈГ°ГЁГ¤-ГўГЁГ¤Г  */
 .files-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -1717,7 +1717,7 @@ body {
     justify-content: flex-end;
 }
 
-/* Теги */
+/* Г’ГҐГЈГЁ */
 .tags {
     margin-top: 4px;
 }
@@ -1733,7 +1733,7 @@ body {
     margin-top: 2px;
 }
 
-/* Алерты */
+/* ГЂГ«ГҐГ°ГІГ» */
 .alert {
     padding: 12px 16px;
     margin-bottom: 20px;
@@ -1758,7 +1758,7 @@ body {
     color: #721c24;
 }
 
-/* Пустое состояние */
+/* ГЏГіГ±ГІГ®ГҐ Г±Г®Г±ГІГ®ГїГ­ГЁГҐ */
 .empty-state {
     text-align: center;
     padding: 60px 20px;
@@ -1770,7 +1770,7 @@ body {
         margin-bottom: 20px;
     }
 
-/* Уведомления */
+/* Г“ГўГҐГ¤Г®Г¬Г«ГҐГ­ГЁГї */
 .notification {
     position: fixed;
     top: 20px;
@@ -1795,7 +1795,7 @@ body {
     background-color: #17a2b8;
 }
 
-/* Общие утилиты */
+/* ГЋГЎГ№ГЁГҐ ГіГІГЁГ«ГЁГІГ» */
 .text-center {
     text-align: center;
 }
@@ -1822,4 +1822,33 @@ body {
 
 .p-3 {
     padding: 16px;
+}:root {
+    --bg-color: #f5f5f5;
+    --text-color: #333;
+    --header-bg: #ffffff;
+    --header-text: #333;
 }
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+.header {
+    background: var(--header-bg);
+    color: var(--header-text);
+}
+.dark-theme {
+    --bg-color: #1e1e1e;
+    --text-color: #f5f5f5;
+    --header-bg: #2c2c2c;
+    --header-text: #f5f5f5;
+}
+@media (max-width: 768px) {
+    .header-content { flex-direction: column; align-items: flex-start; }
+    .nav { flex-direction: column; gap: 10px; }
+    .user-menu { flex-direction: column; gap: 5px; margin-top: 10px; }
+    .toolbar { flex-direction: column; align-items: flex-start; }
+    .toolbar-left, .toolbar-center, .toolbar-right { width: 100%; }
+    .search-input { width: 100%; }
+    .files-table { display: block; overflow-x: auto; }
+}
+.nav-link { color: var(--header-text); }

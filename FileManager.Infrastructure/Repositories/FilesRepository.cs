@@ -83,7 +83,9 @@ public class FilesRepository : IFilesRepository
 
     public async Task<IEnumerable<Files>> SearchAsync(string? searchTerm = null, Guid? folderId = null,
         FileType? fileType = null, string? extension = null, DateTime? dateFrom = null,
-        DateTime? dateTo = null, Guid? userId = null)
+        DateTime? dateTo = null, Guid? userId = null, string? tags = null,
+        DateTime? updatedFrom = null, DateTime? updatedTo = null,
+        long? minSizeBytes = null, long? maxSizeBytes = null)
     {
         var query = _context.Files
             .Where(f => !f.IsDeleted)
@@ -123,9 +125,38 @@ public class FilesRepository : IFilesRepository
             query = query.Where(f => f.CreatedAt <= dateTo.Value);
         }
 
+        if (updatedFrom.HasValue)
+        {
+            query = query.Where(f => f.UpdatedAt >= updatedFrom.Value);
+        }
+
+        if (updatedTo.HasValue)
+        {
+            query = query.Where(f => f.UpdatedAt <= updatedTo.Value);
+        }
+
         if (userId.HasValue)
         {
             query = query.Where(f => f.UploadedById == userId.Value);
+        }
+
+        if (!string.IsNullOrEmpty(tags))
+        {
+            var tagList = tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            foreach (var tag in tagList)
+            {
+                query = query.Where(f => f.Tags != null && f.Tags.Contains(tag));
+            }
+        }
+
+        if (minSizeBytes.HasValue)
+        {
+            query = query.Where(f => f.SizeBytes >= minSizeBytes.Value);
+        }
+
+        if (maxSizeBytes.HasValue)
+        {
+            query = query.Where(f => f.SizeBytes <= maxSizeBytes.Value);
         }
 
         return await query

@@ -14,7 +14,9 @@ public interface IFilesRepository
     Task<IEnumerable<Files>> SearchByNameAsync(string searchTerm);
     Task<IEnumerable<Files>> SearchAsync(string? searchTerm = null, Guid? folderId = null,
         FileType? fileType = null, string? extension = null, DateTime? dateFrom = null,
-        DateTime? dateTo = null, Guid? userId = null);
+        DateTime? dateTo = null, Guid? userId = null, string? tags = null,
+        DateTime? updatedFrom = null, DateTime? updatedTo = null,
+        long? minSizeBytes = null, long? maxSizeBytes = null);
     Task<int> CountAsync();
     Task<long> GetTotalSizeAsync();
     Task<IEnumerable<Files>> GetRecentFilesAsync(Guid userId, int count = 10);

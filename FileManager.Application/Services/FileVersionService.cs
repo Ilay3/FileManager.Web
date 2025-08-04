@@ -35,7 +35,7 @@ public class FileVersionService : IFileVersionService
         _logger = logger;
     }
 
-    public async Task<FileVersionDto> CreateVersionAsync(Guid fileId, Guid userId, string comment = null)
+    public async Task<FileVersionDto> CreateVersionAsync(Guid fileId, Guid userId, string? comment = null)
     {
         var file = await _filesRepository.GetByIdAsync(fileId);
         if (file == null)
@@ -164,7 +164,7 @@ public class FileVersionService : IFileVersionService
         return new FileStream(version.LocalArchivePath, FileMode.Open, FileAccess.Read);
     }
 
-    public async Task<bool> RestoreVersionAsync(Guid fileId, Guid versionId, Guid userId)
+    public async Task<bool> RestoreVersionAsync(Guid fileId, Guid versionId, Guid userId, string? comment)
     {
         var file = await _filesRepository.GetByIdAsync(fileId);
         var version = await _context.FileVersions.FindAsync(versionId);
@@ -185,12 +185,23 @@ public class FileVersionService : IFileVersionService
                     Path.GetDirectoryName(file.YandexPath)?.Replace("\\", "/") ?? "");
             }
 
+            // Фиксируем восстановленную версию как новую активную
+            var restoreComment = $"Восстановление версии {version.VersionNumber}";
+            if (!string.IsNullOrWhiteSpace(comment))
+                restoreComment += $" - {comment}";
+
+            await CreateVersionAsync(fileId, userId, restoreComment);
+
             // Логируем восстановление
+            var auditDescription = $"Восстановлена версия {version.VersionNumber} файла {file.Name}";
+            if (!string.IsNullOrWhiteSpace(comment))
+                auditDescription += $". Причина: {comment}";
+
             await _auditService.LogAsync(
                 AuditAction.FileRestore,
                 userId,
                 fileId,
-                description: $"Восстановлена версия {version.VersionNumber} файла {file.Name}",
+                description: auditDescription,
                 isSuccess: true);
 
             _logger.LogInformation("Restored version {VersionNumber} for file {FileId} by user {UserId}",
