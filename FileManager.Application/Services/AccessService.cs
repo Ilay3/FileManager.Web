@@ -103,14 +103,14 @@ public class AccessService : IAccessService
         if (file == null)
             return AccessType.None;
 
-        var access = await GetDirectAccessAsync(userId, userGroups, fileId, null);
+        var access = await GetDirectAccessAsync(userId, userGroups, fileId, null, false);
         if (access != AccessType.None)
             return access;
 
         return await GetFolderAccessRecursive(userId, userGroups, file.FolderId);
     }
 
-    private async Task<AccessType> GetFolderAccessRecursive(Guid userId, List<Guid> userGroups, Guid folderId)
+    private async Task<AccessType> GetFolderAccessRecursive(Guid userId, List<Guid> userGroups, Guid folderId, bool inheritedOnly = false)
     {
         var folder = await _context.Folders
             .Include(f => f.ParentFolder)
@@ -118,24 +118,27 @@ public class AccessService : IAccessService
         if (folder == null)
             return AccessType.None;
 
-        var access = await GetDirectAccessAsync(userId, userGroups, null, folderId);
+        var access = await GetDirectAccessAsync(userId, userGroups, null, folderId, inheritedOnly);
         if (access != AccessType.None)
             return access;
 
         if (folder.ParentFolderId.HasValue)
-            return await GetFolderAccessRecursive(userId, userGroups, folder.ParentFolderId.Value);
+            return await GetFolderAccessRecursive(userId, userGroups, folder.ParentFolderId.Value, true);
 
         return AccessType.None;
     }
 
-    private async Task<AccessType> GetDirectAccessAsync(Guid userId, List<Guid> userGroups, Guid? fileId, Guid? folderId)
+    private async Task<AccessType> GetDirectAccessAsync(Guid userId, List<Guid> userGroups, Guid? fileId, Guid? folderId, bool inheritedOnly)
     {
-        var rules = await _context.AccessRules
+        var query = _context.AccessRules
             .Where(r => r.FileId == fileId && r.FolderId == folderId &&
                 ((r.UserId.HasValue && r.UserId == userId) ||
-                 (r.GroupId.HasValue && userGroups.Contains(r.GroupId.Value))) &&
-                r.InheritFromParent)
-            .ToListAsync();
+                 (r.GroupId.HasValue && userGroups.Contains(r.GroupId.Value))));
+
+        if (inheritedOnly)
+            query = query.Where(r => r.InheritFromParent);
+
+        var rules = await query.ToListAsync();
 
         var access = AccessType.None;
         foreach (var rule in rules)

@@ -1,13 +1,15 @@
-﻿using FileManager.Application.Services;
+using FileManager.Application.Services;
 using FileManager.Domain.Entities;
 using FileManager.Domain.Enums;
+using FileManager.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 
 namespace FileManager.Infrastructure.Data;
 
 public static class DatabaseInitializer
 {
-    public static async Task InitializeAsync(AppDbContext context, UserService userService)
+    public static async Task InitializeAsync(AppDbContext context, UserService userService, IYandexDiskService yandexDiskService)
     {
         // Проверяем, есть ли пользователи
         if (await context.Users.AnyAsync())
@@ -24,16 +26,7 @@ public static class DatabaseInitializer
                 isAdmin: true
             );
 
-            // Создаем тестового пользователя
-            var user = await userService.CreateUserAsync(
-                email: "user@filemanager.com",
-                fullName: "Тестовый пользователь",
-                password: "User123!@#",
-                department: "Общий отдел",
-                isAdmin: false
-            );
-
-            // Создаем корневую папку
+            // Создаем корневую папку без тестовых данных
             var rootFolder = new Folder
             {
                 Name = "Корневая папка",
@@ -44,131 +37,14 @@ public static class DatabaseInitializer
             context.Folders.Add(rootFolder);
             await context.SaveChangesAsync();
 
-            // Создаем папки отделов
-            var departments = new[] { "IT отдел", "Бухгалтерия", "HR отдел", "Общие документы" };
-            var createdFolders = new Dictionary<string, Folder>();
-
-            foreach (var dept in departments)
-            {
-                var folder = new Folder
-                {
-                    Name = dept,
-                    YandexPath = $"/FileManager/{dept}",
-                    ParentFolderId = rootFolder.Id,
-                    CreatedById = admin.Id
-                };
-
-                context.Folders.Add(folder);
-                createdFolders[dept] = folder;
-            }
-
-            await context.SaveChangesAsync();
-
-            // Создаем тестовые файлы для демонстрации
-            var testFiles = new[]
-            {
-                new Files
-                {
-                    Name = "Отчет по проекту.docx",
-                    OriginalName = "Отчет по проекту.docx",
-                    YandexPath = "/FileManager/IT отдел/Отчет по проекту.docx",
-                    FileType = FileType.Document,
-                    Extension = ".docx",
-                    SizeBytes = 245760,
-                    FolderId = createdFolders["IT отдел"].Id,
-                    UploadedById = admin.Id,
-                    Tags = "отчет,проект,итоговый"
-                },
-                new Files
-                {
-                    Name = "Бюджет 2024.xlsx",
-                    OriginalName = "Бюджет 2024.xlsx",
-                    YandexPath = "/FileManager/Бухгалтерия/Бюджет 2024.xlsx",
-                    FileType = FileType.Spreadsheet,
-                    Extension = ".xlsx",
-                    SizeBytes = 89456,
-                    FolderId = createdFolders["Бухгалтерия"].Id,
-                    UploadedById = user.Id,
-                    Tags = "бюджет,2024,финансы"
-                },
-                new Files
-                {
-                    Name = "Презентация продукта.pptx",
-                    OriginalName = "Презентация продукта.pptx",
-                    YandexPath = "/FileManager/Общие документы/Презентация продукта.pptx",
-                    FileType = FileType.Presentation,
-                    Extension = ".pptx",
-                    SizeBytes = 1024000,
-                    FolderId = createdFolders["Общие документы"].Id,
-                    UploadedById = admin.Id,
-                    Tags = "презентация,продукт,маркетинг"
-                },
-                new Files
-                {
-                    Name = "Инструкция пользователя.pdf",
-                    OriginalName = "Инструкция пользователя.pdf",
-                    YandexPath = "/FileManager/Общие документы/Инструкция пользователя.pdf",
-                    FileType = FileType.Pdf,
-                    Extension = ".pdf",
-                    SizeBytes = 512000,
-                    FolderId = createdFolders["Общие документы"].Id,
-                    UploadedById = user.Id,
-                    Tags = "инструкция,руководство,пользователь"
-                },
-                new Files
-                {
-                    Name = "Заметки.txt",
-                    OriginalName = "Заметки.txt",
-                    YandexPath = "/FileManager/IT отдел/Заметки.txt",
-                    FileType = FileType.Text,
-                    Extension = ".txt",
-                    SizeBytes = 2048,
-                    FolderId = createdFolders["IT отдел"].Id,
-                    UploadedById = admin.Id,
-                    Tags = "заметки,todo"
-                },
-                new Files
-                {
-                    Name = "Логотип компании.png",
-                    OriginalName = "Логотип компании.png",
-                    YandexPath = "/FileManager/Общие документы/Логотип компании.png",
-                    FileType = FileType.Image,
-                    Extension = ".png",
-                    SizeBytes = 156789,
-                    FolderId = createdFolders["Общие документы"].Id,
-                    UploadedById = admin.Id,
-                    Tags = "логотип,брендинг,дизайн"
-                },
-                new Files
-                {
-                    Name = "Архив документов.zip",
-                    OriginalName = "Архив документов.zip",
-                    YandexPath = "/FileManager/HR отдел/Архив документов.zip",
-                    FileType = FileType.Archive,
-                    Extension = ".zip",
-                    SizeBytes = 5242880,
-                    FolderId = createdFolders["HR отдел"].Id,
-                    UploadedById = user.Id,
-                    Tags = "архив,документы,hr"
-                }
-            };
-
-            context.Files.AddRange(testFiles);
-            await context.SaveChangesAsync();
+            await SyncDiskAsync(context, admin, rootFolder, yandexDiskService);
 
             Console.WriteLine("=== База данных инициализирована ===");
             Console.WriteLine("Администратор:");
             Console.WriteLine("  Email: admin@filemanager.com");
             Console.WriteLine("  Пароль: Admin123!@#");
             Console.WriteLine();
-            Console.WriteLine("Тестовый пользователь:");
-            Console.WriteLine("  Email: user@filemanager.com");
-            Console.WriteLine("  Пароль: User123!@#");
-            Console.WriteLine();
-            Console.WriteLine($"Создано папок: {departments.Length + 1}");
-            Console.WriteLine($"Создано тестовых файлов: {testFiles.Length}");
-            Console.WriteLine();
-            Console.WriteLine("ВАЖНО: Смените пароли после первого входа!");
+            Console.WriteLine("ВАЖНО: Смените пароль после первого входа!");
             Console.WriteLine("=====================================");
         }
         catch (Exception ex)
@@ -177,4 +53,64 @@ public static class DatabaseInitializer
             throw;
         }
     }
+
+    private static async Task SyncDiskAsync(AppDbContext context, User admin, Folder root, IYandexDiskService yandexDiskService)
+    {
+        async Task Traverse(string path, Folder parent)
+        {
+            var items = await yandexDiskService.GetFolderContentsAsync(path);
+
+            foreach (var item in items)
+            {
+                if (item.IsDirectory)
+                {
+                    var folder = new Folder
+                    {
+                        Name = item.Name,
+                        YandexPath = item.Path,
+                        ParentFolderId = parent.Id,
+                        CreatedById = admin.Id
+                    };
+
+                    context.Folders.Add(folder);
+                    await context.SaveChangesAsync();
+
+                    await Traverse(item.Path, folder);
+                }
+                else
+                {
+                    var extension = Path.GetExtension(item.Name).ToLowerInvariant();
+                    var file = new Files
+                    {
+                        Name = Path.GetFileNameWithoutExtension(item.Name),
+                        OriginalName = item.Name,
+                        Extension = extension,
+                        YandexPath = item.Path,
+                        FileType = DetermineFileType(extension),
+                        SizeBytes = item.Size,
+                        FolderId = parent.Id,
+                        UploadedById = admin.Id
+                    };
+
+                    context.Files.Add(file);
+                }
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        await Traverse(root.YandexPath, root);
+    }
+
+    private static FileType DetermineFileType(string extension) => extension switch
+    {
+        ".doc" or ".docx" => FileType.Document,
+        ".xls" or ".xlsx" => FileType.Spreadsheet,
+        ".ppt" or ".pptx" => FileType.Presentation,
+        ".pdf" => FileType.Pdf,
+        ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" => FileType.Image,
+        ".txt" => FileType.Text,
+        ".zip" or ".rar" or ".7z" => FileType.Archive,
+        _ => FileType.Other
+    };
 }

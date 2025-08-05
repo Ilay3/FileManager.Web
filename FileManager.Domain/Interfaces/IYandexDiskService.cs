@@ -8,4 +8,5 @@ public interface IYandexDiskService
     Task<bool> FileExistsAsync(string filePath);
     Task CreateFolderAsync(string folderPath);
     Task<string> GetEditLinkAsync(string filePath); // для онлайн-редактирования
+    Task<IEnumerable<FileManager.Domain.Models.YandexDiskItem>> GetFolderContentsAsync(string folderPath);
 }
