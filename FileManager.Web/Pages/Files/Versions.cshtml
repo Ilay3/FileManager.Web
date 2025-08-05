@@ -12,7 +12,7 @@
             <div>
                 <h2>История версий</h2>
                 <p class="file-info">
-                    <span class="file-icon">@Model.FileIcon</span>
+                    <span class="file-icon"><i class="@Model.FileIconClass"></i></span>
                     <strong>@Model.FileName</strong>
                     <span class="file-size">(@Model.FormattedSize)</span>
                 </p>
@@ -21,7 +21,7 @@
 
         <div class="versions-actions">
             <button class="btn btn-primary" onclick="createManualVersion()">
-                💾 Создать версию
+                <i class="bi bi-save"></i> Создать версию
             </button>
         </div>
     </div>
@@ -29,7 +29,7 @@
     @if (Model.ActiveEditors.Any())
     {
         <div class="alert alert-warning">
-            <strong>⚠️ Внимание!</strong>
+            <strong><i class="bi bi-exclamation-triangle"></i> Внимание!</strong>
             Файл сейчас редактируется: @string.Join(", ", Model.ActiveEditors)
         </div>
     }
@@ -76,7 +76,7 @@
                             @if (!version.IsCurrentVersion)
                             {
                                 <button class="btn btn-small btn-primary" onclick="openRestoreModal('@version.Id', @version.VersionNumber)">
-                                    🔄 Восстановить
+                                    <i class="bi bi-arrow-counterclockwise"></i> Восстановить
                                 </button>
                             }
                         </div>
@@ -87,7 +87,7 @@
         else
         {
             <div class="empty-state">
-                <div class="icon">📄</div>
+                <div class="icon"><i class="bi bi-file-earmark"></i></div>
                 <h3>Нет версий</h3>
                 <p>Для этого файла пока нет сохраненных версий.</p>
             </div>

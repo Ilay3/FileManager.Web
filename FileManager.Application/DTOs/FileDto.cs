@@ -24,7 +24,8 @@ public class FileDto
 
     // Helper properties
     public string FormattedSize => FormatFileSize(SizeBytes);
-    public string FileIcon => GetFileIcon();
+    public string FileIconClass => GetFileIconClass();
+    public bool IsNetworkAvailable { get; set; } = true;
 
     private string FormatFileSize(long bytes)
     {
@@ -34,18 +35,18 @@ public class FileDto
         return $"{bytes / (1024 * 1024 * 1024):F1} ГБ";
     }
 
-    private string GetFileIcon()
+    private string GetFileIconClass()
     {
         return FileType switch
         {
-            FileType.Document => "📄",
-            FileType.Spreadsheet => "📊",
-            FileType.Presentation => "📽️",
-            FileType.Pdf => "📕",
-            FileType.Image => "🖼️",
-            FileType.Text => "📝",
-            FileType.Archive => "📦",
-            _ => "📄"
+            FileType.Document => "bi bi-file-earmark-text",
+            FileType.Spreadsheet => "bi bi-file-earmark-spreadsheet",
+            FileType.Presentation => "bi bi-file-earmark-slides",
+            FileType.Pdf => "bi bi-file-earmark-pdf",
+            FileType.Image => "bi bi-file-earmark-image",
+            FileType.Text => "bi bi-file-earmark-richtext",
+            FileType.Archive => "bi bi-file-earmark-zip",
+            _ => "bi bi-file-earmark"
         };
     }
 }

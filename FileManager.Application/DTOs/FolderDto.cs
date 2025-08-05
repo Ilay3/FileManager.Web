@@ -25,7 +25,7 @@ public class FolderDto
     public bool IsExpanded { get; set; } = false;
     public int Level { get; set; } = 0;
 
-    public string FolderIcon => "📁";
+    public string FolderIconClass => "bi bi-folder";
 }
 
 public class TreeNodeDto
@@ -33,7 +33,8 @@ public class TreeNodeDto
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty; // "folder" or "file"
-    public string Icon { get; set; } = string.Empty;
+    public string IconClass { get; set; } = string.Empty;
+    public bool IsNetworkAvailable { get; set; } = true;
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 

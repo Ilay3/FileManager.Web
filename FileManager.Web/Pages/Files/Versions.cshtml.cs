@@ -29,7 +29,7 @@ public class VersionsModel : PageModel
 
     public List<FileVersionDto> Versions { get; set; } = new();
     public string FileName { get; set; } = string.Empty;
-    public string FileIcon { get; set; } = "📄";
+    public string FileIconClass { get; set; } = "bi bi-file-earmark";
     public string FormattedSize { get; set; } = string.Empty;
     public List<string> ActiveEditors { get; set; } = new();
 
@@ -46,7 +46,7 @@ public class VersionsModel : PageModel
         }
 
         FileName = file.Name;
-        FileIcon = file.FileIcon;
+        FileIconClass = file.FileIconClass;
         FormattedSize = file.FormattedSize;
 
         // Получаем список версий

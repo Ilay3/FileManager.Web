@@ -23,12 +23,11 @@ public class IndexModel : PageModel
     public SearchRequestDto SearchRequest { get; set; } = new();
 
     public SearchResultDto<FileDto> FilesResult { get; set; } = new();
-    public List<TreeNodeDto> TreeStructure { get; set; } = new();
     public List<BreadcrumbDto> Breadcrumbs { get; set; } = new();
     public TreeNodeDto? CurrentFolderContents { get; set; }
 
     // View state
-    public string ViewMode { get; set; } = "list"; // list, tree, grid
+    public string ViewMode { get; set; } = "list"; // list, grid
     public Guid CurrentFolderId { get; set; } = Guid.Empty;
 
     public async Task OnGetAsync(Guid? folderId = null, string? view = null)
@@ -40,31 +39,17 @@ public class IndexModel : PageModel
         var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
 
         // Set folder context
-        if (CurrentFolderId != Guid.Empty)
-        {
-            SearchRequest.FolderId = CurrentFolderId;
-            Breadcrumbs = await _folderService.GetBreadcrumbsAsync(CurrentFolderId);
-        }
+        SearchRequest.FolderId = CurrentFolderId;
+        Breadcrumbs = await _folderService.GetBreadcrumbsAsync(CurrentFolderId);
 
         // Load data based on view mode
-        switch (ViewMode.ToLower())
+        if (ViewMode.ToLower() == "grid")
         {
-            case "tree":
-                TreeStructure = await _folderService.GetTreeStructureAsync(userId, isAdmin);
-                if (CurrentFolderId != Guid.Empty)
-                {
-                    CurrentFolderContents = await _folderService.GetFolderContentsAsync(CurrentFolderId, userId, SearchRequest);
-                }
-                break;
-
-            case "grid":
-                FilesResult = await _fileService.GetFilesAsync(SearchRequest, userId, isAdmin);
-                break;
-
-            case "list":
-            default:
-                CurrentFolderContents = await _folderService.GetFolderContentsAsync(CurrentFolderId, userId, SearchRequest);
-                break;
+            FilesResult = await _fileService.GetFilesAsync(SearchRequest, userId, isAdmin);
+        }
+        else
+        {
+            CurrentFolderContents = await _folderService.GetFolderContentsAsync(CurrentFolderId, userId, SearchRequest);
         }
     }
 

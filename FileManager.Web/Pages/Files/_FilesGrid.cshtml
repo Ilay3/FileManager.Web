@@ -15,7 +15,11 @@
         {
                     <div class="file-card" data-file-id="@file.Id">
                         <div class="file-card-icon">
-                    @file.FileIcon
+                            <i class="@file.FileIconClass"></i>
+                            @if (file.IsNetworkAvailable)
+                            {
+                                <i class="bi bi-cloud-check network-icon"></i>
+                            }
                         </div>
                         <div class="file-card-content">
                             <h4 class="file-card-title" title="@file.Name">@file.Name</h4>
@@ -24,26 +28,20 @@
                                 <span class="file-date">@(file.UpdatedAt?.ToString("dd.MM.yyyy") ?? file.CreatedAt.ToString("dd.MM.yyyy"))</span>
                             </p>
                             <p class="file-card-author">@file.UploadedByName</p>
-                    @if (!string.IsNullOrEmpty(file.Tags))
-                    {
-                                    <div class="file-card-tags">
-                            @foreach (var tag in file.Tags.Split(',').Take(3))
+                            @if (!string.IsNullOrEmpty(file.Tags))
                             {
-                                                <span class="tag">@tag.Trim()</span>
+                                <div class="file-card-tags">
+                                    @foreach (var tag in file.Tags.Split(',').Take(3))
+                                    {
+                                        <span class="tag">@tag.Trim()</span>
+                                    }
+                                </div>
                             }
-                                    </div>
-                    }
                         </div>
                         <div class="file-card-actions">
-                            <button class="btn btn-small" onclick="viewFile('@file.Id')" title="Просмотр">
-                                👁️
-                            </button>
-                            <button class="btn btn-small" onclick="downloadFile('@file.Id')" title="Скачать">
-                                ⬇️
-                            </button>
-                            <button class="btn btn-small" onclick="deleteFile('@file.Id', '@file.Name')" title="Удалить">
-                                🗑️
-                            </button>
+                            <button class="btn btn-small" onclick="viewFile('@file.Id')" title="Просмотр"><i class="bi bi-eye"></i></button>
+                            <button class="btn btn-small" onclick="downloadFile('@file.Id')" title="Скачать"><i class="bi bi-download"></i></button>
+                            <button class="btn btn-small" onclick="deleteFile('@file.Id', '@file.Name')" title="Удалить"><i class="bi bi-trash"></i></button>
                         </div>
                     </div>
         }
@@ -52,7 +50,7 @@
 else
 {
         <div class="empty-state">
-            <div style="font-size: 64px; margin-bottom: 20px;">📄</div>
+            <div style="font-size: 64px; margin-bottom: 20px;"><i class="bi bi-file-earmark"></i></div>
             <h3>Файлы не найдены</h3>
             <p style="color: #999; margin-bottom: 30px;">
             @if (!string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["SearchRequest.SearchTerm"]))
@@ -65,7 +63,7 @@ else
             }
             </p>
             <button class="btn btn-primary" onclick="alert('Функция загрузки будет добавлена в следующем этапе')">
-                📤 Загрузить файл
+                <i class="bi bi-upload"></i> Загрузить файл
             </button>
         </div>
 }

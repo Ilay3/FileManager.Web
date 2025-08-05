@@ -10,13 +10,16 @@
     <div class="toolbar">
         <div class="toolbar-left">
             <button class="btn btn-primary" onclick="openUploadModal('@Model.CurrentFolderId')">
-                📤 Загрузить файл
+                <i class="bi bi-upload"></i> Загрузить файл
             </button>
             <button class="btn btn-secondary" onclick="openCreateFolderModal('@Model.CurrentFolderId')">
-                📁 Создать папку
+                <i class="bi bi-folder-plus"></i> Создать папку
+            </button>
+            <button class="btn btn-secondary" onclick="openAccessModal('@Model.CurrentFolderId', true)">
+                <i class="bi bi-shield-lock"></i> Настроить доступ
             </button>
             <button class="btn btn-secondary" id="downloadSelected" onclick="downloadSelected()" disabled>
-                ⬇️ Скачать выбранные
+                <i class="bi bi-download"></i> Скачать выбранные
             </button>
         </div>
 
@@ -24,20 +27,17 @@
             <div class="search-container">
                 <input type="text" id="searchInput" placeholder="Поиск файлов и папок..." class="search-input"
                        value="@Model.SearchRequest.SearchTerm" />
-                <button type="button" id="searchBtn" class="btn btn-search">🔍</button>
+                <button type="button" id="searchBtn" class="btn btn-search"><i class="bi bi-search"></i></button>
             </div>
         </div>
 
         <div class="toolbar-right">
             <div class="view-controls">
                 <button class="btn @(Model.ViewMode == "list" ? "btn-active" : "")" onclick="changeView('list')" title="Список">
-                    📄
-                </button>
-                <button class="btn @(Model.ViewMode == "tree" ? "btn-active" : "")" onclick="changeView('tree')" title="Дерево">
-                    🌳
+                    <i class="bi bi-view-list"></i>
                 </button>
                 <button class="btn @(Model.ViewMode == "grid" ? "btn-active" : "")" onclick="changeView('grid')" title="Сетка">
-                    ⚏
+                    <i class="bi bi-grid"></i>
                 </button>
             </div>
 
@@ -101,11 +101,11 @@
                 <span class="breadcrumb-item">
                     @if (i == Model.Breadcrumbs.Count - 1)
                     {
-                        <span>@breadcrumb.Icon @breadcrumb.Name</span>
+                        <span><i class="@breadcrumb.Icon"></i> @breadcrumb.Name</span>
                     }
                     else
                     {
-                        <a href="?folderId=@breadcrumb.Id&view=@Model.ViewMode">@breadcrumb.Icon @breadcrumb.Name</a>
+                        <a href="?folderId=@breadcrumb.Id&view=@Model.ViewMode"><i class="@breadcrumb.Icon"></i> @breadcrumb.Name</a>
                         <span class="breadcrumb-separator">/</span>
                     }
                 </span>
@@ -115,29 +115,7 @@
 
     <!-- Content Area -->
     <div class="content-area">
-        @if (Model.ViewMode == "tree")
-        {
-            <div class="tree-view">
-                @if (Model.TreeStructure.Any())
-                {
-                    <div id="treeContainer" class="tree-container">
-                        @foreach (var node in Model.TreeStructure)
-                        {
-                            @await Html.PartialAsync("_TreeNode", node)
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="empty-state">
-                        <div style="font-size: 64px; margin-bottom: 20px;">📁</div>
-                        <h3>Нет доступных папок</h3>
-                        <p>У вас пока нет доступа к папкам или они не созданы</p>
-                    </div>
-                }
-            </div>
-        }
-        else if (Model.ViewMode == "grid")
+        @if (Model.ViewMode == "grid")
         {
             <div class="grid-view">
                 @await Html.PartialAsync("_FilesGrid", Model.FilesResult)
@@ -155,7 +133,7 @@
     </div>
 
     <!-- Pagination -->
-    @if (Model.ViewMode != "list" && Model.FilesResult.TotalPages > 1)
+    @if (Model.ViewMode == "grid" && Model.FilesResult.TotalPages > 1)
     {
         <div class="pagination">
             @if (Model.FilesResult.HasPreviousPage)
@@ -178,6 +156,7 @@
 
 @await Html.PartialAsync("_FolderModals")
 @await Html.PartialAsync("_UploadModal")
+@await Html.PartialAsync("_AccessModal")
 <div id="contextMenu" class="context-menu">
     <ul>
         <li data-action="rename">Переименовать</li>

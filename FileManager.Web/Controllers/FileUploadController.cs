@@ -26,7 +26,7 @@ public class FileUploadController : ControllerBase
     [HttpPost]
     public async Task<ActionResult> UploadFiles(
         [FromForm] List<IFormFile> files,
-        [FromForm] Guid? folderId = null,
+        [FromForm] Guid folderId,
         [FromForm] string? comment = null)
     {
         var userId = GetCurrentUserId();
@@ -34,6 +34,11 @@ public class FileUploadController : ControllerBase
         if (files == null || !files.Any())
         {
             return BadRequest(new { error = "Не выбраны файлы для загрузки" });
+        }
+
+        if (folderId == Guid.Empty)
+        {
+            return BadRequest(new { error = "Не выбрана папка назначения" });
         }
 
         var results = new List<object>();
