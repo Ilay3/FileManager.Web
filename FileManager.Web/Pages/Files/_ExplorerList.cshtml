@@ -5,7 +5,7 @@
     <div class="tiles-list">
     @foreach (var item in Model.Children)
     {
-        <div class="tile-row" data-type="@item.Type" data-id="@item.Id" data-name="@item.Name">
+        <div class="tile-row explorer-item" data-type="@item.Type" data-id="@item.Id" data-name="@item.Name">
             <div class="tile-icon">
                 <i class="@item.IconClass"></i>
                 @if (item.IsNetworkAvailable)

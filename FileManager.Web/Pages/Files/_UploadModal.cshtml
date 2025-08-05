@@ -65,6 +65,11 @@
 
     // Открытие модального окна
     async function openUploadModal(folderId = null) {
+        // Если папка не указана явно, используем текущую папку из менеджера
+        if (!folderId && window.filesManager) {
+            folderId = filesManager.currentFolderId;
+        }
+
         document.getElementById('uploadModal').style.display = 'flex';
         await loadAvailableFolders(folderId);
     }

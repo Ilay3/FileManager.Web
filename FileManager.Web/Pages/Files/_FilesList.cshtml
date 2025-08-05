@@ -25,7 +25,7 @@
         <tbody>
             @foreach (var file in Model.Items)
             {
-                <tr>
+                <tr class="explorer-item" data-type="file" data-id="@file.Id" data-name="@file.Name">
                     <td><input type="checkbox" class="file-select" data-file-id="@file.Id" /></td>
                     <td>
                         <span class="file-icon"><i class="@file.FileIconClass"></i></span>
@@ -77,7 +77,8 @@ else
                 <span>В данной папке пока нет файлов. Загрузите первый файл, чтобы начать работу.</span>
             }
         </p>
-        <button class="btn btn-primary" onclick="openUploadModal()">📤 Загрузить файл</button>
+        @{ var currentFolder = ViewContext.HttpContext.Request.Query["folderId"].ToString(); }
+        <button class="btn btn-primary" onclick="openUploadModal('@currentFolder')">📤 Загрузить файл</button>
     </div>
 }
 

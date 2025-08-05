@@ -13,7 +13,7 @@
         <div class="files-grid">
         @foreach (var file in Model.Items)
         {
-                    <div class="file-card" data-file-id="@file.Id">
+                    <div class="file-card explorer-item" data-type="file" data-id="@file.Id" data-name="@file.Name">
                         <div class="file-card-icon">
                             <i class="@file.FileIconClass"></i>
                             @if (file.IsNetworkAvailable)
@@ -62,7 +62,8 @@ else
                         <span>В данной папке пока нет файлов. Загрузите первый файл, чтобы начать работу.</span>
             }
             </p>
-            <button class="btn btn-primary" onclick="alert('Функция загрузки будет добавлена в следующем этапе')">
+            @{ var currentFolder = ViewContext.HttpContext.Request.Query["folderId"].ToString(); }
+            <button class="btn btn-primary" onclick="openUploadModal('@currentFolder')">
                 <i class="bi bi-upload"></i> Загрузить файл
             </button>
         </div>

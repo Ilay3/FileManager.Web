@@ -99,6 +99,9 @@ class FilesManager {
                     this.downloadFile(id);
                 }
                 break;
+            case 'access':
+                openAccessModal(id, type === 'folder');
+                break;
             case 'delete':
                 if (type === 'file') {
                     this.deleteFile(id, name);
