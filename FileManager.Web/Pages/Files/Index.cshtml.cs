@@ -58,9 +58,12 @@ public class IndexModel : PageModel
                 break;
 
             case "grid":
+                FilesResult = await _fileService.GetFilesAsync(SearchRequest, userId, isAdmin);
+                break;
+
             case "list":
             default:
-                FilesResult = await _fileService.GetFilesAsync(SearchRequest, userId, isAdmin);
+                CurrentFolderContents = await _folderService.GetFolderContentsAsync(CurrentFolderId, userId, SearchRequest);
                 break;
         }
     }

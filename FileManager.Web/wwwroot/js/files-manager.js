@@ -5,12 +5,14 @@ class FilesManager {
         this.currentFolderId = null;
         this.currentView = 'list';
         this.selectedFiles = new Set();
+        this.contextItem = null;
         this.init();
     }
 
     init() {
         this.bindEvents();
         this.bindSelectionEvents();
+        this.bindContextMenu();
         this.loadInitialData();
     }
 
@@ -43,6 +45,69 @@ class FilesManager {
         if (onlyMyFiles) {
             onlyMyFiles.addEventListener('change', () => this.applyFilters());
         }
+    }
+
+    bindContextMenu() {
+        document.addEventListener('contextmenu', (e) => {
+            const item = e.target.closest('.explorer-item');
+            if (!item) return;
+            e.preventDefault();
+            const menu = document.getElementById('contextMenu');
+            if (!menu) return;
+            this.contextItem = {
+                id: item.dataset.id,
+                name: item.dataset.name,
+                type: item.dataset.type
+            };
+            menu.style.display = 'block';
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+            // show/hide actions
+            menu.querySelector('[data-action="rename"]').style.display = this.contextItem.type === 'folder' ? 'block' : 'none';
+            menu.querySelector('[data-action="download"]').style.display = this.contextItem.type === 'file' ? 'block' : 'none';
+        });
+
+        document.addEventListener('click', () => this.hideContextMenu());
+
+        const menu = document.getElementById('contextMenu');
+        if (menu) {
+            menu.addEventListener('click', (e) => {
+                const action = e.target.dataset.action;
+                if (action) {
+                    this.handleContextAction(action);
+                }
+            });
+        }
+    }
+
+    hideContextMenu() {
+        const menu = document.getElementById('contextMenu');
+        if (menu) menu.style.display = 'none';
+    }
+
+    handleContextAction(action) {
+        if (!this.contextItem) return;
+        const { id, name, type } = this.contextItem;
+        switch (action) {
+            case 'rename':
+                if (type === 'folder') {
+                    openRenameFolderModal(id, name);
+                }
+                break;
+            case 'download':
+                if (type === 'file') {
+                    this.downloadFile(id);
+                }
+                break;
+            case 'delete':
+                if (type === 'file') {
+                    this.deleteFile(id, name);
+                } else {
+                    deleteFolder(id, name);
+                }
+                break;
+        }
+        this.hideContextMenu();
     }
 
     bindSelectionEvents() {
@@ -235,7 +300,7 @@ class FilesManager {
                 <a href="?folderId=${nodeData.id}&view=tree" class="tree-link folder-link">${nodeData.name}</a>
                 ${nodeData.itemsCount ? '<span class="tree-count">(' + nodeData.itemsCount + ')</span>' : ''}
                 <div class="tree-file-actions">
-                    <button class="btn btn-tiny" onclick="renameFolder('${nodeData.id}', '${safeName}')" title="Переименовать">✏️</button>
+                    <button class="btn btn-tiny" onclick="openRenameFolderModal('${nodeData.id}', '${safeName}')" title="Переименовать">✏️</button>
                     <button class="btn btn-tiny" onclick="moveFolder('${nodeData.id}')" title="Переместить">📁</button>
                     <button class="btn btn-tiny" onclick="deleteFolder('${nodeData.id}', '${safeName}')" title="Удалить">🗑️</button>
                     <button class="btn btn-tiny" onclick="shareAccess('folder','${nodeData.id}')" title="Права">🔑</button>
@@ -343,9 +408,7 @@ class FilesManager {
     }
 
     // Folder actions
-    async createFolder(parentId) {
-        const name = prompt('Введите название папки');
-        if (!name) return;
+    async createFolder(name, parentId) {
         try {
             const response = await fetch('/api/folders', {
                 method: 'POST',
@@ -363,9 +426,7 @@ class FilesManager {
         }
     }
 
-    async renameFolder(folderId, currentName) {
-        const newName = prompt('Новое имя папки', currentName);
-        if (!newName) return;
+    async renameFolder(folderId, newName) {
         try {
             const response = await fetch(`/api/folders/${folderId}/rename`, {
                 method: 'PUT',
@@ -557,16 +618,51 @@ function deleteFile(fileId, fileName) {
     }
 }
 
-function createFolder(parentId) {
-    if (filesManager) {
-        filesManager.createFolder(parentId);
-    }
+let createFolderParentId = null;
+let renameFolderId = null;
+
+function openCreateFolderModal(parentId) {
+    createFolderParentId = parentId;
+    const input = document.getElementById('createFolderName');
+    if (input) input.value = '';
+    const modal = document.getElementById('createFolderModal');
+    if (modal) modal.style.display = 'flex';
 }
 
-function renameFolder(folderId, currentName) {
-    if (filesManager) {
-        filesManager.renameFolder(folderId, currentName);
-    }
+function closeCreateFolderModal() {
+    const modal = document.getElementById('createFolderModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function submitCreateFolder() {
+    const input = document.getElementById('createFolderName');
+    if (!input || !filesManager) return;
+    const name = input.value.trim();
+    if (!name) return;
+    filesManager.createFolder(name, createFolderParentId);
+    closeCreateFolderModal();
+}
+
+function openRenameFolderModal(folderId, currentName) {
+    renameFolderId = folderId;
+    const input = document.getElementById('renameFolderName');
+    if (input) input.value = currentName;
+    const modal = document.getElementById('renameFolderModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeRenameFolderModal() {
+    const modal = document.getElementById('renameFolderModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function submitRenameFolder() {
+    const input = document.getElementById('renameFolderName');
+    if (!input || !filesManager) return;
+    const newName = input.value.trim();
+    if (!newName) return;
+    filesManager.renameFolder(renameFolderId, newName);
+    closeRenameFolderModal();
 }
 
 function deleteFolder(folderId, folderName) {

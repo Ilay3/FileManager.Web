@@ -24,7 +24,7 @@
             }
 
             <div class="tree-file-actions">
-                <button class="btn btn-tiny" onclick="renameFolder('@Model.Id', '@Model.Name')" title="Переименовать">✏️</button>
+                <button class="btn btn-tiny" onclick="openRenameFolderModal('@Model.Id', '@Model.Name')" title="Переименовать">✏️</button>
                 <button class="btn btn-tiny" onclick="moveFolder('@Model.Id')" title="Переместить">📁</button>
                 <button class="btn btn-tiny" onclick="deleteFolder('@Model.Id', '@Model.Name')" title="Удалить">🗑️</button>
                 <button class="btn btn-tiny" onclick="shareAccess('folder', '@Model.Id')" title="Права">🔑</button>
