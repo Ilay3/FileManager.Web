@@ -1,0 +1,38 @@
+<div id="createFolderModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Создание папки</h3>
+            <span class="modal-close" onclick="closeCreateFolderModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="createFolderName">Название папки</label>
+                <input id="createFolderName" class="form-input" type="text" />
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeCreateFolderModal()">Отмена</button>
+            <button class="btn btn-primary" onclick="submitCreateFolder()">Создать</button>
+        </div>
+    </div>
+</div>
+
+<div id="renameFolderModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Переименование папки</h3>
+            <span class="modal-close" onclick="closeRenameFolderModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="renameFolderName">Новое имя</label>
+                <input id="renameFolderName" class="form-input" type="text" />
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeRenameFolderModal()">Отмена</button>
+            <button class="btn btn-primary" onclick="submitRenameFolder()">Сохранить</button>
+        </div>
+    </div>
+</div>
+

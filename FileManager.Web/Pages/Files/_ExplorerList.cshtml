@@ -1,0 +1,77 @@
+@model FileManager.Application.DTOs.TreeNodeDto
+
+@if (Model.Children.Any())
+{
+    <table class="files-table">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Размер</th>
+                <th>Изменен</th>
+                <th>Автор</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.Children)
+        {
+            <tr class="explorer-item" data-type="@item.Type" data-id="@item.Id" data-name="@item.Name">
+                <td>
+                    <span class="file-icon">@item.Icon</span>
+                    @if (item.Type == "folder")
+                    {
+                        <a href="?folderId=@item.Id&view=list">@item.Name</a>
+                    }
+                    else
+                    {
+                        <span>@item.Name</span>
+                    }
+                </td>
+                <td>
+                    @(item.Type == "file" && item.SizeBytes.HasValue ? FormatSize(item.SizeBytes.Value) : "-")
+                </td>
+                <td>@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy HH:mm"))</td>
+                <td>@item.UploadedByName</td>
+                <td>
+                    <div class="action-buttons">
+                        @if (item.Type == "file")
+                        {
+                            <button class="btn btn-small" onclick="viewFile('@item.Id')" title="Просмотр">👁️</button>
+                            <button class="btn btn-small" onclick="downloadFile('@item.Id')" title="Скачать">⬇️</button>
+                            <button class="btn btn-small" onclick="deleteFile('@item.Id', '@item.Name')" title="Удалить">🗑️</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-small" onclick="openRenameFolderModal('@item.Id', '@item.Name')" title="Переименовать">✏️</button>
+                            <button class="btn btn-small" onclick="deleteFolder('@item.Id', '@item.Name')" title="Удалить">🗑️</button>
+                        }
+                    </div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="empty-state">
+        <div style="font-size: 64px; margin-bottom: 20px;">📁</div>
+        <h3>Папка пуста</h3>
+        <p style="color: #999; margin-bottom: 30px;">В данной папке нет файлов или подпапок</p>
+    </div>
+}
+
+@functions {
+    private string FormatSize(long size)
+    {
+        string[] suffix = { "Б", "КБ", "МБ", "ГБ", "ТБ" };
+        double len = size;
+        int order = 0;
+        while (len >= 1024 && order < suffix.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {suffix[order]}";
+    }
+}

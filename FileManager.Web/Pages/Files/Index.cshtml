@@ -12,7 +12,7 @@
             <button class="btn btn-primary" onclick="openUploadModal('@Model.CurrentFolderId')">
                 📤 Загрузить файл
             </button>
-            <button class="btn btn-secondary" onclick="createFolder('@Model.CurrentFolderId')">
+            <button class="btn btn-secondary" onclick="openCreateFolderModal('@Model.CurrentFolderId')">
                 📁 Создать папку
             </button>
             <button class="btn btn-secondary" id="downloadSelected" onclick="downloadSelected()" disabled>
@@ -146,13 +146,16 @@
         else
         {
             <div class="list-view">
-                @await Html.PartialAsync("_FilesList", Model.FilesResult)
+                @if (Model.CurrentFolderContents != null)
+                {
+                    @await Html.PartialAsync("_ExplorerList", Model.CurrentFolderContents)
+                }
             </div>
         }
     </div>
 
     <!-- Pagination -->
-    @if (Model.FilesResult.TotalPages > 1)
+    @if (Model.ViewMode != "list" && Model.FilesResult.TotalPages > 1)
     {
         <div class="pagination">
             @if (Model.FilesResult.HasPreviousPage)
@@ -173,4 +176,12 @@
     }
 </div>
 
+@await Html.PartialAsync("_FolderModals")
 @await Html.PartialAsync("_UploadModal")
+<div id="contextMenu" class="context-menu">
+    <ul>
+        <li data-action="rename">Переименовать</li>
+        <li data-action="download">Скачать</li>
+        <li data-action="delete">Удалить</li>
+    </ul>
+</div>
