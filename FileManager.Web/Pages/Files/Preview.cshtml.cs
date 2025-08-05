@@ -45,8 +45,8 @@ public class PreviewModel : PageModel
     public async Task<IActionResult> OnGetAsync()
     {
         var userId = GetCurrentUserId();
-
-        var file = await _fileService.GetFileByIdAsync(Id, userId);
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+        var file = await _fileService.GetFileByIdAsync(Id, userId, isAdmin);
         if (file == null)
         {
             return NotFound();

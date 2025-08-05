@@ -8,7 +8,7 @@ namespace FileManager.Web.Controllers;
 
 [Authorize]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/folders")]
 public class FoldersApiController : ControllerBase
 {
     private readonly IFolderService _folderService;
