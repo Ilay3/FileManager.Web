@@ -1,15 +1,16 @@
-using FileManager.Infrastructure.Extensions; // ВАЖНО: добавить этот using
+using FileManager.Infrastructure.Extensions; // Р’РђР–РќРћ: РґРѕР±Р°РІРёС‚СЊ СЌС‚РѕС‚ using
 using FileManager.Infrastructure.Data;
 using FileManager.Application.Services;
 using FileManager.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using FileManager.Domain.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ВСЕ сервисы регистрируются одной строкой!
+// Р’РЎР• СЃРµСЂРІРёСЃС‹ СЂРµРіРёСЃС‚СЂРёСЂСѓСЋС‚СЃСЏ РѕРґРЅРѕР№ СЃС‚СЂРѕРєРѕР№!
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// Настройка аутентификации
+// РќР°СЃС‚СЂРѕР№РєР° Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёРё
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -24,7 +25,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Lax;
     });
 
-// Настройка авторизации
+// РќР°СЃС‚СЂРѕР№РєР° Р°РІС‚РѕСЂРёР·Р°С†РёРё
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy =>
@@ -39,7 +40,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizePage("/Admin", "AdminOnly");
 });
 
-// Добавляем поддержку контроллеров для API
+// Р”РѕР±Р°РІР»СЏРµРј РїРѕРґРґРµСЂР¶РєСѓ РєРѕРЅС‚СЂРѕР»Р»РµСЂРѕРІ РґР»СЏ API
 builder.Services.AddControllers();
 
 builder.Services.AddHttpContextAccessor();
@@ -62,13 +63,13 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Middleware для отслеживания активности пользователей
+// Middleware РґР»СЏ РѕС‚СЃР»РµР¶РёРІР°РЅРёСЏ Р°РєС‚РёРІРЅРѕСЃС‚Рё РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
 app.UseUserActivity();
 
 app.MapRazorPages();
 app.MapControllers();
 
-// Перенаправление с корня
+// РџРµСЂРµРЅР°РїСЂР°РІР»РµРЅРёРµ СЃ РєРѕСЂРЅСЏ
 app.MapGet("/", async context =>
 {
     if (context.User.Identity?.IsAuthenticated == true)
@@ -81,21 +82,22 @@ app.MapGet("/", async context =>
     }
 });
 
-// Инициализация базы данных
+// РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С…
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var userService = scope.ServiceProvider.GetRequiredService<UserService>();
+    var yandexDiskService = scope.ServiceProvider.GetRequiredService<IYandexDiskService>();
 
     try
     {
         await context.Database.EnsureCreatedAsync();
-        await DatabaseInitializer.InitializeAsync(context, userService);
+        await DatabaseInitializer.InitializeAsync(context, userService, yandexDiskService);
     }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ошибка инициализации базы данных");
+        logger.LogError(ex, "РћС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё Р±Р°Р·С‹ РґР°РЅРЅС‹С…");
     }
 }
 

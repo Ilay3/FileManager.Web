@@ -1,4 +1,5 @@
 ﻿using FileManager.Domain.Interfaces;
+using FileManager.Domain.Models;
 using FileManager.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
@@ -179,6 +180,51 @@ public class YandexDiskService : IYandexDiskService
         {
             _logger.LogError(ex, "Failed to ensure folder exists: {FolderPath}", folderPath);
             throw;
+        }
+    }
+
+    public async Task<IEnumerable<YandexDiskItem>> GetFolderContentsAsync(string folderPath)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync(
+                $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(folderPath)}&limit=1000");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to get contents of folder {FolderPath}: {StatusCode}", folderPath, response.StatusCode);
+                return Enumerable.Empty<YandexDiskItem>();
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            using var doc = await JsonDocument.ParseAsync(stream);
+
+            if (!doc.RootElement.TryGetProperty("_embedded", out var embedded) ||
+                !embedded.TryGetProperty("items", out var items))
+            {
+                return Enumerable.Empty<YandexDiskItem>();
+            }
+
+            var result = new List<YandexDiskItem>();
+
+            foreach (var item in items.EnumerateArray())
+            {
+                var type = item.GetProperty("type").GetString();
+                var path = item.GetProperty("path").GetString()?.Replace("disk:", "");
+                var name = item.GetProperty("name").GetString() ?? string.Empty;
+                var size = item.TryGetProperty("size", out var sizeEl) ? sizeEl.GetInt64() : 0;
+
+                if (path == null) continue;
+
+                result.Add(new YandexDiskItem(path, name, type == "dir", size));
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get contents for folder {FolderPath}", folderPath);
+            return Enumerable.Empty<YandexDiskItem>();
         }
     }
 
