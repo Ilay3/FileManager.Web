@@ -1,0 +1,62 @@
+@page "/Account/Register"
+@model FileManager.Web.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Регистрация";
+    Layout = "_LoginLayout";
+}
+
+<div class="login-container">
+    <div class="login-card">
+        <h2>FileManager</h2>
+        <p>Регистрация</p>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error">
+                @Model.ErrorMessage
+            </div>
+        }
+
+        <form method="post">
+            <div class="form-group">
+                <label asp-for="RegisterData.Email"></label>
+                <input asp-for="RegisterData.Email" class="form-input" autocomplete="username" />
+                <span asp-validation-for="RegisterData.Email" class="text-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterData.FullName"></label>
+                <input asp-for="RegisterData.FullName" class="form-input" />
+                <span asp-validation-for="RegisterData.FullName" class="text-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterData.Department"></label>
+                <input asp-for="RegisterData.Department" class="form-input" />
+                <span asp-validation-for="RegisterData.Department" class="text-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterData.Password"></label>
+                <input asp-for="RegisterData.Password" type="password" class="form-input" autocomplete="new-password" />
+                <span asp-validation-for="RegisterData.Password" class="text-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterData.ConfirmPassword"></label>
+                <input asp-for="RegisterData.ConfirmPassword" type="password" class="form-input" autocomplete="new-password" />
+                <span asp-validation-for="RegisterData.ConfirmPassword" class="text-error"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+        </form>
+
+        <div class="login-links">
+            <p><a href="/Account/Login">Уже есть аккаунт?</a></p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
