@@ -36,9 +36,10 @@ public class VersionsModel : PageModel
     public async Task<IActionResult> OnGetAsync()
     {
         var userId = GetCurrentUserId();
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
 
         // Получаем информацию о файле
-        var file = await _fileService.GetFileByIdAsync(FileId, userId);
+        var file = await _fileService.GetFileByIdAsync(FileId, userId, isAdmin);
         if (file == null)
         {
             return NotFound();

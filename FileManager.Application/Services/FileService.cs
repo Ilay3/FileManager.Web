@@ -5,6 +5,8 @@ using FileManager.Domain.Interfaces;
 using FileManager.Domain.Enums;
 using System.IO;
 using System.IO.Compression;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FileManager.Application.Services;
 
@@ -14,13 +16,23 @@ public class FileService : IFileService
     private readonly IFolderRepository _folderRepository;
     private readonly IUserRepository _userRepository;
     private readonly IYandexDiskService _yandexDiskService;
+    private readonly IAccessService _accessService;
+    private readonly IAuditService _auditService;
 
-    public FileService(IFilesRepository filesRepository, IFolderRepository folderRepository, IUserRepository userRepository, IYandexDiskService yandexDiskService)
+    public FileService(
+        IFilesRepository filesRepository,
+        IFolderRepository folderRepository,
+        IUserRepository userRepository,
+        IYandexDiskService yandexDiskService,
+        IAccessService accessService,
+        IAuditService auditService)
     {
         _filesRepository = filesRepository;
         _folderRepository = folderRepository;
         _userRepository = userRepository;
         _yandexDiskService = yandexDiskService;
+        _accessService = accessService;
+        _auditService = auditService;
     }
 
     public async Task<SearchResultDto<FileDto>> GetFilesAsync(SearchRequestDto request, Guid userId, bool isAdmin = false)
@@ -28,10 +40,21 @@ public class FileService : IFileService
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null) return new SearchResultDto<FileDto>();
 
-        // TODO: Implement access control
-        var allFiles = await _filesRepository.GetByUserIdAsync(userId);
+        var allFiles = isAdmin
+            ? await _filesRepository.SearchAsync()
+            : await _filesRepository.GetByUserIdAsync(userId);
 
-        var filteredFiles = FilterFiles(allFiles, request, user);
+        var accessibleFiles = new List<Files>();
+        foreach (var file in allFiles)
+        {
+            var access = await _accessService.GetEffectiveAccessAsync(userId, file.Id);
+            if (isAdmin || (access & AccessType.Read) == AccessType.Read)
+            {
+                accessibleFiles.Add(file);
+            }
+        }
+
+        var filteredFiles = FilterFiles(accessibleFiles, request, user);
         var sortedFiles = SortFiles(filteredFiles, request);
 
         var totalCount = sortedFiles.Count();
@@ -51,23 +74,41 @@ public class FileService : IFileService
         };
     }
 
-    public async Task<FileDto?> GetFileByIdAsync(Guid id, Guid userId)
+    public async Task<FileDto?> GetFileByIdAsync(Guid id, Guid userId, bool isAdmin = false)
     {
         var file = await _filesRepository.GetByIdAsync(id);
         if (file == null) return null;
 
-        // TODO: Check access rights
+        if (!isAdmin)
+        {
+            var access = await _accessService.GetEffectiveAccessAsync(userId, file.Id);
+            if ((access & AccessType.Read) != AccessType.Read)
+                return null;
+        }
+
         return MapToDto(file);
     }
 
-    public async Task<List<FileDto>> GetFilesByFolderAsync(Guid folderId, Guid userId)
+    public async Task<List<FileDto>> GetFilesByFolderAsync(Guid folderId, Guid userId, bool isAdmin = false)
     {
         var files = await _filesRepository.GetByFolderIdAsync(folderId);
-        // TODO: Filter by access rights
-        return files.Select(MapToDto).ToList();
+        var accessible = new List<FileDto>();
+        foreach (var file in files)
+        {
+            if (isAdmin)
+            {
+                accessible.Add(MapToDto(file));
+                continue;
+            }
+
+            var access = await _accessService.GetEffectiveAccessAsync(userId, file.Id);
+            if ((access & AccessType.Read) == AccessType.Read)
+                accessible.Add(MapToDto(file));
+        }
+        return accessible;
     }
 
-    public async Task<SearchResultDto<FileDto>> SearchFilesAsync(SearchRequestDto request, Guid userId)
+    public async Task<SearchResultDto<FileDto>> SearchFilesAsync(SearchRequestDto request, Guid userId, bool isAdmin = false)
     {
         var files = await _filesRepository.SearchAsync(
             request.SearchTerm,
@@ -87,7 +128,21 @@ public class FileService : IFileService
 
         if (user == null) return new SearchResultDto<FileDto>();
 
-        var filteredFiles = FilterFiles(files, request, user);
+        var accessible = new List<Files>();
+        foreach (var file in files)
+        {
+            if (isAdmin)
+            {
+                accessible.Add(file);
+                continue;
+            }
+
+            var access = await _accessService.GetEffectiveAccessAsync(userId, file.Id);
+            if ((access & AccessType.Read) == AccessType.Read)
+                accessible.Add(file);
+        }
+
+        var filteredFiles = FilterFiles(accessible, request, user);
         var sortedFiles = SortFiles(filteredFiles, request);
 
         var totalCount = sortedFiles.Count();
@@ -110,7 +165,15 @@ public class FileService : IFileService
     public async Task<List<FileDto>> GetRecentFilesAsync(Guid userId, int count = 10)
     {
         var files = await _filesRepository.GetByUserIdAsync(userId);
-        return files
+        var result = new List<Files>();
+        foreach (var file in files)
+        {
+            var access = await _accessService.GetEffectiveAccessAsync(userId, file.Id);
+            if ((access & AccessType.Read) == AccessType.Read)
+                result.Add(file);
+        }
+
+        return result
             .OrderByDescending(f => f.UpdatedAt ?? f.CreatedAt)
             .Take(count)
             .Select(MapToDto)
@@ -120,24 +183,36 @@ public class FileService : IFileService
     public async Task<List<FileDto>> GetMyFilesAsync(Guid userId, int count = 50)
     {
         var files = await _filesRepository.GetByUserIdAsync(userId);
-        return files
+        var result = new List<Files>();
+        foreach (var file in files)
+        {
+            var access = await _accessService.GetEffectiveAccessAsync(userId, file.Id);
+            if ((access & AccessType.Read) == AccessType.Read)
+                result.Add(file);
+        }
+
+        return result
             .OrderByDescending(f => f.CreatedAt)
             .Take(count)
             .Select(MapToDto)
             .ToList();
     }
 
-    public async Task UpdateTagsAsync(Guid fileId, string tags, Guid userId)
+    public async Task UpdateTagsAsync(Guid fileId, string tags, Guid userId, bool isAdmin = false)
     {
         var file = await _filesRepository.GetByIdAsync(fileId) ?? throw new InvalidOperationException("Файл не найден");
-        if (file.UploadedById != userId)
-            throw new InvalidOperationException("Недостаточно прав для изменения тегов");
+        if (!isAdmin)
+        {
+            var access = await _accessService.GetEffectiveAccessAsync(userId, file.Id);
+            if ((access & AccessType.Write) != AccessType.Write)
+                throw new InvalidOperationException("Недостаточно прав для изменения тегов");
+        }
 
         file.Tags = tags;
         await _filesRepository.UpdateAsync(file);
     }
 
-    public async Task<Stream> DownloadFilesZipAsync(IEnumerable<Guid> ids, Guid userId)
+    public async Task<Stream> DownloadFilesZipAsync(IEnumerable<Guid> ids, Guid userId, bool isAdmin = false)
     {
         var memory = new MemoryStream();
         using (var archive = new ZipArchive(memory, ZipArchiveMode.Create, true))
@@ -145,7 +220,13 @@ public class FileService : IFileService
             foreach (var id in ids)
             {
                 var file = await _filesRepository.GetByIdAsync(id);
-                if (file == null || file.UploadedById != userId) continue;
+                if (file == null) continue;
+
+                if (!isAdmin)
+                {
+                    var access = await _accessService.GetEffectiveAccessAsync(userId, file.Id);
+                    if ((access & AccessType.Read) != AccessType.Read) continue;
+                }
 
                 using var fileStream = await _yandexDiskService.DownloadFileAsync(file.YandexPath);
                 var entry = archive.CreateEntry(file.OriginalName ?? file.Name);
@@ -155,6 +236,23 @@ public class FileService : IFileService
         }
         memory.Position = 0;
         return memory;
+    }
+
+    public async Task DeleteFileAsync(Guid id, Guid userId, bool isAdmin = false)
+    {
+        var file = await _filesRepository.GetByIdAsync(id);
+        if (file == null) return;
+
+        if (!isAdmin)
+        {
+            var access = await _accessService.GetEffectiveAccessAsync(userId, file.Id);
+            if ((access & AccessType.Write) != AccessType.Write)
+                throw new InvalidOperationException("Недостаточно прав для удаления файла");
+        }
+
+        await _yandexDiskService.DeleteFileAsync(file.YandexPath);
+        await _filesRepository.DeleteAsync(id);
+        await _auditService.LogAsync(AuditAction.FileDelete, userId, fileId: id, description: "Удалил файл");
     }
 
     private IEnumerable<Files> FilterFiles(IEnumerable<Files> files, SearchRequestDto request, User user)

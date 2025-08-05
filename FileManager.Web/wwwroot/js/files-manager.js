@@ -328,10 +328,18 @@ class FilesManager {
         if (!confirm(`Вы уверены, что хотите удалить файл "${fileName}"?`)) {
             return;
         }
-
-        // TODO: Implement file deletion
-        console.log('Deleting file:', fileId);
-        alert(`Удаление файла ${fileId} будет добавлено в следующем этапе`);
+        try {
+            const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' });
+            if (response.ok) {
+                location.reload();
+            } else {
+                const text = await response.text();
+                alert('Ошибка удаления файла: ' + text);
+            }
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            alert('Ошибка при удалении файла');
+        }
     }
 
     // Folder actions

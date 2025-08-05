@@ -33,7 +33,8 @@ public class FilesApiController : ControllerBase
     public async Task<ActionResult<FileDto>> GetFile(Guid id)
     {
         var userId = GetCurrentUserId();
-        var file = await _fileService.GetFileByIdAsync(id, userId);
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+        var file = await _fileService.GetFileByIdAsync(id, userId, isAdmin);
 
         if (file == null)
             return NotFound();
@@ -45,7 +46,8 @@ public class FilesApiController : ControllerBase
     public async Task<ActionResult<SearchResultDto<FileDto>>> SearchFiles([FromQuery] SearchRequestDto request)
     {
         var userId = GetCurrentUserId();
-        var result = await _fileService.SearchFilesAsync(request, userId);
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+        var result = await _fileService.SearchFilesAsync(request, userId, isAdmin);
         return Ok(result);
     }
 
@@ -69,7 +71,8 @@ public class FilesApiController : ControllerBase
     public async Task<ActionResult<List<FileDto>>> GetFilesByFolder(Guid folderId)
     {
         var userId = GetCurrentUserId();
-        var files = await _fileService.GetFilesByFolderAsync(folderId, userId);
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+        var files = await _fileService.GetFilesByFolderAsync(folderId, userId, isAdmin);
         return Ok(files);
     }
 
@@ -77,7 +80,8 @@ public class FilesApiController : ControllerBase
     public async Task<IActionResult> UpdateTags(Guid id, [FromBody] TagsRequest request)
     {
         var userId = GetCurrentUserId();
-        await _fileService.UpdateTagsAsync(id, request.Tags, userId);
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+        await _fileService.UpdateTagsAsync(id, request.Tags, userId, isAdmin);
         return NoContent();
     }
 
@@ -85,8 +89,18 @@ public class FilesApiController : ControllerBase
     public async Task<IActionResult> DownloadZip([FromBody] IdsRequest request)
     {
         var userId = GetCurrentUserId();
-        var stream = await _fileService.DownloadFilesZipAsync(request.Ids, userId);
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+        var stream = await _fileService.DownloadFilesZipAsync(request.Ids, userId, isAdmin);
         return File(stream, "application/zip", "files.zip");
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteFile(Guid id)
+    {
+        var userId = GetCurrentUserId();
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+        await _fileService.DeleteFileAsync(id, userId, isAdmin);
+        return NoContent();
     }
 
     private Guid GetCurrentUserId()

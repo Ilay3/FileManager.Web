@@ -196,7 +196,8 @@
                     <span class="file-size">${formatFileSize(file.size)}</span>
                 </div>
                 <div class="file-status" id="status-${index}">
-                    <span class="status-text">Готов к загрузке</span>
+                    <div class="progress-bar"><div class="progress-fill" id="progress-${index}"></div></div>
+                    <span class="status-text" id="status-text-${index}">Готов к загрузке</span>
                 </div>
                 <button type="button" class="btn btn-small btn-danger" onclick="removeFile(${index})">
                     Удалить
@@ -209,13 +210,16 @@
     // Обновление результатов валидации
     function updateFileValidationResults(results) {
         results.forEach((result, index) => {
-            const statusElement = document.getElementById(`status-${index}`);
-            if (statusElement) {
+            const statusText = document.getElementById(`status-text-${index}`);
+            if (statusText) {
+                statusText.className = 'status-text';
                 if (!result.isValid) {
-                    statusElement.innerHTML = `<span class="status-error">Ошибка: ${result.errors.join(', ')}</span>`;
-                    statusElement.parentElement.parentElement.classList.add('file-invalid');
+                    statusText.textContent = `Ошибка: ${result.errors.join(', ')}`;
+                    statusText.classList.add('status-error');
+                    statusText.closest('.file-item')?.classList.add('file-invalid');
                 } else if (result.warnings.length > 0) {
-                    statusElement.innerHTML = `<span class="status-warning">Предупреждение: ${result.warnings.join(', ')}</span>`;
+                    statusText.textContent = `Предупреждение: ${result.warnings.join(', ')}`;
+                    statusText.classList.add('status-warning');
                 }
             }
         });
@@ -234,38 +238,89 @@
     }
 
     // Начало загрузки
-    async function startUpload() {
+    function startUpload() {
         if (selectedFiles.length === 0) return;
 
         const folderId = document.getElementById('uploadFolderSelect').value || null;
         const comment = document.getElementById('uploadComment').value;
 
-        // Показываем прогресс
         document.getElementById('uploadProgress').style.display = 'block';
         document.getElementById('uploadBtn').disabled = true;
 
-        const formData = new FormData();
-        selectedFiles.forEach(file => formData.append('files', file));
-        if (folderId) formData.append('folderId', folderId);
-        if (comment) formData.append('comment', comment);
+        const totalFiles = selectedFiles.length;
+        const results = [];
 
-        try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                showUploadResults(data.results);
-            } else {
-                const errorData = await response.json();
-                showUploadError(errorData.error || 'Ошибка при загрузке файлов');
+        function uploadNext(index) {
+            if (index >= totalFiles) {
+                showUploadResults(results);
+                return;
             }
-        } catch (error) {
-            console.error('Upload error:', error);
-            showUploadError('Ошибка соединения при загрузке файлов');
+
+            const file = selectedFiles[index];
+            const formData = new FormData();
+            formData.append('files', file);
+            if (folderId) formData.append('folderId', folderId);
+            if (comment) formData.append('comment', comment);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/upload');
+
+            xhr.upload.onprogress = function (e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    const progressEl = document.getElementById(`progress-${index}`);
+                    const statusText = document.getElementById(`status-text-${index}`);
+                    if (progressEl) progressEl.style.width = percent + '%';
+                    if (statusText) statusText.textContent = percent + '%';
+
+                    const overall = Math.round(((index + e.loaded / e.total) / totalFiles) * 100);
+                    document.getElementById('progressFill').style.width = overall + '%';
+                    document.getElementById('progressText').textContent = overall + '%';
+                }
+            };
+
+            xhr.onload = function () {
+                const progressEl = document.getElementById(`progress-${index}`);
+                const statusText = document.getElementById(`status-text-${index}`);
+                if (progressEl) progressEl.style.width = '100%';
+
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const response = JSON.parse(xhr.responseText);
+                    const result = response.results[0];
+                    results.push(result);
+                    if (statusText) {
+                        statusText.textContent = result.success ? 'Готово' : result.error;
+                        if (!result.success) statusText.classList.add('status-error');
+                    }
+                } else {
+                    const error = `Ошибка ${xhr.status}`;
+                    results.push({ success: false, fileName: file.name, error });
+                    if (statusText) {
+                        statusText.textContent = error;
+                        statusText.classList.add('status-error');
+                    }
+                }
+
+                uploadNext(index + 1);
+            };
+
+            xhr.onerror = function () {
+                const statusText = document.getElementById(`status-text-${index}`);
+                const progressEl = document.getElementById(`progress-${index}`);
+                if (progressEl) progressEl.style.width = '100%';
+                const error = 'Ошибка соединения';
+                results.push({ success: false, fileName: file.name, error });
+                if (statusText) {
+                    statusText.textContent = error;
+                    statusText.classList.add('status-error');
+                }
+                uploadNext(index + 1);
+            };
+
+            xhr.send(formData);
         }
+
+        uploadNext(0);
     }
 
     // Отображение результатов загрузки
