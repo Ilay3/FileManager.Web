@@ -23,11 +23,13 @@
 
 <script>
     let accessTarget = { id: null, isFolder: true };
+    let currentAccess = [];
 
     async function openAccessModal(targetId, isFolder) {
         accessTarget = { id: targetId, isFolder: isFolder };
         document.getElementById('accessModal').style.display = 'flex';
         await loadAccessLists();
+        await loadCurrentAccess();
     }
 
     function closeAccessModal() {
@@ -61,35 +63,81 @@
         });
     }
 
+    async function loadCurrentAccess() {
+        const url = accessTarget.isFolder
+            ? `/api/access/folder/${accessTarget.id}`
+            : `/api/access/file/${accessTarget.id}`;
+        const res = await fetch(url);
+        currentAccess = res.ok ? await res.json() : [];
+
+        currentAccess.forEach(r => {
+            if (r.userId) {
+                const cb = document.querySelector(`.access-user[value="${r.userId}"]`);
+                if (cb) {
+                    cb.checked = true;
+                    cb.dataset.ruleId = r.id;
+                }
+            }
+            if (r.groupId) {
+                const cb = document.querySelector(`.access-group[value="${r.groupId}"]`);
+                if (cb) {
+                    cb.checked = true;
+                    cb.dataset.ruleId = r.id;
+                }
+            }
+        });
+    }
+
     async function submitAccess() {
-        const userIds = Array.from(document.querySelectorAll('.access-user:checked')).map(cb => cb.value);
-        const groupIds = Array.from(document.querySelectorAll('.access-group:checked')).map(cb => cb.value);
-        const rules = [];
+        const userCheckboxes = Array.from(document.querySelectorAll('.access-user'));
+        const groupCheckboxes = Array.from(document.querySelectorAll('.access-group'));
+        const toGrant = [];
+        const toRevoke = [];
 
-        userIds.forEach(id => rules.push({
-            fileId: accessTarget.isFolder ? null : accessTarget.id,
-            folderId: accessTarget.isFolder ? accessTarget.id : null,
-            userId: id,
-            groupId: null,
-            accessType: 1,
-            inherit: true
-        }));
+        userCheckboxes.forEach(cb => {
+            if (cb.checked) {
+                if (!cb.dataset.ruleId) {
+                    toGrant.push({
+                        fileId: accessTarget.isFolder ? null : accessTarget.id,
+                        folderId: accessTarget.isFolder ? accessTarget.id : null,
+                        userId: cb.value,
+                        groupId: null,
+                        accessType: 1,
+                        inherit: true
+                    });
+                }
+            } else if (cb.dataset.ruleId) {
+                toRevoke.push(cb.dataset.ruleId);
+            }
+        });
 
-        groupIds.forEach(id => rules.push({
-            fileId: accessTarget.isFolder ? null : accessTarget.id,
-            folderId: accessTarget.isFolder ? accessTarget.id : null,
-            userId: null,
-            groupId: id,
-            accessType: 1,
-            inherit: true
-        }));
+        groupCheckboxes.forEach(cb => {
+            if (cb.checked) {
+                if (!cb.dataset.ruleId) {
+                    toGrant.push({
+                        fileId: accessTarget.isFolder ? null : accessTarget.id,
+                        folderId: accessTarget.isFolder ? accessTarget.id : null,
+                        userId: null,
+                        groupId: cb.value,
+                        accessType: 1,
+                        inherit: true
+                    });
+                }
+            } else if (cb.dataset.ruleId) {
+                toRevoke.push(cb.dataset.ruleId);
+            }
+        });
 
-        if (rules.length > 0) {
+        if (toGrant.length > 0) {
             await fetch('/api/access/bulk-grant', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rules })
+                body: JSON.stringify({ rules: toGrant })
             });
+        }
+
+        for (const id of toRevoke) {
+            await fetch(`/api/access/${id}`, { method: 'DELETE' });
         }
 
         closeAccessModal();
