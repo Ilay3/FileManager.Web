@@ -85,7 +85,7 @@ public class FolderService : IFolderService
             {
                 Id = currentFolder.Id,
                 Name = currentFolder.Name,
-                Icon = "📁"
+                Icon = "bi bi-folder"
             });
 
             if (currentFolder.ParentFolderId.HasValue)
@@ -101,7 +101,7 @@ public class FolderService : IFolderService
             {
                 Id = Guid.Empty,
                 Name = "Корневая папка",
-                Icon = "🏠"
+                Icon = "bi bi-folder"
             });
         }
 
@@ -123,7 +123,8 @@ public class FolderService : IFolderService
             Id = folderId,
             Name = folder?.Name ?? "Корневая папка",
             Type = "folder",
-            Icon = "📁",
+            IconClass = "bi bi-folder",
+            IsNetworkAvailable = true,
             CreatedAt = folder?.CreatedAt ?? DateTime.UtcNow,
             UpdatedAt = folder?.UpdatedAt,
             Children = new List<TreeNodeDto>()
@@ -151,7 +152,8 @@ public class FolderService : IFolderService
                 Id = subFolder.Id,
                 Name = subFolder.Name,
                 Type = "folder",
-                Icon = "📁",
+                IconClass = "bi bi-folder",
+                IsNetworkAvailable = true,
                 CreatedAt = subFolder.CreatedAt,
                 UpdatedAt = subFolder.UpdatedAt,
                 ItemsCount = filesCount + subFoldersCount,
@@ -177,7 +179,8 @@ public class FolderService : IFolderService
                 Id = file.Id,
                 Name = file.Name,
                 Type = "file",
-                Icon = GetFileIcon(file.FileType),
+                IconClass = GetFileIconClass(file.FileType),
+                IsNetworkAvailable = true,
                 CreatedAt = file.CreatedAt,
                 UpdatedAt = file.UpdatedAt,
                 SizeBytes = file.SizeBytes,
@@ -307,7 +310,8 @@ public class FolderService : IFolderService
             Id = folder.Id,
             Name = folder.Name,
             Type = "folder",
-            Icon = "📁",
+            IconClass = "bi bi-folder",
+            IsNetworkAvailable = true,
             CreatedAt = folder.CreatedAt,
             UpdatedAt = folder.UpdatedAt,
             ItemsCount = filesCount + subFolders.Count(),
@@ -340,18 +344,18 @@ public class FolderService : IFolderService
         };
     }
 
-    private string GetFileIcon(Domain.Enums.FileType fileType)
+    private string GetFileIconClass(Domain.Enums.FileType fileType)
     {
         return fileType switch
         {
-            Domain.Enums.FileType.Document => "📄",
-            Domain.Enums.FileType.Spreadsheet => "📊",
-            Domain.Enums.FileType.Presentation => "📽️",
-            Domain.Enums.FileType.Pdf => "📕",
-            Domain.Enums.FileType.Image => "🖼️",
-            Domain.Enums.FileType.Text => "📝",
-            Domain.Enums.FileType.Archive => "📦",
-            _ => "📄"
+            Domain.Enums.FileType.Document => "bi bi-file-earmark-text",
+            Domain.Enums.FileType.Spreadsheet => "bi bi-file-earmark-spreadsheet",
+            Domain.Enums.FileType.Presentation => "bi bi-file-earmark-slides",
+            Domain.Enums.FileType.Pdf => "bi bi-file-earmark-pdf",
+            Domain.Enums.FileType.Image => "bi bi-file-earmark-image",
+            Domain.Enums.FileType.Text => "bi bi-file-earmark-richtext",
+            Domain.Enums.FileType.Archive => "bi bi-file-earmark-zip",
+            _ => "bi bi-file-earmark"
         };
     }
 }

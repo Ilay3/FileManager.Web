@@ -8,7 +8,7 @@
 <div class="preview-container">
     <div class="preview-header">
         <div class="preview-title">
-            <span class="file-icon">@Model.FileIcon</span>
+            <span class="file-icon"><i class="@Model.FileIconClass"></i></span>
             <h2>@Model.FileName</h2>
             <span class="file-size">(@Model.FormattedSize)</span>
         </div>
@@ -21,18 +21,18 @@
             @if (Model.CanEdit)
             {
                 <button class="btn btn-primary" onclick="openForEdit('@Model.FileId')">
-                    ✏️ Редактировать
+                    <i class="bi bi-pencil"></i> Редактировать
                 </button>
             }
 
             <button class="btn btn-secondary" onclick="downloadFile('@Model.FileId')">
-                ⬇️ Скачать
+                <i class="bi bi-download"></i> Скачать
             </button>
 
             @if (Model.VersionsCount > 0)
             {
                 <a href="/Files/@Model.FileId/Versions" class="btn btn-secondary">
-                    📋 История версий (@Model.VersionsCount)
+                    <i class="bi bi-clipboard"></i> История версий (@Model.VersionsCount)
                 </a>
             }
         </div>
@@ -69,11 +69,11 @@
         {
             <div class="office-preview">
                 <div class="office-preview-message">
-                    <div class="icon">📄</div>
+                    <div class="icon"><i class="bi bi-file-earmark"></i></div>
                     <h3>Документ Office</h3>
                     <p>Для просмотра и редактирования документа нажмите кнопку ниже:</p>
                     <button class="btn btn-primary btn-large" onclick="openExternalPreview('@Model.FileId')">
-                        🔗 Открыть в Яндекс.Документах
+                        <i class="bi bi-box-arrow-up-right"></i> Открыть в Яндекс.Документах
                     </button>
                 </div>
             </div>
@@ -81,11 +81,11 @@
         else
         {
             <div class="no-preview">
-                <div class="icon">📄</div>
+                <div class="icon"><i class="bi bi-file-earmark"></i></div>
                 <h3>Предпросмотр недоступен</h3>
                 <p>Для данного типа файла предпросмотр не поддерживается.</p>
                 <button class="btn btn-primary" onclick="downloadFile('@Model.FileId')">
-                    ⬇️ Скачать файл
+                    <i class="bi bi-download"></i> Скачать файл
                 </button>
             </div>
         }
@@ -114,6 +114,10 @@
             <tr>
                 <td><strong>Автор:</strong></td>
                 <td>@Model.UploadedBy</td>
+            </tr>
+            <tr>
+                <td><strong>Доступ в сети:</strong></td>
+                <td>@(Model.IsNetworkAvailable ? "Да" : "Нет")</td>
             </tr>
             <tr>
                 <td><strong>Теги:</strong></td>

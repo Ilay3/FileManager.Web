@@ -28,8 +28,12 @@
                 <tr>
                     <td><input type="checkbox" class="file-select" data-file-id="@file.Id" /></td>
                     <td>
-                        <span class="file-icon">@file.FileIcon</span>
+                        <span class="file-icon"><i class="@file.FileIconClass"></i></span>
                         <strong>@file.Name</strong>
+                        @if (file.IsNetworkAvailable)
+                        {
+                            <i class="bi bi-cloud-check network-icon"></i>
+                        }
                         @if (!string.IsNullOrEmpty(file.Tags))
                         {
                             <div class="tags">
@@ -44,13 +48,13 @@
                     <td>@(file.UpdatedAt?.ToString("dd.MM.yyyy HH:mm") ?? file.CreatedAt.ToString("dd.MM.yyyy HH:mm"))</td>
                     <td>@file.UploadedByName</td>
                     <td>
-                        <a href="?folderId=@file.FolderId">📁 @file.FolderName</a>
+                        <a href="?folderId=@file.FolderId"><i class="bi bi-folder"></i> @file.FolderName</a>
                     </td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn btn-small" onclick="viewFile('@file.Id')" title="Просмотр">👁️</button>
-                            <button class="btn btn-small" onclick="downloadFile('@file.Id')" title="Скачать">⬇️</button>
-                            <button class="btn btn-small" onclick="deleteFile('@file.Id', '@file.Name')" title="Удалить">🗑️</button>
+                            <button class="btn btn-small" onclick="viewFile('@file.Id')" title="Просмотр"><i class="bi bi-eye"></i></button>
+                            <button class="btn btn-small" onclick="downloadFile('@file.Id')" title="Скачать"><i class="bi bi-download"></i></button>
+                            <button class="btn btn-small" onclick="deleteFile('@file.Id', '@file.Name')" title="Удалить"><i class="bi bi-trash"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -61,7 +65,7 @@
 else
 {
     <div class="empty-state">
-        <div style="font-size: 64px; margin-bottom: 20px;">📄</div>
+        <div style="font-size: 64px; margin-bottom: 20px;"><i class="bi bi-file-earmark"></i></div>
         <h3>Файлы не найдены</h3>
         <p style="color: #999; margin-bottom: 30px;">
             @if (!string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["SearchRequest.SearchTerm"]))

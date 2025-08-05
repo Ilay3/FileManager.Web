@@ -53,25 +53,14 @@ public class FileUploadService
         }
 
         // Определяем папку назначения
-        Folder? targetFolder = null;
-        if (folderId.HasValue && folderId.Value != Guid.Empty)
+        Folder targetFolder;
+        if (!folderId.HasValue || folderId.Value == Guid.Empty)
         {
-            targetFolder = await _folderRepository.GetByIdAsync(folderId.Value);
-            if (targetFolder == null)
-            {
-                throw new InvalidOperationException("Папка назначения не найдена");
-            }
+            throw new InvalidOperationException("Папка назначения не указана");
         }
-        else
-        {
-            // Используем корневую папку
-            var rootFolders = await _folderRepository.GetRootFoldersAsync();
-            targetFolder = rootFolders.FirstOrDefault();
-            if (targetFolder == null)
-            {
-                throw new InvalidOperationException("Корневая папка не найдена");
-            }
-        }
+
+        targetFolder = await _folderRepository.GetByIdAsync(folderId.Value)
+            ?? throw new InvalidOperationException("Папка назначения не найдена");
 
         try
         {
@@ -132,7 +121,8 @@ public class FileUploadService
                 FolderId = fileEntity.FolderId,
                 FolderName = targetFolder.Name,
                 UploadedById = userId,
-                UploadedByName = user.FullName
+                UploadedByName = user.FullName,
+                IsNetworkAvailable = true
             };
         }
         catch (Exception ex)

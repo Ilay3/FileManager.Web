@@ -1,0 +1,97 @@
+<div id="accessModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Настройки доступа</h3>
+            <span class="modal-close" onclick="closeAccessModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Пользователи</label>
+                <div id="usersList" class="checkbox-list"></div>
+            </div>
+            <div class="form-group">
+                <label>Группы</label>
+                <div id="groupsList" class="checkbox-list"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeAccessModal()">Отмена</button>
+            <button class="btn btn-primary" onclick="submitAccess()">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let accessTarget = { id: null, isFolder: true };
+
+    async function openAccessModal(targetId, isFolder) {
+        accessTarget = { id: targetId, isFolder: isFolder };
+        document.getElementById('accessModal').style.display = 'flex';
+        await loadAccessLists();
+    }
+
+    function closeAccessModal() {
+        document.getElementById('accessModal').style.display = 'none';
+    }
+
+    async function loadAccessLists() {
+        const [usersRes, groupsRes] = await Promise.all([
+            fetch('/api/users'),
+            fetch('/api/groups')
+        ]);
+        const users = usersRes.ok ? await usersRes.json() : [];
+        const groups = groupsRes.ok ? await groupsRes.json() : [];
+
+        const usersList = document.getElementById('usersList');
+        usersList.innerHTML = '';
+        users.forEach(u => {
+            const label = document.createElement('label');
+            label.className = 'checkbox-item';
+            label.innerHTML = `<input type="checkbox" class="access-user" value="${u.id}"> ${u.fullName}`;
+            usersList.appendChild(label);
+        });
+
+        const groupsList = document.getElementById('groupsList');
+        groupsList.innerHTML = '';
+        groups.forEach(g => {
+            const label = document.createElement('label');
+            label.className = 'checkbox-item';
+            label.innerHTML = `<input type="checkbox" class="access-group" value="${g.id}"> ${g.name}`;
+            groupsList.appendChild(label);
+        });
+    }
+
+    async function submitAccess() {
+        const userIds = Array.from(document.querySelectorAll('.access-user:checked')).map(cb => cb.value);
+        const groupIds = Array.from(document.querySelectorAll('.access-group:checked')).map(cb => cb.value);
+        const rules = [];
+
+        userIds.forEach(id => rules.push({
+            fileId: accessTarget.isFolder ? null : accessTarget.id,
+            folderId: accessTarget.isFolder ? accessTarget.id : null,
+            userId: id,
+            groupId: null,
+            accessType: 1,
+            inherit: true
+        }));
+
+        groupIds.forEach(id => rules.push({
+            fileId: accessTarget.isFolder ? null : accessTarget.id,
+            folderId: accessTarget.isFolder ? accessTarget.id : null,
+            userId: null,
+            groupId: id,
+            accessType: 1,
+            inherit: true
+        }));
+
+        if (rules.length > 0) {
+            await fetch('/api/access/bulk-grant', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rules })
+            });
+        }
+
+        closeAccessModal();
+    }
+</script>

@@ -1930,3 +1930,62 @@ body {
     padding: 20px;
     border-top: 1px solid #dee2e6;
 }
+
+/* Explorer tiles */
+.tiles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tile-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.tile-icon {
+    font-size: 32px;
+    width: 40px;
+    position: relative;
+}
+
+.tile-body {
+    flex: 1;
+    margin-left: 10px;
+}
+
+.tile-name {
+    font-weight: 500;
+}
+
+.tile-meta {
+    font-size: 14px;
+    color: #666;
+}
+
+.tile-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.network-icon {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    font-size: 14px;
+    color: #0d6efd;
+}
+
+.file-card-icon {
+    position: relative;
+    font-size: 48px;
+}
+
+.file-card-icon .network-icon {
+    bottom: 4px;
+    right: 4px;
+}
