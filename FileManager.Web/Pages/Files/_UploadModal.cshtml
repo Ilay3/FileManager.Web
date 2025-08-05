@@ -10,14 +10,14 @@
             <div class="form-group">
                 <label for="uploadFolderSelect">Папка назначения:</label>
                 <select id="uploadFolderSelect" class="form-select">
-                    <option value="">Корневая папка</option>
+                    <option value="" disabled selected>Выберите папку</option>
                 </select>
             </div>
 
             <!-- Drag & Drop зона -->
             <div id="dropZone" class="drop-zone">
                 <div class="drop-zone-content">
-                    <div class="drop-icon">📁</div>
+                    <div class="drop-icon"><i class="bi bi-folder"></i></div>
                     <p>Перетащите файлы сюда или</p>
                     <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
                         Выберите файлы
@@ -64,15 +64,9 @@
     let availableFolders = [];
 
     // Открытие модального окна
-    function openUploadModal(folderId = null) {
+    async function openUploadModal(folderId = null) {
         document.getElementById('uploadModal').style.display = 'flex';
-        loadAvailableFolders();
-
-        if (folderId) {
-            setTimeout(() => {
-                document.getElementById('uploadFolderSelect').value = folderId;
-            }, 100);
-        }
+        await loadAvailableFolders(folderId);
     }
 
     // Закрытие модального окна
@@ -82,12 +76,15 @@
     }
 
     // Загрузка доступных папок
-    async function loadAvailableFolders() {
+    async function loadAvailableFolders(selectedId = null) {
         try {
             const response = await fetch('/api/upload/folders');
             if (response.ok) {
                 availableFolders = await response.json();
                 populateFoldersSelect();
+                if (selectedId) {
+                    document.getElementById('uploadFolderSelect').value = selectedId;
+                }
             }
         } catch (error) {
             console.error('Error loading folders:', error);
@@ -97,7 +94,7 @@
     // Заполнение селекта папок
     function populateFoldersSelect() {
         const select = document.getElementById('uploadFolderSelect');
-        select.innerHTML = '<option value="">Корневая папка</option>';
+        select.innerHTML = '<option value="" disabled>Выберите папку</option>';
 
         function addFolderOptions(folders, level = 0) {
             folders.forEach(folder => {
@@ -241,8 +238,13 @@
     function startUpload() {
         if (selectedFiles.length === 0) return;
 
-        const folderId = document.getElementById('uploadFolderSelect').value || null;
+        const folderId = document.getElementById('uploadFolderSelect').value;
         const comment = document.getElementById('uploadComment').value;
+
+        if (!folderId) {
+            alert('Пожалуйста, выберите папку для загрузки.');
+            return;
+        }
 
         document.getElementById('uploadProgress').style.display = 'block';
         document.getElementById('uploadBtn').disabled = true;
@@ -259,7 +261,7 @@
             const file = selectedFiles[index];
             const formData = new FormData();
             formData.append('files', file);
-            if (folderId) formData.append('folderId', folderId);
+            formData.append('folderId', folderId);
             if (comment) formData.append('comment', comment);
 
             const xhr = new XMLHttpRequest();

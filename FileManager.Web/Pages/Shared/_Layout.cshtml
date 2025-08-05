@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - FileManager</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
 </head>
 <body>
     @if (User.Identity?.IsAuthenticated == true)
@@ -16,17 +17,17 @@
                         <a href="/Files" style="text-decoration: none; color: inherit;">FileManager</a>
                     </h1>
                     <nav class="nav">
-                        <a href="/Files" class="nav-link">📁 Мои документы</a>
+                        <a href="/Files" class="nav-link"><i class="bi bi-folder"></i> Мои документы</a>
                         @if (User.FindFirst("IsAdmin")?.Value == "True")
                         {
-                            <a href="/Admin" class="nav-link">⚙️ Администрирование</a>
+                            <a href="/Admin" class="nav-link"><i class="bi bi-gear"></i> Администрирование</a>
                         }
-                        <a href="/Docs" class="nav-link">📖 Документация</a>
+                        <a href="/Docs" class="nav-link"><i class="bi bi-book"></i> Документация</a>
                     </nav>
                     <div class="user-menu">
-                        <span>👤 @User.Identity.Name</span>
+                        <span><i class="bi bi-person"></i> @User.Identity.Name</span>
                         <span style="color: #999; font-size: 14px;">(@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value)</span>
-                        <button id="themeToggle" class="btn btn-secondary" type="button">🌓</button>
+                        <button id="themeToggle" class="btn btn-secondary" type="button"><i class="bi bi-moon"></i></button>
                         <a href="/Account/Logout" class="btn btn-secondary">Выход</a>
                     </div>
                 </div>

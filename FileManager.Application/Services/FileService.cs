@@ -344,7 +344,8 @@ public class FileService : IFileService
             FolderId = file.FolderId,
             FolderName = file.Folder?.Name ?? "",
             UploadedById = file.UploadedById,
-            UploadedByName = file.UploadedBy?.FullName ?? ""
+            UploadedByName = file.UploadedBy?.FullName ?? "",
+            IsNetworkAvailable = true
         };
     }
 }

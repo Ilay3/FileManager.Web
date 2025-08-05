@@ -29,7 +29,7 @@ public class PreviewModel : PageModel
 
     public string FileId => Id.ToString();
     public string FileName { get; set; } = string.Empty;
-    public string FileIcon { get; set; } = "📄";
+    public string FileIconClass { get; set; } = "bi bi-file-earmark";
     public string FormattedSize { get; set; } = string.Empty;
     public string FileType { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
@@ -41,6 +41,7 @@ public class PreviewModel : PageModel
     public bool HasActiveEditors { get; set; }
     public List<string> ActiveEditors { get; set; } = new();
     public int VersionsCount { get; set; }
+    public bool IsNetworkAvailable { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -53,12 +54,13 @@ public class PreviewModel : PageModel
         }
 
         FileName = file.Name;
-        FileIcon = file.FileIcon;
+        FileIconClass = file.FileIconClass;
         FormattedSize = file.FormattedSize;
         FileType = file.FileType.ToString();
         CreatedAt = file.CreatedAt;
         UploadedBy = file.UploadedByName;
         Tags = file.Tags;
+        IsNetworkAvailable = file.IsNetworkAvailable;
 
         // Определяем тип предпросмотра
         var extension = file.Extension.ToLower();
