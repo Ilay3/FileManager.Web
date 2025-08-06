@@ -14,11 +14,16 @@ namespace FileManager.Web.Controllers;
 public class AccessApiController : ControllerBase
 {
     private readonly IAccessService _accessService;
+    private readonly IUserService _userService;
     private readonly ILogger<AccessApiController> _logger;
 
-    public AccessApiController(IAccessService accessService, ILogger<AccessApiController> logger)
+    public AccessApiController(
+        IAccessService accessService,
+        IUserService userService,
+        ILogger<AccessApiController> logger)
     {
         _accessService = accessService;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -39,7 +44,7 @@ public class AccessApiController : ControllerBase
     [HttpPost("grant")]
     public async Task<IActionResult> GrantAccess([FromBody] GrantAccessRequest request)
     {
-        var userId = GetCurrentUserId();
+        var userId = await GetCurrentUserIdAsync();
         if (!userId.HasValue)
         {
             _logger.LogWarning("GrantAccess called without a valid user ID.");
@@ -53,7 +58,7 @@ public class AccessApiController : ControllerBase
     [HttpPost("bulk-grant")]
     public async Task<IActionResult> BulkGrant([FromBody] BulkGrantRequest request)
     {
-        var userId = GetCurrentUserId();
+        var userId = await GetCurrentUserIdAsync();
         if (!userId.HasValue)
         {
             _logger.LogWarning("BulkGrant called without a valid user ID.");
@@ -70,7 +75,7 @@ public class AccessApiController : ControllerBase
     [HttpDelete("{ruleId}")]
     public async Task<IActionResult> Revoke(Guid ruleId)
     {
-        var userId = GetCurrentUserId();
+        var userId = await GetCurrentUserIdAsync();
         if (!userId.HasValue)
         {
             _logger.LogWarning("Revoke called without a valid user ID.");
@@ -81,31 +86,25 @@ public class AccessApiController : ControllerBase
         return result ? NoContent() : NotFound();
     }
 
-    private Guid? GetCurrentUserId()
+    private async Task<Guid?> GetCurrentUserIdAsync()
     {
-        var claimType = ClaimTypes.NameIdentifier;
-        var userIdClaim = User.FindFirst(claimType)?.Value;
-
-        if (string.IsNullOrEmpty(userIdClaim))
+        foreach (var claimType in new[] { ClaimTypes.NameIdentifier, "sub" })
         {
-            _logger.LogDebug("Claim {ClaimType} not found, trying 'sub'.", claimType);
-            claimType = "sub";
-            userIdClaim = User.FindFirst(claimType)?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                _logger.LogWarning("User ID claim is missing. Checked {PrimaryClaim} and 'sub'.", ClaimTypes.NameIdentifier);
-                return null;
-            }
+            var userIdClaim = User.FindFirst(claimType)?.Value;
+            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var id))
+                return id;
         }
 
-        if (!Guid.TryParse(userIdClaim, out var userId))
+        var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        if (!string.IsNullOrEmpty(email))
         {
-            _logger.LogWarning("Invalid User ID claim: {UserIdClaim} (claim type: {ClaimType})", userIdClaim, claimType);
-            return null;
+            var user = await _userService.GetUserByEmailAsync(email);
+            if (user != null)
+                return user.Id;
         }
 
-        return userId;
+        _logger.LogWarning("User ID claim is missing or invalid.");
+        return null;
     }
 
     public record GrantAccessRequest(Guid? FileId, Guid? FolderId, Guid? UserId, Guid? GroupId, AccessType AccessType, bool Inherit = true);
