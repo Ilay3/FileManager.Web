@@ -13,25 +13,29 @@ public class FolderService : IFolderService
     private readonly IUserRepository _userRepository;
     private readonly IAuditService _auditService;
     private readonly IYandexDiskService _yandexDiskService;
+    private readonly IAccessService _accessService;
 
     public FolderService(IFolderRepository folderRepository, IFilesRepository filesRepository, IUserRepository userRepository,
-        IAuditService auditService, IYandexDiskService yandexDiskService)
+        IAuditService auditService, IYandexDiskService yandexDiskService, IAccessService accessService)
     {
         _folderRepository = folderRepository;
         _filesRepository = filesRepository;
         _userRepository = userRepository;
         _auditService = auditService;
         _yandexDiskService = yandexDiskService;
+        _accessService = accessService;
     }
 
     public async Task<List<TreeNodeDto>> GetTreeStructureAsync(Guid userId, bool isAdmin = false)
     {
-        var rootFolders = await _folderRepository.GetRootFoldersAsync();
+        var rootFolders = isAdmin
+            ? await _folderRepository.GetRootFoldersAsync()
+            : await _folderRepository.GetUserAccessibleFoldersAsync(userId);
         var treeNodes = new List<TreeNodeDto>();
 
         foreach (var folder in rootFolders)
         {
-            var node = await BuildTreeNodeAsync(folder, userId, 0);
+            var node = await BuildTreeNodeAsync(folder, userId, 0, isAdmin);
             treeNodes.Add(node);
         }
 
@@ -48,7 +52,7 @@ public class FolderService : IFolderService
 
     public async Task<List<FolderDto>> GetRootFoldersAsync(Guid userId)
     {
-        var folders = await _folderRepository.GetRootFoldersAsync();
+        var folders = await _folderRepository.GetUserAccessibleFoldersAsync(userId);
         var folderDtos = new List<FolderDto>();
 
         foreach (var folder in folders)
@@ -108,7 +112,7 @@ public class FolderService : IFolderService
         return breadcrumbs;
     }
 
-    public async Task<TreeNodeDto?> GetFolderContentsAsync(Guid folderId, Guid userId, SearchRequestDto? searchRequest = null)
+    public async Task<TreeNodeDto?> GetFolderContentsAsync(Guid folderId, Guid userId, SearchRequestDto? searchRequest = null, bool isAdmin = false)
     {
         Folder? folder = null;
 
@@ -132,8 +136,20 @@ public class FolderService : IFolderService
 
         // Get subfolders
         var subFolders = folderId == Guid.Empty
-            ? await _folderRepository.GetRootFoldersAsync()
+            ? (isAdmin ? await _folderRepository.GetRootFoldersAsync() : await _folderRepository.GetUserAccessibleFoldersAsync(userId))
             : await _folderRepository.GetSubFoldersAsync(folderId);
+
+        if (!isAdmin)
+        {
+            var accessibleSubFolders = new List<Folder>();
+            foreach (var sf in subFolders)
+            {
+                var access = await _accessService.GetEffectiveFolderAccessAsync(userId, sf.Id);
+                if ((access & AccessType.Read) == AccessType.Read)
+                    accessibleSubFolders.Add(sf);
+            }
+            subFolders = accessibleSubFolders;
+        }
 
         if (!string.IsNullOrEmpty(searchRequest?.SearchTerm))
         {
@@ -144,8 +160,33 @@ public class FolderService : IFolderService
 
         foreach (var subFolder in subFolders)
         {
-            var filesCount = (await _filesRepository.GetByFolderIdAsync(subFolder.Id)).Count();
-            var subFoldersCount = (await _folderRepository.GetSubFoldersAsync(subFolder.Id)).Count();
+            var filesInSub = await _filesRepository.GetByFolderIdAsync(subFolder.Id);
+            if (!isAdmin)
+            {
+                var accessibleFiles = new List<Files>();
+                foreach (var f in filesInSub)
+                {
+                    var access = await _accessService.GetEffectiveAccessAsync(userId, f.Id);
+                    if ((access & AccessType.Read) == AccessType.Read)
+                        accessibleFiles.Add(f);
+                }
+                filesInSub = accessibleFiles;
+            }
+            var filesCount = filesInSub.Count();
+
+            var subSubFolders = await _folderRepository.GetSubFoldersAsync(subFolder.Id);
+            if (!isAdmin)
+            {
+                var accessible = new List<Folder>();
+                foreach (var ssf in subSubFolders)
+                {
+                    var access = await _accessService.GetEffectiveFolderAccessAsync(userId, ssf.Id);
+                    if ((access & AccessType.Read) == AccessType.Read)
+                        accessible.Add(ssf);
+                }
+                subSubFolders = accessible;
+            }
+            var subFoldersCount = subSubFolders.Count();
 
             node.Children.Add(new TreeNodeDto
             {
@@ -164,6 +205,18 @@ public class FolderService : IFolderService
 
         // Get files
         var files = folderId == Guid.Empty ? new List<Files>() : await _filesRepository.GetByFolderIdAsync(folderId);
+
+        if (!isAdmin)
+        {
+            var accessibleFiles = new List<Files>();
+            foreach (var f in files)
+            {
+                var access = await _accessService.GetEffectiveAccessAsync(userId, f.Id);
+                if ((access & AccessType.Read) == AccessType.Read)
+                    accessibleFiles.Add(f);
+            }
+            files = accessibleFiles;
+        }
 
         if (!string.IsNullOrEmpty(searchRequest?.SearchTerm))
         {
@@ -300,10 +353,33 @@ public class FolderService : IFolderService
         return true;
     }
 
-    private async Task<TreeNodeDto> BuildTreeNodeAsync(Folder folder, Guid userId, int level)
+    private async Task<TreeNodeDto> BuildTreeNodeAsync(Folder folder, Guid userId, int level, bool isAdmin)
     {
-        var filesCount = (await _filesRepository.GetByFolderIdAsync(folder.Id)).Count();
+        var files = await _filesRepository.GetByFolderIdAsync(folder.Id);
+        if (!isAdmin)
+        {
+            var accessibleFiles = new List<Files>();
+            foreach (var f in files)
+            {
+                var access = await _accessService.GetEffectiveAccessAsync(userId, f.Id);
+                if ((access & AccessType.Read) == AccessType.Read)
+                    accessibleFiles.Add(f);
+            }
+            files = accessibleFiles;
+        }
+
         var subFolders = await _folderRepository.GetSubFoldersAsync(folder.Id);
+        if (!isAdmin)
+        {
+            var accessibleFolders = new List<Folder>();
+            foreach (var sf in subFolders)
+            {
+                var access = await _accessService.GetEffectiveFolderAccessAsync(userId, sf.Id);
+                if ((access & AccessType.Read) == AccessType.Read)
+                    accessibleFolders.Add(sf);
+            }
+            subFolders = accessibleFolders;
+        }
 
         var node = new TreeNodeDto
         {
@@ -314,7 +390,7 @@ public class FolderService : IFolderService
             IsNetworkAvailable = true,
             CreatedAt = folder.CreatedAt,
             UpdatedAt = folder.UpdatedAt,
-            ItemsCount = filesCount + subFolders.Count(),
+            ItemsCount = files.Count() + subFolders.Count(),
             Level = level,
             HasChildren = subFolders.Any(),
             Children = new List<TreeNodeDto>()

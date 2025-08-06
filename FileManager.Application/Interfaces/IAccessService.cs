@@ -11,4 +11,5 @@ public interface IAccessService
         AccessType accessType, Guid grantedById, bool inherit = true);
     Task<bool> RevokeAccessAsync(Guid accessRuleId, Guid revokedById);
     Task<AccessType> GetEffectiveAccessAsync(Guid userId, Guid fileId);
+    Task<AccessType> GetEffectiveFolderAccessAsync(Guid userId, Guid folderId);
 }

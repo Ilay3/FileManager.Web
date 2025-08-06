@@ -135,6 +135,16 @@ public class AccessService : IAccessService
         return await GetFolderAccessRecursive(userId, userGroups, file.FolderId);
     }
 
+    public async Task<AccessType> GetEffectiveFolderAccessAsync(Guid userId, Guid folderId)
+    {
+        var userGroups = await _context.Groups
+            .Where(g => g.Users.Any(u => u.Id == userId))
+            .Select(g => g.Id)
+            .ToListAsync();
+
+        return await GetFolderAccessRecursive(userId, userGroups, folderId);
+    }
+
     private async Task<AccessType> GetFolderAccessRecursive(Guid userId, List<Guid> userGroups, Guid folderId, bool inheritedOnly = false)
     {
         var folder = await _context.Folders

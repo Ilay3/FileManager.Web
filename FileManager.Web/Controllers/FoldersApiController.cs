@@ -67,7 +67,8 @@ public class FoldersApiController : ControllerBase
     public async Task<ActionResult<TreeNodeDto>> GetFolderContents(Guid folderId, [FromQuery] SearchRequestDto? searchRequest)
     {
         var userId = GetCurrentUserId();
-        var contents = await _folderService.GetFolderContentsAsync(folderId, userId, searchRequest);
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+        var contents = await _folderService.GetFolderContentsAsync(folderId, userId, searchRequest, isAdmin);
 
         if (contents == null)
             return NotFound();
