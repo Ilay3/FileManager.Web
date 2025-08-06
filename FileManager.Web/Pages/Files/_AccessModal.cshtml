@@ -38,8 +38,8 @@
 
     async function loadAccessLists() {
         const [usersRes, groupsRes] = await Promise.all([
-            fetch('/api/users'),
-            fetch('/api/groups')
+            fetch('/api/users', { credentials: 'include' }),
+            fetch('/api/groups', { credentials: 'include' })
         ]);
         const users = usersRes.ok ? await usersRes.json() : [];
         const groups = groupsRes.ok ? await groupsRes.json() : [];
@@ -67,7 +67,7 @@
         const url = accessTarget.isFolder
             ? `/api/access/folder/${accessTarget.id}`
             : `/api/access/file/${accessTarget.id}`;
-        const res = await fetch(url);
+        const res = await fetch(url, { credentials: 'include' });
         currentAccess = res.ok ? await res.json() : [];
 
         currentAccess.forEach(r => {
@@ -129,15 +129,19 @@
         });
 
         if (toGrant.length > 0) {
-            await fetch('/api/access/bulk-grant', {
+            const res = await fetch('/api/access/bulk-grant', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rules: toGrant })
+                body: JSON.stringify({ rules: toGrant }),
+                credentials: 'include'
             });
+            if (!res.ok) {
+                alert('Ошибка сохранения прав доступа');
+            }
         }
 
         for (const id of toRevoke) {
-            await fetch(`/api/access/${id}`, { method: 'DELETE' });
+            await fetch(`/api/access/${id}`, { method: 'DELETE', credentials: 'include' });
         }
 
         closeAccessModal();
