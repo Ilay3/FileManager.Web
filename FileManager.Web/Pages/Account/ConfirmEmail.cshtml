@@ -1,0 +1,41 @@
+@page "/Account/ConfirmEmail"
+@model FileManager.Web.Pages.Account.ConfirmEmailModel
+@{
+    ViewData["Title"] = "Подтверждение email";
+    Layout = "_LoginLayout";
+}
+
+<div class="login-container">
+    <div class="login-card">
+        <h2>Подтверждение email</h2>
+        <p>Введите код, отправленный на ваш email.</p>
+
+        @if (!string.IsNullOrEmpty(Model.Message))
+        {
+            <div class="alert alert-info">
+                @Model.Message
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error">
+                @Model.ErrorMessage
+            </div>
+        }
+
+        <form method="post">
+            <input type="hidden" asp-for="Input.Email" />
+            <div class="form-group">
+                <label asp-for="Input.Code"></label>
+                <input asp-for="Input.Code" class="form-input" />
+                <span asp-validation-for="Input.Code" class="text-error"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Подтвердить</button>
+        </form>
+
+        <div class="login-info">
+            <small><a href="/Account/Login">Вернуться к входу</a></small>
+        </div>
+    </div>
+</div>

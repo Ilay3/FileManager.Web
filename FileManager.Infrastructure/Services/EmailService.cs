@@ -83,6 +83,27 @@ public class EmailService : IEmailService
         await SendEmailAsync(email, subject, body);
     }
 
+    public async Task SendEmailConfirmationAsync(string email, string userName, string code)
+    {
+        if (!_emailOptions.Enabled)
+        {
+            _logger.LogWarning("Email отправка отключена в настройках");
+            return;
+        }
+
+        var subject = "Подтверждение регистрации FileManager";
+        var body = $@"
+            <h2>Подтверждение регистрации</h2>
+            <p>Здравствуйте, {userName}!</p>
+            <p>Ваш код подтверждения: <strong>{code}</strong></p>
+            <p>Введите его на странице подтверждения email.</p>
+            <br>
+            <p>С уважением,<br>Команда FileManager</p>
+        ";
+
+        await SendEmailAsync(email, subject, body);
+    }
+
     private async Task SendEmailAsync(string toEmail, string subject, string body)
     {
         try

@@ -48,7 +48,7 @@ public class FilePreviewService : IFilePreviewService
                 return null;
             }
 
-            if (!CanPreviewAsync(file.Extension).Result)
+            if (!await CanPreviewAsync(file.Extension))
             {
                 _logger.LogWarning("File {FileId} with extension {Extension} cannot be previewed", fileId, file.Extension);
                 return null;
@@ -96,7 +96,7 @@ public class FilePreviewService : IFilePreviewService
                 return null;
             }
 
-            if (!CanEditOnlineAsync(file.Extension).Result)
+            if (!await CanEditOnlineAsync(file.Extension))
             {
                 _logger.LogWarning("File {FileId} with extension {Extension} cannot be edited online", fileId, file.Extension);
                 return null;

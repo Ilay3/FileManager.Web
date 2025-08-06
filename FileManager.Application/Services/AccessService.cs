@@ -4,6 +4,7 @@ using FileManager.Domain.Entities;
 using FileManager.Domain.Enums;
 using FileManager.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FileManager.Application.Services;
 
@@ -11,11 +12,13 @@ public class AccessService : IAccessService
 {
     private readonly IAppDbContext _context;
     private readonly IAuditService _audit;
+    private readonly ILogger<AccessService> _logger;
 
-    public AccessService(IAppDbContext context, IAuditService audit)
+    public AccessService(IAppDbContext context, IAuditService audit, ILogger<AccessService> logger)
     {
         _context = context;
         _audit = audit;
+        _logger = logger;
     }
 
     public async Task<List<AccessRuleDto>> GetFileAccessAsync(Guid fileId)
@@ -59,6 +62,18 @@ public class AccessService : IAccessService
     public async Task GrantAccessAsync(Guid? fileId, Guid? folderId, Guid? userId, Guid? groupId,
         AccessType accessType, Guid grantedById, bool inherit = true)
     {
+        if ((fileId.HasValue && folderId.HasValue) || (!fileId.HasValue && !folderId.HasValue))
+        {
+            _logger.LogWarning("GrantAccessAsync: неверно указаны параметры файла/папки");
+            throw new ArgumentException("Должен быть указан либо файл, либо папка");
+        }
+
+        if ((userId.HasValue && groupId.HasValue) || (!userId.HasValue && !groupId.HasValue))
+        {
+            _logger.LogWarning("GrantAccessAsync: неверно указаны получатели");
+            throw new ArgumentException("Должен быть указан либо пользователь, либо группа");
+        }
+
         var rule = new AccessRule
         {
             FileId = fileId,
@@ -72,6 +87,11 @@ public class AccessService : IAccessService
         _context.AccessRules.Add(rule);
         await _context.SaveChangesAsync();
 
+        _logger.LogInformation("Назначены права {AccessType} для {Principal} к {Target}",
+            accessType,
+            userId ?? groupId,
+            fileId ?? folderId);
+
         await _audit.LogAsync(AuditAction.AccessGranted, grantedById, fileId, folderId,
             $"Granted {accessType} access", isSuccess: true);
     }
@@ -80,10 +100,15 @@ public class AccessService : IAccessService
     {
         var rule = await _context.AccessRules.FindAsync(accessRuleId);
         if (rule == null)
+        {
+            _logger.LogWarning("Не найдены права доступа с Id {AccessRuleId}", accessRuleId);
             return false;
+        }
 
         _context.AccessRules.Remove(rule);
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Отозваны права {AccessType} с Id {AccessRuleId}", rule.AccessType, accessRuleId);
 
         await _audit.LogAsync(AuditAction.AccessRevoked, revokedById, rule.FileId, rule.FolderId,
             $"Revoked {rule.AccessType} access", isSuccess: true);

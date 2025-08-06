@@ -7,8 +7,8 @@
 
 <div class="files-wrapper">
     <!-- Toolbar -->
-    <div class="toolbar">
-        <div class="toolbar-left">
+    <div class="toolbar d-flex flex-wrap gap-2 align-items-center">
+        <div class="btn-group">
             <button class="btn btn-primary" onclick="openUploadModal('@Model.CurrentFolderId')">
                 <i class="bi bi-upload"></i> Загрузить файл
             </button>
@@ -22,41 +22,33 @@
                 <i class="bi bi-download"></i> Скачать выбранные
             </button>
         </div>
-
-        <div class="toolbar-center">
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Поиск файлов и папок..." class="search-input"
+        <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
+            <div class="input-group">
+                <input type="text" id="searchInput" placeholder="Поиск файлов и папок..." class="form-control"
                        value="@Model.SearchRequest.SearchTerm" />
-                <button type="button" id="searchBtn" class="btn btn-search"><i class="bi bi-search"></i></button>
+                <button type="button" id="searchBtn" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
             </div>
-        </div>
-
-        <div class="toolbar-right">
-            <div class="view-controls">
-                <button class="btn @(Model.ViewMode == "list" ? "btn-active" : "")" onclick="changeView('list')" title="Список">
+            <select id="filterType" class="form-select">
+                <option value="">Все типы</option>
+                <option value="Document">Документы</option>
+                <option value="Spreadsheet">Таблицы</option>
+                <option value="Presentation">Презентации</option>
+                <option value="Pdf">PDF</option>
+                <option value="Image">Изображения</option>
+                <option value="Archive">Архивы</option>
+            </select>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="onlyMyFiles" @(Model.SearchRequest.OnlyMyFiles ? "checked" : "") />
+                <label class="form-check-label" for="onlyMyFiles">Только мои</label>
+            </div>
+            <button class="btn btn-outline-secondary" type="button" onclick="toggleAdvanced()">Фильтры</button>
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary @(Model.ViewMode == "list" ? "active" : "")" onclick="changeView('list')" title="Список">
                     <i class="bi bi-view-list"></i>
                 </button>
-                <button class="btn @(Model.ViewMode == "grid" ? "btn-active" : "")" onclick="changeView('grid')" title="Сетка">
+                <button class="btn btn-outline-secondary @(Model.ViewMode == "grid" ? "active" : "")" onclick="changeView('grid')" title="Сетка">
                     <i class="bi bi-grid"></i>
                 </button>
-            </div>
-
-            <div class="filter-controls">
-                <select id="filterType" class="form-select">
-                    <option value="">Все типы</option>
-                    <option value="Document">Документы</option>
-                    <option value="Spreadsheet">Таблицы</option>
-                    <option value="Presentation">Презентации</option>
-                    <option value="Pdf">PDF</option>
-                    <option value="Image">Изображения</option>
-                    <option value="Archive">Архивы</option>
-                </select>
-
-                <label class="checkbox-label">
-                    <input type="checkbox" id="onlyMyFiles" @(Model.SearchRequest.OnlyMyFiles ? "checked" : "") />
-                    Только мои файлы
-                </label>
-                <button class="btn btn-secondary" type="button" onclick="toggleAdvanced()">Фильтры</button>
             </div>
         </div>
     </div>
@@ -118,7 +110,7 @@
         @if (Model.ViewMode == "grid")
         {
             <div class="grid-view">
-                @await Html.PartialAsync("_FilesGrid", Model.FilesResult)
+                @await Html.PartialAsync("_FilesGrid", Model.GridItems)
             </div>
         }
         else
@@ -165,3 +157,4 @@
         <li data-action="delete">Удалить</li>
     </ul>
 </div>
+<div id="notificationContainer" class="notification-container"></div>

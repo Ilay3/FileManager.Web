@@ -45,6 +45,18 @@ class FilesManager {
         if (onlyMyFiles) {
             onlyMyFiles.addEventListener('change', () => this.applyFilters());
         }
+
+        document.addEventListener('dblclick', (e) => {
+            const item = e.target.closest('.explorer-item');
+            if (!item) return;
+            const id = item.dataset.id;
+            const type = item.dataset.type;
+            if (type === 'folder') {
+                window.location.href = `?folderId=${id}&view=${this.currentView}`;
+            } else {
+                this.previewFile(id);
+            }
+        });
     }
 
     bindContextMenu() {
@@ -343,7 +355,7 @@ class FilesManager {
             window.location.href = `/Files/Preview/${fileId}`;
         } catch (error) {
             console.error('Error opening file preview:', error);
-            alert('Ошибка при открытии предпросмотра файла');
+            this.showNotification('Ошибка при открытии предпросмотра файла', 'error');
         }
     }
 
@@ -353,7 +365,7 @@ class FilesManager {
             const data = await response.json();
 
             if (data.hasActiveEditors && !data.canProceed) {
-                alert('Файл сейчас редактируется другим пользователем. Попробуйте позже.');
+                this.showNotification('Файл сейчас редактируется другим пользователем. Попробуйте позже.', 'error');
                 return;
             }
 
@@ -373,7 +385,7 @@ class FilesManager {
             }
         } catch (error) {
             console.error('Error opening file for edit:', error);
-            alert('Ошибка при открытии файла для редактирования');
+            this.showNotification('Ошибка при открытии файла для редактирования', 'error');
         }
     }
 
@@ -388,7 +400,7 @@ class FilesManager {
             window.location.href = `/api/files/${fileId}/content`;
         } catch (error) {
             console.error('Error downloading file:', error);
-            alert('Ошибка при скачивании файла');
+            this.showNotification('Ошибка при скачивании файла', 'error');
         }
     }
 
@@ -399,14 +411,15 @@ class FilesManager {
         try {
             const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' });
             if (response.ok) {
-                location.reload();
+                this.showNotification('Файл удалён', 'success');
+                setTimeout(() => location.reload(), 500);
             } else {
                 const text = await response.text();
-                alert('Ошибка удаления файла: ' + text);
+                this.showNotification('Ошибка удаления файла: ' + text, 'error');
             }
         } catch (error) {
             console.error('Error deleting file:', error);
-            alert('Ошибка при удалении файла');
+            this.showNotification('Ошибка при удалении файла', 'error');
         }
     }
 
@@ -419,10 +432,11 @@ class FilesManager {
                 body: JSON.stringify({ name, parentId })
             });
             if (response.ok) {
-                location.reload();
+                this.showNotification('Папка создана', 'success');
+                setTimeout(() => location.reload(), 500);
             } else {
                 const text = await response.text();
-                alert('Ошибка создания папки: ' + text);
+                this.showNotification('Ошибка создания папки: ' + text, 'error');
             }
         } catch (error) {
             console.error('Error creating folder:', error);
@@ -437,10 +451,11 @@ class FilesManager {
                 body: JSON.stringify({ name: newName })
             });
             if (response.ok) {
-                location.reload();
+                this.showNotification('Папка переименована', 'success');
+                setTimeout(() => location.reload(), 500);
             } else {
                 const text = await response.text();
-                alert('Ошибка переименования: ' + text);
+                this.showNotification('Ошибка переименования: ' + text, 'error');
             }
         } catch (error) {
             console.error('Error renaming folder:', error);
@@ -452,10 +467,11 @@ class FilesManager {
         try {
             const response = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' });
             if (response.ok) {
-                location.reload();
+                this.showNotification('Папка удалена', 'success');
+                setTimeout(() => location.reload(), 500);
             } else {
                 const text = await response.text();
-                alert('Ошибка удаления: ' + text);
+                this.showNotification('Ошибка удаления: ' + text, 'error');
             }
         } catch (error) {
             console.error('Error deleting folder:', error);
@@ -472,10 +488,11 @@ class FilesManager {
                 body: JSON.stringify({ newParentId: newParentId || null })
             });
             if (response.ok) {
-                location.reload();
+                this.showNotification('Папка перемещена', 'success');
+                setTimeout(() => location.reload(), 500);
             } else {
                 const text = await response.text();
-                alert('Ошибка перемещения: ' + text);
+                this.showNotification('Ошибка перемещения: ' + text, 'error');
             }
         } catch (error) {
             console.error('Error moving folder:', error);
@@ -501,9 +518,9 @@ class FilesManager {
                 body: JSON.stringify(body)
             });
             if (response.ok) {
-                alert('Права назначены');
+                this.showNotification('Права назначены', 'success');
             } else {
-                alert('Ошибка назначения прав');
+                this.showNotification('Ошибка назначения прав', 'error');
             }
         } catch (error) {
             console.error('Error granting access:', error);
@@ -535,26 +552,13 @@ class FilesManager {
 
     // Utility method for notifications
     showNotification(message, type = 'info') {
+        const container = document.getElementById('notificationContainer');
+        if (!container) return;
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
-
-        Object.assign(notification.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            padding: '12px 16px',
-            borderRadius: '4px',
-            color: 'white',
-            backgroundColor: type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8',
-            zIndex: '9999'
-        });
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 5000);
+        container.appendChild(notification);
+        setTimeout(() => notification.remove(), 5000);
     }
 
     // Utility functions

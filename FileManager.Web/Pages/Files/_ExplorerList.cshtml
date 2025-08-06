@@ -15,31 +15,11 @@
             </div>
             <div class="tile-body">
                 <div class="tile-name">
-                    @if (item.Type == "folder")
-                    {
-                        <a href="?folderId=@item.Id&view=list">@item.Name</a>
-                    }
-                    else
-                    {
-                        <span>@item.Name</span>
-                    }
+                    <span>@item.Name</span>
                 </div>
                 <div class="tile-meta">
                     @(item.Type == "file" && item.SizeBytes.HasValue ? FormatSize(item.SizeBytes.Value) : "-") · @((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy HH:mm")) · @item.UploadedByName
                 </div>
-            </div>
-            <div class="tile-actions">
-                @if (item.Type == "file")
-                {
-                    <button class="btn btn-small" onclick="viewFile('@item.Id')" title="Просмотр"><i class="bi bi-eye"></i></button>
-                    <button class="btn btn-small" onclick="downloadFile('@item.Id')" title="Скачать"><i class="bi bi-download"></i></button>
-                    <button class="btn btn-small" onclick="deleteFile('@item.Id', '@item.Name')" title="Удалить"><i class="bi bi-trash"></i></button>
-                }
-                else
-                {
-                    <button class="btn btn-small" onclick="openRenameFolderModal('@item.Id', '@item.Name')" title="Переименовать"><i class="bi bi-pencil"></i></button>
-                    <button class="btn btn-small" onclick="deleteFolder('@item.Id', '@item.Name')" title="Удалить"><i class="bi bi-trash"></i></button>
-                }
             </div>
         </div>
     }

@@ -11,6 +11,7 @@ namespace FileManager.Application.Interfaces
         Task SendPasswordResetEmailAsync(string email, string resetToken, string userName);
         Task SendAccountLockedEmailAsync(string email, string userName, string reason);
         Task SendWelcomeEmailAsync(string email, string userName, string temporaryPassword);
+        Task SendEmailConfirmationAsync(string email, string userName, string code);
     }
 
 }

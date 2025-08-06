@@ -37,6 +37,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.LastIpAddress)
             .HasMaxLength(45); // IPv6
 
+        builder.Property(u => u.EmailConfirmationCode)
+            .HasMaxLength(10);
+
         // Индексы
         builder.HasIndex(u => u.Email)
             .IsUnique()
@@ -53,6 +56,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasIndex(u => u.LastActivityAt)
             .HasDatabaseName("IX_Users_LastActivityAt");
+
+        builder.HasIndex(u => u.IsEmailConfirmed)
+            .HasDatabaseName("IX_Users_IsEmailConfirmed");
 
         // Отношения
         builder.HasMany(u => u.UploadedFiles)
