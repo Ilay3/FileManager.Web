@@ -2073,3 +2073,27 @@ body {
         padding: 20px;
     }
 }
+
+/* Системные уведомления */
+.notification-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.notification {
+    margin-top: 10px;
+    padding: 10px 16px;
+    border-radius: 4px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.7);
+    animation: fadein 0.3s, fadeout 0.5s 4.5s forwards;
+}
+
+.notification-success { background-color: #28a745; }
+.notification-error { background-color: #dc3545; }
+.notification-info { background-color: #17a2b8; }
+
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }

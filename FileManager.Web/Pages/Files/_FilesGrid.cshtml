@@ -1,72 +1,81 @@
-﻿@model FileManager.Application.DTOs.SearchResultDto<FileManager.Application.DTOs.FileDto>
+@model IEnumerable<FileManager.Application.DTOs.TreeNodeDto>
+@using System.Linq
 
-@if (Model.Items.Any())
+@if (Model.Any())
 {
-        <div class="sort-controls">
-            <span>Сортировка:</span>
-            <a href="javascript:void(0)" onclick="sortBy('name')" class="sort-link">По имени</a>
-            <a href="javascript:void(0)" onclick="sortBy('date')" class="sort-link">По дате</a>
-            <a href="javascript:void(0)" onclick="sortBy('size')" class="sort-link">По размеру</a>
-            <a href="javascript:void(0)" onclick="sortBy('type')" class="sort-link">По типу</a>
-        </div>
+    <div class="sort-controls">
+        <span>Сортировка:</span>
+        <a href="javascript:void(0)" onclick="sortBy('name')" class="sort-link">По имени</a>
+        <a href="javascript:void(0)" onclick="sortBy('date')" class="sort-link">По дате</a>
+        <a href="javascript:void(0)" onclick="sortBy('size')" class="sort-link">По размеру</a>
+        <a href="javascript:void(0)" onclick="sortBy('type')" class="sort-link">По типу</a>
+    </div>
 
-        <div class="files-grid">
-        @foreach (var file in Model.Items)
+    <div class="files-grid">
+    @foreach (var item in Model)
+    {
+        if (item.Type == "folder")
         {
-                    <div class="file-card explorer-item" data-type="file" data-id="@file.Id" data-name="@file.Name">
-                        <div class="file-card-icon">
-                            <i class="@file.FileIconClass"></i>
-                            @if (file.IsNetworkAvailable)
-                            {
-                                <i class="bi bi-cloud-check network-icon"></i>
-                            }
-                        </div>
-                        <div class="file-card-content">
-                            <h4 class="file-card-title" title="@file.Name">@file.Name</h4>
-                            <p class="file-card-info">
-                                <span class="file-size">@file.FormattedSize</span>
-                                <span class="file-date">@(file.UpdatedAt?.ToString("dd.MM.yyyy") ?? file.CreatedAt.ToString("dd.MM.yyyy"))</span>
-                            </p>
-                            <p class="file-card-author">@file.UploadedByName</p>
-                            @if (!string.IsNullOrEmpty(file.Tags))
-                            {
-                                <div class="file-card-tags">
-                                    @foreach (var tag in file.Tags.Split(',').Take(3))
-                                    {
-                                        <span class="tag">@tag.Trim()</span>
-                                    }
-                                </div>
-                            }
-                        </div>
-                        <div class="file-card-actions">
-                            <button class="btn btn-small" onclick="viewFile('@file.Id')" title="Просмотр"><i class="bi bi-eye"></i></button>
-                            <button class="btn btn-small" onclick="downloadFile('@file.Id')" title="Скачать"><i class="bi bi-download"></i></button>
-                            <button class="btn btn-small" onclick="deleteFile('@file.Id', '@file.Name')" title="Удалить"><i class="bi bi-trash"></i></button>
-                        </div>
-                    </div>
+            <div class="file-card explorer-item" data-type="folder" data-id="@item.Id" data-name="@item.Name">
+                <div class="file-card-icon">
+                    <i class="bi bi-folder"></i>
+                    @if (item.IsNetworkAvailable)
+                    {
+                        <i class="bi bi-cloud-check network-icon"></i>
+                    }
+                </div>
+                <div class="file-card-content">
+                    <h4 class="file-card-title" title="@item.Name">@item.Name</h4>
+                    <p class="file-card-info">
+                        <span class="file-date">@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy"))</span>
+                    </p>
+                    <p class="file-card-author">@item.UploadedByName</p>
+                </div>
+            </div>
         }
-        </div>
+        else
+        {
+            <div class="file-card explorer-item" data-type="file" data-id="@item.Id" data-name="@item.Name">
+                <div class="file-card-icon">
+                    <i class="@item.IconClass"></i>
+                    @if (item.IsNetworkAvailable)
+                    {
+                        <i class="bi bi-cloud-check network-icon"></i>
+                    }
+                </div>
+                <div class="file-card-content">
+                    <h4 class="file-card-title" title="@item.Name">@item.Name</h4>
+                    <p class="file-card-info">
+                        <span class="file-size">@FormatSize(item.SizeBytes ?? 0)</span>
+                        <span class="file-date">@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy"))</span>
+                    </p>
+                    <p class="file-card-author">@item.UploadedByName</p>
+                </div>
+            </div>
+        }
+    }
+    </div>
 }
 else
 {
-        <div class="empty-state">
-            <div style="font-size: 64px; margin-bottom: 20px;"><i class="bi bi-file-earmark"></i></div>
-            <h3>Файлы не найдены</h3>
-            <p style="color: #999; margin-bottom: 30px;">
-            @if (!string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["SearchRequest.SearchTerm"]))
-            {
-                        <span>По вашему запросу ничего не найдено. Попробуйте изменить критерии поиска.</span>
-            }
-            else
-            {
-                        <span>В данной папке пока нет файлов. Загрузите первый файл, чтобы начать работу.</span>
-            }
-            </p>
-            @{ var currentFolder = ViewContext.HttpContext.Request.Query["folderId"].ToString(); }
-            <button class="btn btn-primary" onclick="openUploadModal('@currentFolder')">
-                <i class="bi bi-upload"></i> Загрузить файл
-            </button>
-        </div>
+    <div class="empty-state">
+        <div style="font-size: 64px; margin-bottom: 20px;"><i class="bi bi-file-earmark"></i></div>
+        <h3>Файлы не найдены</h3>
+        <p style="color: #999; margin-bottom: 30px;">
+        @if (!string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["SearchRequest.SearchTerm"]))
+        {
+            <span>По вашему запросу ничего не найдено. Попробуйте изменить критерии поиска.</span>
+        }
+        else
+        {
+            <span>В данной папке пока нет файлов. Загрузите первый файл, чтобы начать работу.</span>
+        }
+        </p>
+        @{ var currentFolder = ViewContext.HttpContext.Request.Query["folderId"].ToString(); }
+        <button class="btn btn-primary" onclick="openUploadModal('@currentFolder')">
+            <i class="bi bi-upload"></i> Загрузить файл
+        </button>
+    </div>
 }
 
 <script>
@@ -74,14 +83,25 @@ else
         const params = new URLSearchParams(window.location.search);
         const currentSort = params.get('SearchRequest.SortBy');
         const currentDirection = params.get('SearchRequest.SortDirection') || 'asc';
-
-        // Toggle direction if same field
         const newDirection = (currentSort === field && currentDirection === 'asc') ? 'desc' : 'asc';
-
         params.set('SearchRequest.SortBy', field);
         params.set('SearchRequest.SortDirection', newDirection);
-        params.set('SearchRequest.Page', '1'); // Reset to first page
-
+        params.set('SearchRequest.Page', '1');
         window.location.search = params.toString();
     }
 </script>
+
+@functions {
+    private string FormatSize(long size)
+    {
+        string[] suffix = { "Б", "КБ", "МБ", "ГБ", "ТБ" };
+        double len = size;
+        int order = 0;
+        while (len >= 1024 && order < suffix.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {suffix[order]}";
+    }
+}

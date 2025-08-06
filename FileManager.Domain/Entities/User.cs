@@ -43,6 +43,11 @@ public class User : BaseEntity
     public DateTime? LastActivityAt { get; set; }
     public string? LastIpAddress { get; set; }
 
+    public bool IsEmailConfirmed { get; set; } = false;
+
+    [StringLength(10)]
+    public string? EmailConfirmationCode { get; set; }
+
     // Navigation properties
     public virtual ICollection<Files> UploadedFiles { get; set; } = new List<Files>();
     public virtual ICollection<Folder> CreatedFolders { get; set; } = new List<Folder>();

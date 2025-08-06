@@ -1,6 +1,7 @@
 ﻿using FileManager.Domain.Entities;
 using FileManager.Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -10,11 +11,13 @@ public class UserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<UserService> _logger;
 
-    public UserService(IUserRepository userRepository, IConfiguration configuration)
+    public UserService(IUserRepository userRepository, IConfiguration configuration, ILogger<UserService> logger)
     {
         _userRepository = userRepository;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<User?> ValidateUserAsync(string email, string password, string? ipAddress = null)
@@ -23,18 +26,27 @@ public class UserService
 
         if (user == null)
         {
+            _logger.LogWarning("Попытка входа с несуществующим email {Email}", email);
             return null;
         }
 
         // Проверяем блокировку аккаунта
         if (user.IsLocked)
         {
+            _logger.LogWarning("Пользователь {Email} заблокирован", email);
             return null;
         }
 
         // Проверяем активность
         if (!user.IsActive)
         {
+            _logger.LogWarning("Пользователь {Email} не активен", email);
+            return null;
+        }
+
+        if (!user.IsEmailConfirmed)
+        {
+            _logger.LogWarning("Пользователь {Email} не подтвердил email", email);
             return null;
         }
 
@@ -46,6 +58,7 @@ public class UserService
             user.LastFailedLoginAt.HasValue &&
             user.LastFailedLoginAt.Value.AddMinutes(lockoutMinutes) > DateTime.UtcNow)
         {
+            _logger.LogWarning("Пользователь {Email} временно заблокирован из-за неудачных попыток", email);
             return null; // Временная блокировка
         }
 
@@ -57,6 +70,7 @@ public class UserService
             user.FailedLoginAttempts++;
             user.LastFailedLoginAt = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
+            _logger.LogWarning("Неверный пароль для {Email}", email);
             return null;
         }
 
@@ -68,6 +82,7 @@ public class UserService
         user.LastIpAddress = ipAddress;
 
         await _userRepository.UpdateAsync(user);
+        _logger.LogInformation("Пользователь {Email} успешно вошёл", email);
 
         return user;
     }
@@ -75,7 +90,10 @@ public class UserService
     public async Task<User> CreateUserAsync(string email, string fullName, string password, string? department = null, bool isAdmin = false)
     {
         if (await _userRepository.ExistsAsync(email))
+        {
+            _logger.LogWarning("Попытка создания уже существующего пользователя {Email}", email);
             throw new InvalidOperationException($"Пользователь с email {email} уже существует");
+        }
 
         // Валидируем пароль
         ValidatePassword(password);
@@ -88,10 +106,14 @@ public class UserService
             Department = department,
             IsActive = true,
             IsAdmin = isAdmin,
-            LastActivityAt = DateTime.UtcNow
+            LastActivityAt = DateTime.UtcNow,
+            IsEmailConfirmed = false,
+            EmailConfirmationCode = GenerateConfirmationCode()
         };
 
-        return await _userRepository.CreateAsync(user);
+        var created = await _userRepository.CreateAsync(user);
+        _logger.LogInformation("Создан новый пользователь {Email}", email);
+        return created;
     }
 
     public async Task<User?> GetUserByIdAsync(Guid id)
@@ -147,13 +169,17 @@ public class UserService
     {
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null || !user.IsActive || user.IsLocked)
+        {
+            _logger.LogWarning("Запрос на сброс пароля для недоступного пользователя {Email}", email);
             return null;
+        }
 
         var token = GenerateSecureToken();
         user.PasswordResetToken = token;
         user.PasswordResetTokenExpires = DateTime.UtcNow.AddHours(1); // Токен действует 1 час
 
         await _userRepository.UpdateAsync(user);
+        _logger.LogInformation("Сгенерирован токен сброса пароля для {Email}", email);
         return token;
     }
 
@@ -162,7 +188,10 @@ public class UserService
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null || user.PasswordResetToken != token ||
             user.PasswordResetTokenExpires < DateTime.UtcNow)
+        {
+            _logger.LogWarning("Неудачная попытка сброса пароля для {Email}", email);
             return false;
+        }
 
         // Валидируем новый пароль
         ValidatePassword(newPassword);
@@ -174,6 +203,7 @@ public class UserService
         user.FailedLoginAttempts = 0;
 
         await _userRepository.UpdateAsync(user);
+        _logger.LogInformation("Пароль пользователя {Email} успешно изменён", email);
         return true;
     }
 
@@ -224,5 +254,26 @@ public class UserService
         var bytes = new byte[32];
         rng.GetBytes(bytes);
         return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
+    }
+
+    private string GenerateConfirmationCode()
+    {
+        using var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[4];
+        rng.GetBytes(bytes);
+        var code = BitConverter.ToUInt32(bytes) % 1000000;
+        return code.ToString("D6");
+    }
+
+    public async Task<bool> ConfirmEmailAsync(string email, string code)
+    {
+        var user = await _userRepository.GetByEmailAsync(email);
+        if (user == null || user.EmailConfirmationCode != code)
+            return false;
+
+        user.IsEmailConfirmed = true;
+        user.EmailConfirmationCode = null;
+        await _userRepository.UpdateAsync(user);
+        return true;
     }
 }
