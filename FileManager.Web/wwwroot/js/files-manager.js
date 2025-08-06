@@ -77,6 +77,8 @@ class FilesManager {
             // show/hide actions
             menu.querySelector('[data-action="rename"]').style.display = this.contextItem.type === 'folder' ? 'block' : 'none';
             menu.querySelector('[data-action="download"]').style.display = this.contextItem.type === 'file' ? 'block' : 'none';
+            menu.querySelector('[data-action="preview"]').style.display = this.contextItem.type === 'file' ? 'block' : 'none';
+            menu.querySelector('[data-action="edit"]').style.display = this.contextItem.type === 'file' ? 'block' : 'none';
         });
 
         document.addEventListener('click', () => this.hideContextMenu());
@@ -101,6 +103,16 @@ class FilesManager {
         if (!this.contextItem) return;
         const { id, name, type } = this.contextItem;
         switch (action) {
+            case 'preview':
+                if (type === 'file') {
+                    this.previewFile(id);
+                }
+                break;
+            case 'edit':
+                if (type === 'file') {
+                    this.editFile(id);
+                }
+                break;
             case 'rename':
                 if (type === 'folder') {
                     openRenameFolderModal(id, name);
@@ -120,6 +132,9 @@ class FilesManager {
                 } else {
                     deleteFolder(id, name);
                 }
+                break;
+            case 'properties':
+                this.showProperties(id, name, type);
                 break;
         }
         this.hideContextMenu();
@@ -420,6 +435,53 @@ class FilesManager {
         } catch (error) {
             console.error('Error deleting file:', error);
             this.showNotification('Ошибка при удалении файла', 'error');
+        }
+    }
+
+    async showProperties(itemId, itemName, itemType) {
+        const crumbs = Array.from(document.querySelectorAll('.breadcrumb-item'))
+            .map(el => el.textContent.trim().replace(/\s*\/\s*/g, ''))
+            .filter(t => t.length > 0);
+        const path = (crumbs.length ? crumbs.join('/') + '/' : '') + itemName;
+
+        let size = '-';
+        let creator = '';
+        let created = '';
+        let updated = '';
+
+        try {
+            if (itemType === 'file') {
+                const res = await fetch(`/api/files/${itemId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    size = data.formattedSize;
+                    creator = data.uploadedByName;
+                    created = new Date(data.createdAt).toLocaleString();
+                    updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : created;
+                }
+            } else {
+                const res = await fetch(`/api/folders/${itemId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    creator = data.createdByName;
+                    created = new Date(data.createdAt).toLocaleString();
+                    updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : created;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading properties:', error);
+        }
+
+        document.getElementById('propPath').textContent = path;
+        document.getElementById('propSize').textContent = size;
+        document.getElementById('propCreator').textContent = creator;
+        document.getElementById('propCreated').textContent = created;
+        document.getElementById('propUpdated').textContent = updated;
+
+        const modalEl = document.getElementById('propertiesModal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
         }
     }
 
