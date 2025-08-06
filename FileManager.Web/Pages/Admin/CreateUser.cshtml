@@ -1,0 +1,67 @@
+@page "/Admin/CreateUser"
+@model FileManager.Web.Pages.Admin.CreateUserModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Создание пользователя";
+
+    if (User.FindFirst("IsAdmin")?.Value != "True")
+    {
+        Response.Redirect("/Files");
+        return;
+    }
+}
+
+<h2>Создание пользователя</h2>
+
+<form id="createUserForm" class="mb-3">
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" class="form-control" required />
+    </div>
+    <div class="form-group">
+        <label for="fullName">ФИО</label>
+        <input type="text" id="fullName" class="form-control" required />
+    </div>
+    <div class="form-group">
+        <label for="password">Пароль</label>
+        <input type="password" id="password" class="form-control" required />
+    </div>
+    <div class="form-group">
+        <label for="department">Отдел</label>
+        <input type="text" id="department" class="form-control" />
+    </div>
+    <div class="form-group form-check">
+        <input type="checkbox" id="isAdmin" class="form-check-input" />
+        <label class="form-check-label" for="isAdmin">Администратор</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Создать</button>
+</form>
+<div id="result" class="text-success"></div>
+
+<script>
+const form = document.getElementById('createUserForm');
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+        email: document.getElementById('email').value,
+        fullName: document.getElementById('fullName').value,
+        password: document.getElementById('password').value,
+        department: document.getElementById('department').value || null,
+        isAdmin: document.getElementById('isAdmin').checked
+    };
+    const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include'
+    });
+    if (res.ok) {
+        form.reset();
+        document.getElementById('result').textContent = 'Пользователь создан';
+    } else {
+        const text = await res.text();
+        alert('Ошибка: ' + text);
+    }
+});
+</script>
+

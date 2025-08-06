@@ -10,36 +10,41 @@
 <body>
     @if (User.Identity?.IsAuthenticated == true)
     {
-        <header class="header">
-            <div class="container">
-                <div class="header-content">
-                    <h1 class="logo">
-                        <a href="/Files" style="text-decoration: none; color: inherit;">FileManager</a>
-                    </h1>
-                    <nav class="nav">
-                        <a href="/Files" class="nav-link"><i class="bi bi-folder"></i> Мои документы</a>
-                        @if (User.FindFirst("IsAdmin")?.Value == "True")
-                        {
-                            <a href="/Admin" class="nav-link"><i class="bi bi-gear"></i> Администрирование</a>
-                        }
-                        <a href="/Docs" class="nav-link"><i class="bi bi-book"></i> Документация</a>
-                    </nav>
+        <div class="app-shell">
+            <aside class="sidebar">
+                <div class="sidebar-logo">FileManager</div>
+                <a href="/Files" class="sidebar-link"><i class="bi bi-folder"></i> Мои документы</a>
+                @if (User.FindFirst("IsAdmin")?.Value == "True")
+                {
+                    <a href="/Admin" class="sidebar-link"><i class="bi bi-gear"></i> Администрирование</a>
+                }
+                <a href="/Docs" class="sidebar-link"><i class="bi bi-book"></i> Документация</a>
+            </aside>
+            <div class="content">
+                <header class="app-header">
                     <div class="user-menu">
                         <span><i class="bi bi-person"></i> @User.Identity.Name</span>
-                        <span style="color: #999; font-size: 14px;">(@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value)</span>
-                        <button id="themeToggle" class="btn btn-secondary" type="button"><i class="bi bi-moon"></i></button>
-                        <a href="/Account/Logout" class="btn btn-secondary">Выход</a>
+                        <span class="user-email">(@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value)</span>
+                        <button id="themeToggle" class="btn btn-secondary btn-small" type="button"><i class="bi bi-moon"></i></button>
+                        <a href="/Account/Logout" class="btn btn-secondary btn-small">Выход</a>
                     </div>
-                </div>
+                </header>
+                <main class="content-main">
+                    <div class="container">
+                        @RenderBody()
+                    </div>
+                </main>
             </div>
-        </header>
-    }
-
-    <main class="main">
-        <div class="container">
-            @RenderBody()
         </div>
-    </main>
+    }
+    else
+    {
+        <main class="content-main">
+            <div class="container">
+                @RenderBody()
+            </div>
+        </main>
+    }
     <script src="~/js/files-manager.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

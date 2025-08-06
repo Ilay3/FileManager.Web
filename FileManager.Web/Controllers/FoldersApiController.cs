@@ -81,7 +81,8 @@ public class FoldersApiController : ControllerBase
         var userId = GetCurrentUserId();
         try
         {
-            var folder = await _folderService.CreateFolderAsync(request.Name, request.ParentId, userId);
+            var parentId = request.ParentId == Guid.Empty ? null : request.ParentId;
+            var folder = await _folderService.CreateFolderAsync(request.Name, parentId, userId);
             return Ok(folder);
         }
         catch (InvalidOperationException ex)
