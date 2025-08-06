@@ -43,7 +43,7 @@ public class AccessApiController : ControllerBase
         if (!userId.HasValue)
         {
             _logger.LogWarning("GrantAccess called without a valid user ID.");
-            return Unauthorized();
+            return Unauthorized("User identifier claim is missing or invalid.");
         }
 
         await _accessService.GrantAccessAsync(request.FileId, request.FolderId, request.UserId, request.GroupId, request.AccessType, userId.Value, request.Inherit);
@@ -57,7 +57,7 @@ public class AccessApiController : ControllerBase
         if (!userId.HasValue)
         {
             _logger.LogWarning("BulkGrant called without a valid user ID.");
-            return Unauthorized();
+            return Unauthorized("User identifier claim is missing or invalid.");
         }
 
         foreach (var item in request.Rules)
@@ -74,7 +74,7 @@ public class AccessApiController : ControllerBase
         if (!userId.HasValue)
         {
             _logger.LogWarning("Revoke called without a valid user ID.");
-            return Unauthorized();
+            return Unauthorized("User identifier claim is missing or invalid.");
         }
 
         var result = await _accessService.RevokeAccessAsync(ruleId, userId.Value);
@@ -83,16 +83,25 @@ public class AccessApiController : ControllerBase
 
     private Guid? GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var claimType = ClaimTypes.NameIdentifier;
+        var userIdClaim = User.FindFirst(claimType)?.Value;
+
         if (string.IsNullOrEmpty(userIdClaim))
         {
-            _logger.LogWarning("User ID claim is missing.");
-            return null;
+            _logger.LogDebug("Claim {ClaimType} not found, trying 'sub'.", claimType);
+            claimType = "sub";
+            userIdClaim = User.FindFirst(claimType)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                _logger.LogWarning("User ID claim is missing. Checked {PrimaryClaim} and 'sub'.", ClaimTypes.NameIdentifier);
+                return null;
+            }
         }
 
         if (!Guid.TryParse(userIdClaim, out var userId))
         {
-            _logger.LogWarning("Invalid User ID claim: {UserIdClaim}", userIdClaim);
+            _logger.LogWarning("Invalid User ID claim: {UserIdClaim} (claim type: {ClaimType})", userIdClaim, claimType);
             return null;
         }
 
