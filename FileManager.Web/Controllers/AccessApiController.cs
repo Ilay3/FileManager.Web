@@ -4,6 +4,7 @@ using FileManager.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace FileManager.Web.Controllers;
 
@@ -13,10 +14,12 @@ namespace FileManager.Web.Controllers;
 public class AccessApiController : ControllerBase
 {
     private readonly IAccessService _accessService;
+    private readonly ILogger<AccessApiController> _logger;
 
-    public AccessApiController(IAccessService accessService)
+    public AccessApiController(IAccessService accessService, ILogger<AccessApiController> logger)
     {
         _accessService = accessService;
+        _logger = logger;
     }
 
     [HttpGet("file/{fileId}")]
@@ -37,7 +40,13 @@ public class AccessApiController : ControllerBase
     public async Task<IActionResult> GrantAccess([FromBody] GrantAccessRequest request)
     {
         var userId = GetCurrentUserId();
-        await _accessService.GrantAccessAsync(request.FileId, request.FolderId, request.UserId, request.GroupId, request.AccessType, userId, request.Inherit);
+        if (!userId.HasValue)
+        {
+            _logger.LogWarning("GrantAccess called without a valid user ID.");
+            return Unauthorized();
+        }
+
+        await _accessService.GrantAccessAsync(request.FileId, request.FolderId, request.UserId, request.GroupId, request.AccessType, userId.Value, request.Inherit);
         return Ok();
     }
 
@@ -45,9 +54,15 @@ public class AccessApiController : ControllerBase
     public async Task<IActionResult> BulkGrant([FromBody] BulkGrantRequest request)
     {
         var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+        {
+            _logger.LogWarning("BulkGrant called without a valid user ID.");
+            return Unauthorized();
+        }
+
         foreach (var item in request.Rules)
         {
-            await _accessService.GrantAccessAsync(item.FileId, item.FolderId, item.UserId, item.GroupId, item.AccessType, userId, item.Inherit);
+            await _accessService.GrantAccessAsync(item.FileId, item.FolderId, item.UserId, item.GroupId, item.AccessType, userId.Value, item.Inherit);
         }
         return Ok();
     }
@@ -56,14 +71,32 @@ public class AccessApiController : ControllerBase
     public async Task<IActionResult> Revoke(Guid ruleId)
     {
         var userId = GetCurrentUserId();
-        var result = await _accessService.RevokeAccessAsync(ruleId, userId);
+        if (!userId.HasValue)
+        {
+            _logger.LogWarning("Revoke called without a valid user ID.");
+            return Unauthorized();
+        }
+
+        var result = await _accessService.RevokeAccessAsync(ruleId, userId.Value);
         return result ? NoContent() : NotFound();
     }
 
-    private Guid GetCurrentUserId()
+    private Guid? GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            _logger.LogWarning("User ID claim is missing.");
+            return null;
+        }
+
+        if (!Guid.TryParse(userIdClaim, out var userId))
+        {
+            _logger.LogWarning("Invalid User ID claim: {UserIdClaim}", userIdClaim);
+            return null;
+        }
+
+        return userId;
     }
 
     public record GrantAccessRequest(Guid? FileId, Guid? FolderId, Guid? UserId, Guid? GroupId, AccessType AccessType, bool Inherit = true);
