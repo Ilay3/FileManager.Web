@@ -21,6 +21,7 @@ public enum AuditAction
     FolderDelete,
     FolderRename,
     FolderMove,
+    FolderRestore,
 
     // Управление доступом
     AccessGranted,

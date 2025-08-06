@@ -1,0 +1,80 @@
+@page "/Photos"
+@model FileManager.Web.Pages.Photos.IndexModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Фото";
+}
+
+<h2>Фото</h2>
+
+<div class="photo-gallery">
+@foreach (var photo in Model.Photos)
+{
+    <div class="photo-item">
+        <img src="/api/files/@photo.Id/content" alt="@photo.Name" />
+        <div class="photo-actions">
+            <a href="/api/files/@photo.Id/content" download>Скачать</a>
+            <a href="javascript:void(0)" onclick="openAccessModal('@photo.Id', false)">Доступ</a>
+            <a href="javascript:void(0)" onclick="showProperties('@photo.Id','@photo.Name')">Свойства</a>
+            <a href="javascript:void(0)" onclick="deletePhoto('@photo.Id','@photo.Name')">Удалить</a>
+        </div>
+    </div>
+}
+</div>
+
+<partial name="~/Pages/Files/_AccessModal.cshtml" />
+<partial name="~/Pages/Files/_PropertiesModal.cshtml" />
+
+@section Scripts {
+<script>
+function deletePhoto(id,name){
+    if(window.deleteFile){
+        deleteFile(id,name);
+    }
+}
+function showProperties(id,name){
+    if(window.filesManager){
+        filesManager.showProperties(id,name,'file');
+    }
+}
+</script>
+}
+
+<style>
+.photo-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.photo-item {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    overflow: hidden;
+}
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.photo-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    transform: translateY(100%);
+    transition: transform .2s;
+}
+.photo-item:hover .photo-actions {
+    transform: translateY(0);
+}
+.photo-actions a {
+    color: white;
+    padding: 2px 5px;
+}
+</style>

@@ -11,6 +11,9 @@ public interface IFilesRepository
     Task<Files> CreateAsync(Files file);
     Task<Files> UpdateAsync(Files file);
     Task DeleteAsync(Guid id);
+    Task HardDeleteAsync(Guid id);
+    Task<Files?> GetDeletedByIdAsync(Guid id);
+    Task<IEnumerable<Files>> GetDeletedAsync(Guid? userId = null);
     Task<IEnumerable<Files>> SearchByNameAsync(string searchTerm);
     Task<IEnumerable<Files>> SearchAsync(string? searchTerm = null, Guid? folderId = null,
         FileType? fileType = null, string? extension = null, DateTime? dateFrom = null,
