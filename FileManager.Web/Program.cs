@@ -3,7 +3,6 @@ using FileManager.Infrastructure.Data;
 using FileManager.Application.Services;
 using FileManager.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using FileManager.Domain.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,12 +86,11 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var userService = scope.ServiceProvider.GetRequiredService<UserService>();
-    var yandexDiskService = scope.ServiceProvider.GetRequiredService<IYandexDiskService>();
 
     try
     {
         await context.Database.EnsureCreatedAsync();
-        await DatabaseInitializer.InitializeAsync(context, userService, yandexDiskService);
+        await DatabaseInitializer.InitializeAsync(context, userService);
     }
     catch (Exception ex)
     {
