@@ -1,0 +1,62 @@
+@page "/Admin/Users"
+@model FileManager.Web.Pages.Admin.UsersModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Пользователи";
+    if (User.FindFirst("IsAdmin")?.Value != "True")
+    {
+        Response.Redirect("/Files");
+        return;
+    }
+}
+
+<h2>Пользователи</h2>
+<a class="btn btn-primary mb-3" href="/Admin/CreateUser">Создать пользователя</a>
+<table class="table table-striped" id="usersTable">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>ФИО</th>
+            <th>Отдел</th>
+            <th>Администратор</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+async function loadUsers() {
+    const res = await fetch('/api/users', { credentials: 'include' });
+    const users = res.ok ? await res.json() : [];
+    const tbody = document.querySelector('#usersTable tbody');
+    tbody.innerHTML = '';
+    for (const u of users) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${u.email}</td>
+            <td>${u.fullName}</td>
+            <td>${u.department ?? ''}</td>
+            <td><input type="checkbox" ${u.isAdmin ? 'checked' : ''} onchange="toggleAdmin('${u.id}', this.checked)" /></td>
+            <td><button class="btn btn-secondary btn-small" onclick="deleteUser('${u.id}')">Удалить</button></td>`;
+        tbody.appendChild(tr);
+    }
+}
+
+async function deleteUser(id) {
+    if (!confirm('Удалить пользователя?')) return;
+    await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+    await loadUsers();
+}
+
+async function toggleAdmin(id, isAdmin) {
+    await fetch(`/api/users/${id}/admin`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isAdmin }),
+        credentials: 'include'
+    });
+}
+
+loadUsers();
+</script>
