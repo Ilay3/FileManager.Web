@@ -10,7 +10,7 @@ namespace FileManager.Web.Controllers;
 
 [Authorize]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/access")]
 public class AccessApiController : ControllerBase
 {
     private readonly IAccessService _accessService;
@@ -88,11 +88,20 @@ public class AccessApiController : ControllerBase
 
     private async Task<Guid?> GetCurrentUserIdAsync()
     {
-        foreach (var claimType in new[] { ClaimTypes.NameIdentifier, "sub" })
+        _logger.LogDebug("User claims: {Claims}", string.Join(", ", User.Claims.Select(c => $"{c.Type}:{c.Value}")));
+
+        foreach (var claimType in new[] { ClaimTypes.NameIdentifier, "sub", "id" })
         {
             var userIdClaim = User.FindFirst(claimType)?.Value;
-            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var id))
+            if (string.IsNullOrEmpty(userIdClaim))
+                continue;
+
+            if (Guid.TryParse(userIdClaim, out var id))
                 return id;
+
+            var user = await _userService.GetUserByEmailAsync(userIdClaim);
+            if (user != null)
+                return user.Id;
         }
 
         var email = User.FindFirst(ClaimTypes.Email)?.Value;
@@ -106,6 +115,7 @@ public class AccessApiController : ControllerBase
         _logger.LogWarning("User ID claim is missing or invalid.");
         return null;
     }
+
 
     public record GrantAccessRequest(Guid? FileId, Guid? FolderId, Guid? UserId, Guid? GroupId, AccessType AccessType, bool Inherit = true);
     public record BulkGrantRequest(List<GrantAccessRequest> Rules);
