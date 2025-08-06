@@ -149,12 +149,16 @@
 @await Html.PartialAsync("_FolderModals")
 @await Html.PartialAsync("_UploadModal")
 @await Html.PartialAsync("_AccessModal")
+@await Html.PartialAsync("_PropertiesModal")
 <div id="contextMenu" class="context-menu">
     <ul>
+        <li data-action="preview">Предпросмотр</li>
+        <li data-action="edit">Редактировать</li>
         <li data-action="rename">Переименовать</li>
         <li data-action="download">Скачать</li>
         <li data-action="access">Доступ</li>
         <li data-action="delete">Удалить</li>
+        <li data-action="properties">Свойства</li>
     </ul>
 </div>
 <div id="notificationContainer" class="notification-container"></div>
