@@ -44,6 +44,25 @@ public class UsersApiController : ControllerBase
         return Ok();
     }
 
+    [HttpDelete("{id}")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var deleted = await _userService.DeleteUserAsync(id);
+        return deleted ? NoContent() : NotFound();
+    }
+
+    [HttpPut("{id}/admin")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> UpdateAdmin(Guid id, [FromBody] UpdateAdminRequest request)
+    {
+        var user = await _userService.SetAdminStatusAsync(id, request.IsAdmin);
+        if (user == null) return NotFound();
+        var dto = await _userDtoService.GetUserByIdAsync(id);
+        return Ok(dto);
+    }
+
     public record CreateUserRequest(string Email, string FullName, string Password, string? Department, bool IsAdmin);
     public record RegisterRequest(string Email, string FullName, string Password, string? Department);
+    public record UpdateAdminRequest(bool IsAdmin);
 }

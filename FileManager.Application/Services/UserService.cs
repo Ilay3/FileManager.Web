@@ -131,6 +131,27 @@ public class UserService
         return await _userRepository.GetAllAsync();
     }
 
+    public async Task<bool> DeleteUserAsync(Guid userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null) return false;
+
+        await _userRepository.DeleteAsync(userId);
+        _logger.LogInformation("Удалён пользователь {UserId}", userId);
+        return true;
+    }
+
+    public async Task<User?> SetAdminStatusAsync(Guid userId, bool isAdmin)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null) return null;
+
+        user.IsAdmin = isAdmin;
+        await _userRepository.UpdateAsync(user);
+        _logger.LogInformation("Изменён статус администратора пользователя {UserId} на {IsAdmin}", userId, isAdmin);
+        return user;
+    }
+
     public async Task<bool> UserExistsAsync(string email)
     {
         return await _userRepository.ExistsAsync(email);
