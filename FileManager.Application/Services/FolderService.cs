@@ -312,8 +312,14 @@ public class FolderService : IFolderService
         return await MapToFolderDtoAsync(folder);
     }
 
-    public async Task<bool> DeleteFolderAsync(Guid id, Guid userId)
+    public async Task<bool> DeleteFolderAsync(Guid id, Guid userId, bool isAdmin = false)
     {
+        var folder = await _folderRepository.GetByIdAsync(id);
+        if (folder == null) return false;
+
+        if (!isAdmin && folder.CreatedById != userId)
+            return false;
+
         var filesCount = await _folderRepository.GetFilesCountInFolderAsync(id);
         var subFoldersCount = await _folderRepository.GetSubFoldersCountAsync(id);
         if (filesCount > 0 || subFoldersCount > 0)

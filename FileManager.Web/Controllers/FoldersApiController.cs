@@ -111,7 +111,8 @@ public class FoldersApiController : ControllerBase
     public async Task<IActionResult> DeleteFolder(Guid id)
     {
         var userId = GetCurrentUserId();
-        var result = await _folderService.DeleteFolderAsync(id, userId);
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+        var result = await _folderService.DeleteFolderAsync(id, userId, isAdmin);
         if (!result)
             return BadRequest("Невозможно удалить папку");
         return NoContent();

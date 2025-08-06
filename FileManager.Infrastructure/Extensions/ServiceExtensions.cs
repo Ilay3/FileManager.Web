@@ -51,6 +51,8 @@ public static class ServiceExtensions
         services.AddScoped<IFilePreviewService, FilePreviewService>();
         services.AddScoped<IFileVersionService, FileVersionService>();
         services.AddScoped<IAccessService, AccessService>();
+        services.AddScoped<IFavoriteService, FavoriteService>();
+        services.AddScoped<ITrashService, TrashService>();
 
         // Background services
         services.AddHostedService<FileMonitoringService>();

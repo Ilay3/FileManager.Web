@@ -243,14 +243,9 @@ public class FileService : IFileService
         var file = await _filesRepository.GetByIdAsync(id);
         if (file == null) return;
 
-        if (!isAdmin)
-        {
-            var access = await _accessService.GetEffectiveAccessAsync(userId, file.Id);
-            if ((access & AccessType.Write) != AccessType.Write)
-                throw new InvalidOperationException("Недостаточно прав для удаления файла");
-        }
+        if (!isAdmin && file.UploadedById != userId)
+            throw new InvalidOperationException("Недостаточно прав для удаления файла");
 
-        await _yandexDiskService.DeleteFileAsync(file.YandexPath);
         await _filesRepository.DeleteAsync(id);
         await _auditService.LogAsync(AuditAction.FileDelete, userId, fileId: id, description: "Удалил файл");
     }

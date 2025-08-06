@@ -61,13 +61,46 @@ public class FilesRepository : IFilesRepository
 
     public async Task DeleteAsync(Guid id)
     {
-        var file = await GetByIdAsync(id);
+        var file = await _context.Files.FirstOrDefaultAsync(f => f.Id == id && !f.IsDeleted);
         if (file != null)
         {
             file.IsDeleted = true;
+            file.DeletedAt = DateTime.UtcNow;
             file.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task HardDeleteAsync(Guid id)
+    {
+        var file = await _context.Files.FirstOrDefaultAsync(f => f.Id == id);
+        if (file != null)
+        {
+            _context.Files.Remove(file);
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task<Files?> GetDeletedByIdAsync(Guid id)
+    {
+        return await _context.Files
+            .Include(f => f.UploadedBy)
+            .Include(f => f.Folder)
+            .FirstOrDefaultAsync(f => f.Id == id && f.IsDeleted);
+    }
+
+    public async Task<IEnumerable<Files>> GetDeletedAsync(Guid? userId = null)
+    {
+        var query = _context.Files
+            .Where(f => f.IsDeleted)
+            .Include(f => f.UploadedBy)
+            .Include(f => f.Folder)
+            .AsQueryable();
+
+        if (userId.HasValue)
+            query = query.Where(f => f.UploadedById == userId.Value);
+
+        return await query.OrderByDescending(f => f.DeletedAt).ToListAsync();
     }
 
     public async Task<IEnumerable<Files>> SearchByNameAsync(string searchTerm)

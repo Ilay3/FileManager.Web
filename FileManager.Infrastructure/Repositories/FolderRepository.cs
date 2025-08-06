@@ -57,13 +57,46 @@ public class FolderRepository : IFolderRepository
 
     public async Task DeleteAsync(Guid id)
     {
-        var folder = await GetByIdAsync(id);
+        var folder = await _context.Folders.FirstOrDefaultAsync(f => f.Id == id && !f.IsDeleted);
         if (folder != null)
         {
             folder.IsDeleted = true;
+            folder.DeletedAt = DateTime.UtcNow;
             folder.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task HardDeleteAsync(Guid id)
+    {
+        var folder = await _context.Folders.FirstOrDefaultAsync(f => f.Id == id);
+        if (folder != null)
+        {
+            _context.Folders.Remove(folder);
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task<Folder?> GetDeletedByIdAsync(Guid id)
+    {
+        return await _context.Folders
+            .Include(f => f.CreatedBy)
+            .Include(f => f.ParentFolder)
+            .FirstOrDefaultAsync(f => f.Id == id && f.IsDeleted);
+    }
+
+    public async Task<IEnumerable<Folder>> GetDeletedAsync(Guid? userId = null)
+    {
+        var query = _context.Folders
+            .Where(f => f.IsDeleted)
+            .Include(f => f.CreatedBy)
+            .Include(f => f.ParentFolder)
+            .AsQueryable();
+
+        if (userId.HasValue)
+            query = query.Where(f => f.CreatedById == userId.Value);
+
+        return await query.OrderByDescending(f => f.DeletedAt).ToListAsync();
     }
 
     public async Task<Folder?> GetByYandexPathAsync(string yandexPath)

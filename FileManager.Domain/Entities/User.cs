@@ -54,4 +54,5 @@ public class User : BaseEntity
     public virtual ICollection<FileVersion> FileVersions { get; set; } = new List<FileVersion>();
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
     public virtual ICollection<AccessRule> AccessRules { get; set; } = new List<AccessRule>();
+    public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
 }

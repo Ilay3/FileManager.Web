@@ -10,6 +10,9 @@ public interface IFolderRepository
     Task<Folder> CreateAsync(Folder folder);
     Task<Folder> UpdateAsync(Folder folder);
     Task DeleteAsync(Guid id);
+    Task HardDeleteAsync(Guid id);
+    Task<Folder?> GetDeletedByIdAsync(Guid id);
+    Task<IEnumerable<Folder>> GetDeletedAsync(Guid? userId = null);
     Task<Folder?> GetByYandexPathAsync(string yandexPath);
     Task<IEnumerable<Folder>> GetFolderTreeAsync(Guid? rootFolderId = null);
     Task<IEnumerable<Folder>> GetUserAccessibleFoldersAsync(Guid userId);

@@ -16,6 +16,7 @@ public interface IAppDbContext
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<FileEditSession> FileEditSessions { get; }
+    DbSet<Favorite> Favorites { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
