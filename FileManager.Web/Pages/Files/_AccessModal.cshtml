@@ -136,12 +136,28 @@
                 credentials: 'include'
             });
             if (!res.ok) {
-                alert('Ошибка сохранения прав доступа');
+                const errorText = await res.text();
+                console.error(errorText);
+                if (res.status === 401 || res.status === 403) {
+                    alert('Необходимо авторизоваться');
+                } else {
+                    alert(`Ошибка сохранения прав доступа: ${errorText}`);
+                }
             }
         }
 
         for (const id of toRevoke) {
-            await fetch(`/api/access/${id}`, { method: 'DELETE', credentials: 'include' });
+            const res = await fetch(`/api/access/${id}`, { method: 'DELETE', credentials: 'include' });
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error(errorText);
+                if (res.status === 401 || res.status === 403) {
+                    alert('Необходимо авторизоваться');
+                    break;
+                } else {
+                    alert(`Ошибка удаления прав доступа: ${errorText}`);
+                }
+            }
         }
 
         closeAccessModal();
