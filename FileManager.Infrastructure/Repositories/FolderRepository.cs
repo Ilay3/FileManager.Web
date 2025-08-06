@@ -94,10 +94,18 @@ public class FolderRepository : IFolderRepository
 
     public async Task<IEnumerable<Folder>> GetUserAccessibleFoldersAsync(Guid userId)
     {
-        // TODO: Implement access control
-        // For now, return all folders
+        // Получаем группы, в которых состоит пользователь
+        var userGroupIds = await _context.Groups
+            .Where(g => g.Users.Any(u => u.Id == userId))
+            .Select(g => g.Id)
+            .ToListAsync();
+
         return await _context.Folders
-            .Where(f => !f.IsDeleted)
+            .Where(f => f.ParentFolderId == null && !f.IsDeleted)
+            .Where(f => f.AccessRules.Any(r =>
+                r.FolderId == f.Id &&
+                (r.UserId == userId || (r.GroupId.HasValue && userGroupIds.Contains(r.GroupId.Value))) &&
+                (r.AccessType & Domain.Enums.AccessType.Read) == Domain.Enums.AccessType.Read))
             .Include(f => f.CreatedBy)
             .OrderBy(f => f.Name)
             .ToListAsync();

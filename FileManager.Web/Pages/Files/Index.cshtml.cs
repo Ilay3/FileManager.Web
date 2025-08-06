@@ -48,7 +48,7 @@ public class IndexModel : PageModel
         if (ViewMode.ToLower() == "grid")
         {
             FilesResult = await _fileService.GetFilesAsync(SearchRequest, userId, isAdmin);
-            var folderContents = await _folderService.GetFolderContentsAsync(CurrentFolderId, userId, SearchRequest);
+            var folderContents = await _folderService.GetFolderContentsAsync(CurrentFolderId, userId, SearchRequest, isAdmin);
             if (folderContents != null)
             {
                 GridItems = folderContents.Children
@@ -92,7 +92,7 @@ public class IndexModel : PageModel
         }
         else
         {
-            CurrentFolderContents = await _folderService.GetFolderContentsAsync(CurrentFolderId, userId, SearchRequest);
+            CurrentFolderContents = await _folderService.GetFolderContentsAsync(CurrentFolderId, userId, SearchRequest, isAdmin);
         }
     }
 
