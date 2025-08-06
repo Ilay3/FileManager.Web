@@ -14,6 +14,7 @@ public class FileUploadService
     private readonly IFolderRepository _folderRepository;
     private readonly IUserRepository _userRepository;
     private readonly IYandexDiskService _yandexDiskService;
+    private readonly IAccessService _accessService;
     private readonly IAuditService _auditService;
     private readonly IFileStorageOptions _storageOptions;
     private readonly ILogger<FileUploadService> _logger;
@@ -23,6 +24,7 @@ public class FileUploadService
         IFolderRepository folderRepository,
         IUserRepository userRepository,
         IYandexDiskService yandexDiskService,
+        IAccessService accessService,
         IAuditService auditService,
         IFileStorageOptions storageOptions,
         ILogger<FileUploadService> logger)
@@ -31,6 +33,7 @@ public class FileUploadService
         _folderRepository = folderRepository;
         _userRepository = userRepository;
         _yandexDiskService = yandexDiskService;
+        _accessService = accessService;
         _auditService = auditService;
         _storageOptions = storageOptions;
         _logger = logger;
@@ -92,6 +95,9 @@ public class FileUploadService
             };
 
             fileEntity = await _filesRepository.CreateAsync(fileEntity);
+
+            await _accessService.GrantAccessAsync(fileEntity.Id, null, userId, null,
+                AccessType.FullAccess, userId);
 
             // Логируем действие
             await _auditService.LogAsync(
