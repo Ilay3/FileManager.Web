@@ -279,6 +279,10 @@ public class FolderService : IFolderService
         };
 
         var created = await _folderRepository.CreateAsync(folder);
+
+        await _accessService.GrantAccessAsync(null, created.Id, userId, null,
+            AccessType.FullAccess, userId);
+
         await _auditService.LogAsync(AuditAction.FolderCreate, userId, folderId: created.Id,
             description: $"Создал папку {name}");
 
