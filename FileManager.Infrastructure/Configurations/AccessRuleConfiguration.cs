@@ -44,7 +44,7 @@ public class AccessRuleConfiguration : IEntityTypeConfiguration<AccessRule>
 
         // Исправленные Check Constraints с правильными именами столбцов PostgreSQL
         builder.HasCheckConstraint("CK_AccessRules_FileOrFolder",
-            "(\"FileId\" IS NOT NULL AND \"FolderId\" IS NULL) OR (\"FileId\" IS NULL AND \"FolderId\" IS NOT NULL)");
+            "(\"FileId\" IS NOT NULL AND \"FolderId\" IS NULL) OR (\"FileId\" IS NULL AND \"FolderId\" IS NOT NULL) OR (\"FileId\" IS NULL AND \"FolderId\" IS NULL)");
 
         builder.HasCheckConstraint("CK_AccessRules_UserOrGroup",
             "(\"UserId\" IS NOT NULL AND \"GroupId\" IS NULL) OR (\"UserId\" IS NULL AND \"GroupId\" IS NOT NULL)");
