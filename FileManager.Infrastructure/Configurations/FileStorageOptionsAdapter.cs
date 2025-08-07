@@ -17,4 +17,5 @@ public class FileStorageOptionsAdapter : IFileStorageOptions
     public long MaxFileSize => _options.MaxFileSize;
     public string[] AllowedExtensions => _options.AllowedExtensions;
     public bool CreateFolderIfNotExists => _options.CreateFolderIfNotExists;
+    public long QuotaPerUser => _options.QuotaPerUser;
 }

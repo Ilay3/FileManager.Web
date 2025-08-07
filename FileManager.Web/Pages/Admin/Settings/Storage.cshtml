@@ -1,0 +1,39 @@
+@page "/Admin/Settings/Storage"
+@model FileManager.Web.Pages.Admin.Settings.StorageModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Настройки хранилища";
+
+    if (User.FindFirst("IsAdmin")?.Value != "True")
+    {
+        Response.Redirect("/Files");
+        return;
+    }
+}
+
+<h2>Настройки хранилища</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="ArchivePath" class="form-label">Путь к архиву</label>
+        <input asp-for="ArchivePath" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="MaxFileSize" class="form-label">Максимальный размер файла (байт)</label>
+        <input asp-for="MaxFileSize" class="form-control" type="number" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="AllowedExtensions" class="form-label">Разрешённые расширения (через запятую)</label>
+        <input asp-for="AllowedExtensions" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="QuotaPerUser" class="form-label">Квота на пользователя (байт)</label>
+        <input asp-for="QuotaPerUser" class="form-control" type="number" />
+    </div>
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>
