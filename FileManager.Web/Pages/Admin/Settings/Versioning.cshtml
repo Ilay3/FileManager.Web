@@ -1,0 +1,35 @@
+@page "/Admin/Settings/Versioning"
+@model FileManager.Web.Pages.Admin.Settings.VersioningModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Настройки версионирования";
+
+    if (User.FindFirst("IsAdmin")?.Value != "True")
+    {
+        Response.Redirect("/Files");
+        return;
+    }
+}
+
+<h2>Настройки версионирования</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<form method="post">
+    <div class="mb-3 form-check">
+        <input asp-for="Enabled" class="form-check-input" type="checkbox" />
+        <label asp-for="Enabled" class="form-check-label">Включить версионирование</label>
+    </div>
+    <div class="mb-3">
+        <label asp-for="MaxVersionsPerFile" class="form-label">Максимум версий на файл</label>
+        <input asp-for="MaxVersionsPerFile" class="form-control" type="number" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="RetentionDays" class="form-label">Срок хранения (дней)</label>
+        <input asp-for="RetentionDays" class="form-control" type="number" />
+    </div>
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>

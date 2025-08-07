@@ -17,6 +17,7 @@ public class FilePreviewService : IFilePreviewService
     private readonly IFileVersionService _fileVersionService;
     private readonly IAppDbContext _context;
     private readonly ILogger<FilePreviewService> _logger;
+    private readonly IVersioningOptions _versioningOptions;
 
     private readonly string[] _previewableExtensions = { ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".txt", ".docx", ".xlsx", ".pptx" };
     private readonly string[] _editableExtensions = { ".docx", ".xlsx", ".pptx" };
@@ -27,6 +28,7 @@ public class FilePreviewService : IFilePreviewService
         IAuditService auditService,
         IFileVersionService fileVersionService,
         IAppDbContext context,
+        IVersioningOptions versioningOptions,
         ILogger<FilePreviewService> logger)
     {
         _filesRepository = filesRepository;
@@ -34,6 +36,7 @@ public class FilePreviewService : IFilePreviewService
         _auditService = auditService;
         _fileVersionService = fileVersionService;
         _context = context;
+        _versioningOptions = versioningOptions;
         _logger = logger;
     }
 
@@ -103,7 +106,10 @@ public class FilePreviewService : IFilePreviewService
             }
 
             // Создаем версию перед началом редактирования
-            await _fileVersionService.CreateVersionAsync(fileId, userId, "Версия перед началом редактирования");
+            if (_versioningOptions.Enabled)
+            {
+                await _fileVersionService.CreateVersionAsync(fileId, userId, "Версия перед началом редактирования");
+            }
 
             var editUrl = await _yandexDiskService.GetEditLinkAsync(file.YandexPath);
 
@@ -233,7 +239,10 @@ public class FilePreviewService : IFilePreviewService
                 await _context.SaveChangesAsync();
 
                 // Создаем версию после завершения редактирования
-                await _fileVersionService.CreateVersionAsync(session.FileId, userId, "Версия после завершения редактирования");
+                if (_versioningOptions.Enabled)
+                {
+                    await _fileVersionService.CreateVersionAsync(session.FileId, userId, "Версия после завершения редактирования");
+                }
 
                 _logger.LogInformation("Edit session {SessionId} ended by user {UserId}", sessionId, userId);
             }

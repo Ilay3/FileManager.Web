@@ -110,6 +110,28 @@ public class SettingsService : ISettingsService
         await File.WriteAllTextAsync(path, json);
     }
 
+    public Task<VersioningSettingsDto> GetVersioningOptionsAsync()
+    {
+        var options = new VersioningSettingsDto();
+        _configuration.GetSection("Versioning").Bind(options);
+        return Task.FromResult(options);
+    }
+
+    public async Task SaveVersioningOptionsAsync(VersioningSettingsDto options)
+    {
+        var path = Path.Combine(_environment.ContentRootPath, "appsettings.json");
+        JsonNode? root = JsonNode.Parse(await File.ReadAllTextAsync(path)) ?? new JsonObject();
+        var versioning = new JsonObject
+        {
+            ["Enabled"] = options.Enabled,
+            ["MaxVersionsPerFile"] = options.MaxVersionsPerFile,
+            ["RetentionDays"] = options.RetentionDays
+        };
+        root["Versioning"] = versioning;
+        var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(path, json);
+    }
+
     public Task<EmailSettingsDto> GetEmailOptionsAsync()
     {
         var options = new EmailSettingsDto();

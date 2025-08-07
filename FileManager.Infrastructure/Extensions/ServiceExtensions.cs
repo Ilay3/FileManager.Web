@@ -30,6 +30,7 @@ public static class ServiceExtensions
 
         // Адаптер
         services.AddScoped<IFileStorageOptions, FileStorageOptionsAdapter>();
+        services.AddScoped<IVersioningOptions, VersioningOptionsAdapter>();
 
         // Репозитории
         services.AddScoped<IUserRepository, UserRepository>();

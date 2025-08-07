@@ -14,4 +14,6 @@ public interface ISettingsService
     Task<bool> SendTestEmailAsync(EmailSettingsDto options);
     Task<AuditSettingsDto> GetAuditOptionsAsync();
     Task SaveAuditOptionsAsync(AuditSettingsDto options);
+    Task<VersioningSettingsDto> GetVersioningOptionsAsync();
+    Task SaveVersioningOptionsAsync(VersioningSettingsDto options);
 }

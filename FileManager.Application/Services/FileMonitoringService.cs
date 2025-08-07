@@ -48,6 +48,7 @@ public class FileMonitoringService : BackgroundService
         var filesRepository = scope.ServiceProvider.GetRequiredService<IFilesRepository>();
         var yandexDiskService = scope.ServiceProvider.GetRequiredService<IYandexDiskService>();
         var fileVersionService = scope.ServiceProvider.GetRequiredService<IFileVersionService>();
+        var versioningOptions = scope.ServiceProvider.GetRequiredService<IVersioningOptions>();
         var context = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         // Получаем все активные сессии редактирования
@@ -59,7 +60,7 @@ public class FileMonitoringService : BackgroundService
         {
             try
             {
-                await CheckFileForChanges(session.FileId, session.UserId, filesRepository, yandexDiskService, fileVersionService);
+                await CheckFileForChanges(session.FileId, session.UserId, filesRepository, yandexDiskService, fileVersionService, versioningOptions);
             }
             catch (Exception ex)
             {
@@ -69,8 +70,11 @@ public class FileMonitoringService : BackgroundService
     }
 
     private async Task CheckFileForChanges(Guid fileId, Guid userId, IFilesRepository filesRepository,
-        IYandexDiskService yandexDiskService, IFileVersionService fileVersionService)
+        IYandexDiskService yandexDiskService, IFileVersionService fileVersionService, IVersioningOptions versioningOptions)
     {
+        if (!versioningOptions.Enabled)
+            return;
+
         var file = await filesRepository.GetByIdAsync(fileId);
         if (file == null) return;
 
