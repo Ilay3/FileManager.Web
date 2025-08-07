@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
 
 namespace FileManager.Web.Models;
 
@@ -16,8 +15,6 @@ public class ProfileViewModel
 
     [StringLength(100)]
     public string? Department { get; set; }
-
-    public IFormFile? Photo { get; set; }
 
     [DataType(DataType.Password)]
     public string? CurrentPassword { get; set; }

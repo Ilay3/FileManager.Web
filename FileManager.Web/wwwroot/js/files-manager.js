@@ -920,9 +920,11 @@ function closePropertiesModal() {
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function () {
+function initializeFilesManager() {
     filesManager = new FilesManager();
-});
+}
+
+document.addEventListener('DOMContentLoaded', initializeFilesManager);
 
 
 // Upload modal functions (will be loaded from _UploadModal.cshtml)
