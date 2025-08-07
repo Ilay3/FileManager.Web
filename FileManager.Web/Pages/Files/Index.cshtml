@@ -6,82 +6,6 @@
 }
 
 <div class="files-wrapper">
-    <!-- Toolbar -->
-    <div class="toolbar d-flex flex-wrap gap-2 align-items-center">
-        <div class="btn-group">
-            <button class="btn btn-primary" onclick="openUploadModal('@Model.CurrentFolderId')">
-                <i class="bi bi-upload"></i> Загрузить файл
-            </button>
-            <button class="btn btn-secondary" onclick="openCreateFolderModal('@Model.CurrentFolderId')">
-                <i class="bi bi-folder-plus"></i> Создать папку
-            </button>
-            <button class="btn btn-secondary" onclick="openAccessModal('@Model.CurrentFolderId', true)">
-                <i class="bi bi-shield-lock"></i> Настроить доступ
-            </button>
-            <button class="btn btn-secondary" id="downloadSelected" onclick="downloadSelected()" disabled>
-                <i class="bi bi-download"></i> Скачать выбранные
-            </button>
-        </div>
-        <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
-            <div class="input-group">
-                <input type="text" id="searchInput" placeholder="Поиск файлов и папок..." class="form-control"
-                       value="@Model.SearchRequest.SearchTerm" />
-                <button type="button" id="searchBtn" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
-            </div>
-            <select id="filterType" class="form-select">
-                <option value="">Все типы</option>
-                <option value="Document">Документы</option>
-                <option value="Spreadsheet">Таблицы</option>
-                <option value="Presentation">Презентации</option>
-                <option value="Pdf">PDF</option>
-                <option value="Image">Изображения</option>
-                <option value="Archive">Архивы</option>
-            </select>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="onlyMyFiles" @(Model.SearchRequest.OnlyMyFiles ? "checked" : "") />
-                <label class="form-check-label" for="onlyMyFiles">Только мои</label>
-            </div>
-            <button class="btn btn-outline-secondary" type="button" onclick="toggleAdvanced()">Фильтры</button>
-            <div class="btn-group">
-                <button class="btn btn-outline-secondary @(Model.ViewMode == "list" ? "active" : "")" onclick="changeView('list')" title="Список">
-                    <i class="bi bi-view-list"></i>
-                </button>
-                <button class="btn btn-outline-secondary @(Model.ViewMode == "grid" ? "active" : "")" onclick="changeView('grid')" title="Сетка">
-                    <i class="bi bi-grid"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="advancedFilters" style="display:none" class="advanced-filters">
-        <div>
-            <label>Дата создания от:</label>
-            <input type="date" id="dateFrom" value="@Model.SearchRequest.DateFrom?.ToString("yyyy-MM-dd")" />
-            <label>до:</label>
-            <input type="date" id="dateTo" value="@Model.SearchRequest.DateTo?.ToString("yyyy-MM-dd")" />
-        </div>
-        <div>
-            <label>Дата изменения от:</label>
-            <input type="date" id="updatedFrom" value="@Model.SearchRequest.UpdatedFrom?.ToString("yyyy-MM-dd")" />
-            <label>до:</label>
-            <input type="date" id="updatedTo" value="@Model.SearchRequest.UpdatedTo?.ToString("yyyy-MM-dd")" />
-        </div>
-        <div>
-            <label>Расширение:</label>
-            <input type="text" id="extension" value="@Model.SearchRequest.Extension" />
-            <label>Размер от (байт):</label>
-            <input type="number" id="minSize" value="@Model.SearchRequest.MinSizeBytes" />
-            <label>до:</label>
-            <input type="number" id="maxSize" value="@Model.SearchRequest.MaxSizeBytes" />
-        </div>
-        <div>
-            <label>Теги:</label>
-            <input type="text" id="tags" value="@Model.SearchRequest.Tags" />
-            <label>Владелец (GUID):</label>
-            <input type="text" id="ownerId" value="@Model.SearchRequest.OwnerId" />
-        </div>
-        <button class="btn btn-primary" type="button" onclick="applyFilters()">Применить</button>
-    </div>
 
     <!-- Breadcrumbs -->
     @if (Model.Breadcrumbs.Any())
@@ -152,13 +76,16 @@
 @await Html.PartialAsync("_PropertiesModal")
 <div id="contextMenu" class="context-menu">
     <ul>
-        <li data-action="preview">Предпросмотр</li>
-        <li data-action="edit">Редактировать</li>
-        <li data-action="rename">Переименовать</li>
-        <li data-action="download">Скачать</li>
-        <li data-action="access">Доступ</li>
-        <li data-action="delete">Удалить</li>
-        <li data-action="properties">Свойства</li>
+        <li data-action="upload" title="Загрузить"><i class="bi bi-upload"></i></li>
+        <li data-action="create-folder" title="Создать папку"><i class="bi bi-folder-plus"></i></li>
+        <li data-action="manage-access" title="Управление доступом"><i class="bi bi-shield-lock"></i></li>
+        <li data-action="preview" title="Предпросмотр"><i class="bi bi-eye"></i></li>
+        <li data-action="edit" title="Редактировать"><i class="bi bi-pencil"></i></li>
+        <li data-action="rename" title="Переименовать"><i class="bi bi-pencil-square"></i></li>
+        <li data-action="download" title="Скачать"><i class="bi bi-download"></i></li>
+        <li data-action="access" title="Доступ"><i class="bi bi-person-lock"></i></li>
+        <li data-action="delete" title="Удалить"><i class="bi bi-trash"></i></li>
+        <li data-action="properties" title="Свойства"><i class="bi bi-info-circle"></i></li>
     </ul>
 </div>
 <div id="notificationContainer" class="notification-container"></div>
