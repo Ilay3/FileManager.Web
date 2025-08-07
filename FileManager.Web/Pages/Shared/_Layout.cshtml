@@ -26,6 +26,8 @@
                     }
                 </div>
                 <a href="/Files" class="sidebar-link"><i class="bi bi-folder"></i> Мои документы</a>
+                <a href="/Favorites" class="sidebar-link"><i class="bi bi-star"></i> Избранное</a>
+                <a href="/Trash" class="sidebar-link"><i class="bi bi-trash"></i> Корзина</a>
                 @if (User.FindFirst("IsAdmin")?.Value == "True")
                 {
                     <a href="/Admin" class="sidebar-link"><i class="bi bi-gear"></i> Администрирование</a>
@@ -43,7 +45,7 @@
                     </div>
                 </header>
                 <main class="content-main">
-                    <div class="container">
+                    <div class="container" id="pageContainer">
                         @RenderBody()
                     </div>
                 </main>
@@ -53,7 +55,7 @@
     else
     {
         <main class="content-main">
-            <div class="container">
+            <div class="container" id="pageContainer">
                 @RenderBody()
             </div>
         </main>

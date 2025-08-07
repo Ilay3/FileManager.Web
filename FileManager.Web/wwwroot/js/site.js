@@ -1,7 +1,8 @@
 let mainContainer;
+let isLoading = false;
 
 document.addEventListener('DOMContentLoaded', function () {
-    mainContainer = document.querySelector('main');
+    mainContainer = document.getElementById('pageContainer');
     if (mainContainer) {
         mainContainer.classList.add('page-enter');
         mainContainer.addEventListener('animationend', () => {
@@ -52,14 +53,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-window.navigateWithTransition = function (url) {
-    if (mainContainer) {
-        mainContainer.classList.add('page-leave');
-        mainContainer.addEventListener('animationend', () => {
+window.loadPage = async function (url, addToHistory = true) {
+    if (isLoading) return;
+    isLoading = true;
+    console.log('loadPage', url);
+    try {
+        const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!response.ok) {
             window.location.href = url;
-        }, { once: true });
-    } else {
+            return;
+        }
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const newContent = doc.getElementById('pageContainer');
+        const current = document.getElementById('pageContainer');
+        if (newContent && current) {
+            current.innerHTML = newContent.innerHTML;
+            if (addToHistory) {
+                history.pushState(null, '', url);
+            }
+        } else {
+            window.location.href = url;
+        }
+    } catch (err) {
+        console.error('loadPage error', err);
         window.location.href = url;
+    } finally {
+        isLoading = false;
     }
 };
 
@@ -71,7 +91,11 @@ document.addEventListener('click', function (e) {
     if (link.getAttribute('target') === '_blank' || link.hasAttribute('download')) return;
     if (link.origin !== window.location.origin) return;
     e.preventDefault();
-    navigateWithTransition(link.href);
+    loadPage(link.href);
+});
+
+window.addEventListener('popstate', () => {
+    loadPage(window.location.href, false);
 });
 
 window.showNotification = function (message, type = 'info') {

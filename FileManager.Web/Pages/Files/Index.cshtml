@@ -33,6 +33,11 @@
         <input type="text" id="searchInput" placeholder="Поиск..." oninput="filesManager.loadFiles(this.value)" />
     </div>
 
+    <div class="view-toggle">
+        <button id="viewList" class="btn btn-secondary btn-small" type="button" title="Список"><i class="bi bi-list"></i></button>
+        <button id="viewGrid" class="btn btn-secondary btn-small" type="button" title="Сетка"><i class="bi bi-grid"></i></button>
+    </div>
+
     <!-- Content Area -->
     <div class="content-area">
         @if (Model.ViewMode == "grid")
