@@ -16,6 +16,14 @@ class FilesManager {
         this.loadInitialData();
     }
 
+    navigateTo(url) {
+        if (window.navigateWithTransition) {
+            window.navigateWithTransition(url);
+        } else {
+            window.location.href = url;
+        }
+    }
+
     bindEvents() {
         // Search functionality
         const searchInput = document.getElementById('searchInput');
@@ -52,7 +60,7 @@ class FilesManager {
             const id = item.dataset.id;
             const type = item.dataset.type;
             if (type === 'folder') {
-                window.location.href = `?folderId=${id}&view=${this.currentView}`;
+                this.navigateTo(`?folderId=${id}&view=${this.currentView}`);
             } else {
                 this.previewFile(id);
             }
@@ -231,7 +239,7 @@ class FilesManager {
             delete params['SearchRequest.SearchTerm'];
         }
         const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
-        window.location.href = newUrl;
+        this.navigateTo(newUrl);
     }
 
     applyFilters() {
@@ -268,7 +276,7 @@ class FilesManager {
 
         // Update URL and reload
         const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
-        window.location.href = newUrl;
+        this.navigateTo(newUrl);
     }
 
     buildSearchParams() {
@@ -402,7 +410,7 @@ class FilesManager {
     async previewFile(fileId) {
         try {
             // Переходим на страницу предпросмотра
-            window.location.href = `/Files/Preview/${fileId}`;
+            this.navigateTo(`/Files/Preview/${fileId}`);
         } catch (error) {
             console.error('Error opening file preview:', error);
             this.showNotification('Ошибка при открытии предпросмотра файла', 'error');
@@ -894,7 +902,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Version management functions
 window.viewVersions = function (fileId) {
-    window.location.href = `/Files/${fileId}/Versions`;
+    if (window.navigateWithTransition) {
+        window.navigateWithTransition(`/Files/${fileId}/Versions`);
+    } else {
+        window.location.href = `/Files/${fileId}/Versions`;
+    }
 };
 
 // Add version button to file actions where appropriate
