@@ -29,6 +29,10 @@
         </div>
     }
 
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Поиск..." oninput="filesManager.loadFiles(this.value)" />
+    </div>
+
     <!-- Content Area -->
     <div class="content-area">
         @if (Model.ViewMode == "grid")

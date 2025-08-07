@@ -231,6 +231,37 @@ class FilesManager {
         this.currentView = params.get('view') || 'list';
     }
 
+    async loadFiles(searchTerm = '') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams();
+
+        const folderId = urlParams.get('folderId');
+        if (folderId) params.append('FolderId', folderId);
+
+        const fileType = urlParams.get('SearchRequest.FileType');
+        if (fileType) params.append('FileType', fileType);
+
+        const onlyMy = urlParams.get('SearchRequest.OnlyMyFiles');
+        if (onlyMy === 'true') params.append('OnlyMyFiles', 'true');
+
+        if (searchTerm) params.append('SearchTerm', searchTerm);
+
+        const sortBy = urlParams.get('SearchRequest.SortBy') || 'name';
+        const sortDir = urlParams.get('SearchRequest.SortDirection') || 'asc';
+        params.append('SortBy', sortBy);
+        params.append('SortDirection', sortDir);
+
+        try {
+            const response = await fetch(`/api/files?${params.toString()}`);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Loaded files:', data);
+            }
+        } catch (error) {
+            console.error('Error loading files:', error);
+        }
+    }
+
     performSearch(searchTerm) {
         const params = this.buildSearchParams();
         if (searchTerm) {
