@@ -29,10 +29,12 @@ public static class ServiceExtensions
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
         services.Configure<ThemeOptions>(configuration.GetSection(ThemeOptions.SectionName));
         services.Configure<UploadSecurityOptions>(configuration.GetSection(UploadSecurityOptions.SectionName));
+        services.Configure<CleanupOptions>(configuration.GetSection(CleanupOptions.SectionName));
 
         // Адаптер
         services.AddScoped<IFileStorageOptions, FileStorageOptionsAdapter>();
         services.AddScoped<IVersioningOptions, VersioningOptionsAdapter>();
+        services.AddScoped<ICleanupOptions, CleanupOptionsAdapter>();
 
         // Репозитории
         services.AddScoped<IUserRepository, UserRepository>();
@@ -63,6 +65,8 @@ public static class ServiceExtensions
         // Background services
         services.AddHostedService<FileMonitoringService>();
         services.AddHostedService<AuditCleanupService>();
+        services.AddHostedService<TrashCleanupService>();
+        services.AddHostedService<ArchiveCleanupService>();
 
         return services;
     }
