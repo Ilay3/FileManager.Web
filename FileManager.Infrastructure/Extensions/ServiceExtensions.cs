@@ -34,7 +34,7 @@ public static class ServiceExtensions
         // Адаптер
         services.AddScoped<IFileStorageOptions, FileStorageOptionsAdapter>();
         services.AddScoped<IVersioningOptions, VersioningOptionsAdapter>();
-        services.AddScoped<ICleanupOptions, CleanupOptionsAdapter>();
+        services.AddSingleton<ICleanupOptions, CleanupOptionsAdapter>();
 
         // Репозитории
         services.AddScoped<IUserRepository, UserRepository>();
