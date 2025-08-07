@@ -16,4 +16,6 @@ public interface ISettingsService
     Task SaveAuditOptionsAsync(AuditSettingsDto options);
     Task<VersioningSettingsDto> GetVersioningOptionsAsync();
     Task SaveVersioningOptionsAsync(VersioningSettingsDto options);
+    Task<ThemeSettingsDto> GetThemeOptionsAsync();
+    Task SaveThemeOptionsAsync(ThemeSettingsDto options);
 }
