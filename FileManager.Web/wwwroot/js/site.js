@@ -69,6 +69,9 @@ window.loadPage = async function (url, addToHistory = true) {
         const current = document.getElementById('pageContainer');
         if (newContent && current) {
             current.innerHTML = newContent.innerHTML;
+            if (typeof initializeFilesManager === 'function') {
+                initializeFilesManager();
+            }
             if (addToHistory) {
                 history.pushState(null, '', url);
             }

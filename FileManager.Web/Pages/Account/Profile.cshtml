@@ -7,7 +7,7 @@
 <h2>Личный кабинет</h2>
 <div class="profile-wrapper">
     <div class="profile-form">
-        <form method="post" enctype="multipart/form-data">
+        <form method="post">
             <div class="form-group">
                 <label asp-for="ProfileData.FullName">ФИО</label>
                 <input asp-for="ProfileData.FullName" class="form-input" />
@@ -21,10 +21,6 @@
             <div class="form-group">
                 <label asp-for="ProfileData.Department">Отдел</label>
                 <input asp-for="ProfileData.Department" class="form-input" />
-            </div>
-            <div class="form-group">
-                <label asp-for="ProfileData.Photo">Фото профиля</label>
-                <input asp-for="ProfileData.Photo" type="file" class="form-input" />
             </div>
             <div class="form-group">
                 <label asp-for="ProfileData.CurrentPassword">Текущий пароль</label>
