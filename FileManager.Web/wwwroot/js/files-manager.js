@@ -649,13 +649,9 @@ class FilesManager {
 
     // Utility method for notifications
     showNotification(message, type = 'info') {
-        const container = document.getElementById('notificationContainer');
-        if (!container) return;
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
-        container.appendChild(notification);
-        setTimeout(() => notification.remove(), 5000);
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(message, type);
+        }
     }
 
     // Utility functions
