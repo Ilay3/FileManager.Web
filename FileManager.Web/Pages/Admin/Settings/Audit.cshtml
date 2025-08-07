@@ -1,0 +1,48 @@
+@page "/Admin/Settings/Audit"
+@model FileManager.Web.Pages.Admin.Settings.AuditModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Настройки аудита";
+
+    if (User.FindFirst("IsAdmin")?.Value != "True")
+    {
+        Response.Redirect("/Files");
+        return;
+    }
+}
+
+<h2>Настройки аудита</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<form method="post">
+    <div class="mb-3 form-check">
+        <input asp-for="EnableFileActions" class="form-check-input" type="checkbox" />
+        <label asp-for="EnableFileActions" class="form-check-label">Логировать действия с файлами</label>
+    </div>
+    <div class="mb-3 form-check">
+        <input asp-for="EnableUserActions" class="form-check-input" type="checkbox" />
+        <label asp-for="EnableUserActions" class="form-check-label">Логировать действия пользователей</label>
+    </div>
+    <div class="mb-3 form-check">
+        <input asp-for="EnableAccessLog" class="form-check-input" type="checkbox" />
+        <label asp-for="EnableAccessLog" class="form-check-label">Логировать управление доступом</label>
+    </div>
+    <div class="mb-3">
+        <label asp-for="LogLevel" class="form-label">Уровень логирования</label>
+        <select asp-for="LogLevel" class="form-select">
+            @foreach (var level in Model.LogLevels)
+            {
+                <option>@level</option>
+            }
+        </select>
+    </div>
+    <div class="mb-3">
+        <label asp-for="RetentionDays" class="form-label">Срок хранения (дней)</label>
+        <input asp-for="RetentionDays" class="form-control" type="number" />
+    </div>
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>

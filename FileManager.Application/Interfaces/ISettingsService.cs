@@ -12,4 +12,6 @@ public interface ISettingsService
     Task<EmailSettingsDto> GetEmailOptionsAsync();
     Task SaveEmailOptionsAsync(EmailSettingsDto options);
     Task<bool> SendTestEmailAsync(EmailSettingsDto options);
+    Task<AuditSettingsDto> GetAuditOptionsAsync();
+    Task SaveAuditOptionsAsync(AuditSettingsDto options);
 }
