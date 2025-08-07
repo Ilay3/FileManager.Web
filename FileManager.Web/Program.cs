@@ -3,6 +3,7 @@ using FileManager.Infrastructure.Data;
 using FileManager.Application.Services;
 using FileManager.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,7 +90,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        await context.Database.EnsureCreatedAsync();
+        await context.Database.MigrateAsync();
         await DatabaseInitializer.InitializeAsync(context, userService);
     }
     catch (Exception ex)
