@@ -1,9 +1,7 @@
-﻿namespace FileManager.Infrastructure.Configuration;
+namespace FileManager.Application.DTOs;
 
-public class VersioningOptions
+public class VersioningSettingsDto
 {
-    public const string SectionName = "Versioning";
-
     public bool Enabled { get; set; } = true;
     public int MaxVersionsPerFile { get; set; } = 10;
     public int RetentionDays { get; set; } = 365;

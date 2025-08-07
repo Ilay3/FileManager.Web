@@ -5,8 +5,9 @@ using FileManager.Domain.Enums;
 using FileManager.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FileManager.Application.Services;
 
@@ -18,6 +19,7 @@ public class FileVersionService : IFileVersionService
     private readonly IAuditService _auditService;
     private readonly IFileStorageOptions _storageOptions;
     private readonly ILogger<FileVersionService> _logger;
+    private readonly IVersioningOptions _versioningOptions;
 
     public FileVersionService(
         IAppDbContext context,
@@ -25,6 +27,7 @@ public class FileVersionService : IFileVersionService
         IYandexDiskService yandexDiskService,
         IAuditService auditService,
         IFileStorageOptions storageOptions,
+        IVersioningOptions versioningOptions,
         ILogger<FileVersionService> logger)
     {
         _context = context;
@@ -32,11 +35,15 @@ public class FileVersionService : IFileVersionService
         _yandexDiskService = yandexDiskService;
         _auditService = auditService;
         _storageOptions = storageOptions;
+        _versioningOptions = versioningOptions;
         _logger = logger;
     }
 
     public async Task<FileVersionDto> CreateVersionAsync(Guid fileId, Guid userId, string? comment = null)
     {
+        if (!_versioningOptions.Enabled)
+            throw new InvalidOperationException("Версионирование отключено");
+
         var file = await _filesRepository.GetByIdAsync(fileId);
         if (file == null)
             throw new InvalidOperationException("Файл не найден");
@@ -166,6 +173,9 @@ public class FileVersionService : IFileVersionService
 
     public async Task<bool> RestoreVersionAsync(Guid fileId, Guid versionId, Guid userId, string? comment)
     {
+        if (!_versioningOptions.Enabled)
+            return false;
+
         var file = await _filesRepository.GetByIdAsync(fileId);
         var version = await _context.FileVersions.FindAsync(versionId);
 
@@ -227,15 +237,28 @@ public class FileVersionService : IFileVersionService
 
     public async Task CleanupOldVersionsAsync(Guid fileId)
     {
-        const int maxVersionsPerFile = 10; // Можно вынести в настройки
+        var maxVersionsPerFile = _versioningOptions.MaxVersionsPerFile;
+        var retentionDays = _versioningOptions.RetentionDays;
 
         var versions = await _context.FileVersions
             .Where(v => v.FileId == fileId)
             .OrderByDescending(v => v.VersionNumber)
-            .Skip(maxVersionsPerFile)
             .ToListAsync();
 
-        foreach (var version in versions)
+        var toRemove = new List<FileVersion>();
+
+        if (maxVersionsPerFile > 0)
+        {
+            toRemove.AddRange(versions.Skip(maxVersionsPerFile));
+        }
+
+        if (retentionDays > 0)
+        {
+            var cutoff = DateTime.UtcNow.AddDays(-retentionDays);
+            toRemove.AddRange(versions.Where(v => v.CreatedAt < cutoff));
+        }
+
+        foreach (var version in toRemove.Distinct())
         {
             // Удаляем физический файл
             if (version.LocalArchivePath != null && File.Exists(version.LocalArchivePath))
@@ -253,10 +276,10 @@ public class FileVersionService : IFileVersionService
             _context.FileVersions.Remove(version);
         }
 
-        if (versions.Any())
+        if (toRemove.Any())
         {
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Cleaned up {Count} old versions for file {FileId}", versions.Count, fileId);
+            _logger.LogInformation("Cleaned up {Count} old versions for file {FileId}", toRemove.Count, fileId);
         }
     }
 
