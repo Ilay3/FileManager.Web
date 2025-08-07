@@ -1,12 +1,12 @@
-﻿namespace FileManager.Infrastructure.Configuration;
+using System;
 
-public class FileStorageOptions
+namespace FileManager.Application.DTOs;
+
+public class StorageSettingsDto
 {
-    public const string SectionName = "FileStorage";
-
     public string ArchivePath { get; set; } = "./Archive";
     public long MaxFileSize { get; set; } = 104857600;
     public string[] AllowedExtensions { get; set; } = Array.Empty<string>();
     public bool CreateFolderIfNotExists { get; set; } = true;
-    public long QuotaPerUser { get; set; } = 0;
+    public long QuotaPerUser { get; set; }
 }

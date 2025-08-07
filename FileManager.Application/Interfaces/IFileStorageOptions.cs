@@ -6,4 +6,5 @@ public interface IFileStorageOptions
     long MaxFileSize { get; }
     string[] AllowedExtensions { get; }
     bool CreateFolderIfNotExists { get; }
+    long QuotaPerUser { get; }
 }

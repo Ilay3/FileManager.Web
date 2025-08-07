@@ -53,6 +53,7 @@ public static class ServiceExtensions
         services.AddScoped<IAccessService, AccessService>();
         services.AddScoped<IFavoriteService, FavoriteService>();
         services.AddScoped<ITrashService, TrashService>();
+        services.AddScoped<ISettingsService, SettingsService>();
 
         // Background services
         services.AddHostedService<FileMonitoringService>();
