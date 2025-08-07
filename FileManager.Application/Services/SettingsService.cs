@@ -45,6 +45,11 @@ public class SettingsService : ISettingsService
         root["FileStorage"] = storage;
         var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(path, json);
+
+        if (_configuration is IConfigurationRoot configurationRoot)
+        {
+            configurationRoot.Reload();
+        }
     }
 
     public Task<SecuritySettingsDto> GetSecurityOptionsAsync()
@@ -84,6 +89,11 @@ public class SettingsService : ISettingsService
         root["Security"] = security;
         var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(path, json);
+
+        if (_configuration is IConfigurationRoot configurationRoot)
+        {
+            configurationRoot.Reload();
+        }
     }
 
     public Task<AuditSettingsDto> GetAuditOptionsAsync()
@@ -108,6 +118,11 @@ public class SettingsService : ISettingsService
         root["Audit"] = audit;
         var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(path, json);
+
+        if (_configuration is IConfigurationRoot configurationRoot)
+        {
+            configurationRoot.Reload();
+        }
     }
 
     public Task<VersioningSettingsDto> GetVersioningOptionsAsync()
@@ -164,28 +179,6 @@ public class SettingsService : ISettingsService
         await File.WriteAllTextAsync(path, json);
     }
 
-    public Task<ThemeSettingsDto> GetThemeOptionsAsync()
-    {
-        var options = new ThemeSettingsDto();
-        _configuration.GetSection("Theme").Bind(options);
-        return Task.FromResult(options);
-    }
-
-    public async Task SaveThemeOptionsAsync(ThemeSettingsDto options)
-    {
-        var path = Path.Combine(_environment.ContentRootPath, "appsettings.json");
-        JsonNode? root = JsonNode.Parse(await File.ReadAllTextAsync(path)) ?? new JsonObject();
-        var theme = new JsonObject
-        {
-            ["Theme"] = options.Theme,
-            ["LogoUrl"] = options.LogoUrl,
-            ["AccentColor"] = options.AccentColor
-        };
-        root["Theme"] = theme;
-        var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
-        await File.WriteAllTextAsync(path, json);
-    }
-
     public Task<UploadSecuritySettingsDto> GetUploadSecurityOptionsAsync()
     {
         var options = new UploadSecuritySettingsDto();
@@ -206,6 +199,11 @@ public class SettingsService : ISettingsService
         root["UploadSecurity"] = upload;
         var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(path, json);
+
+        if (_configuration is IConfigurationRoot configurationRoot)
+        {
+            configurationRoot.Reload();
+        }
     }
 
     public Task<CleanupSettingsDto> GetCleanupOptionsAsync()
