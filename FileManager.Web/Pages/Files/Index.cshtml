@@ -1,5 +1,6 @@
 ﻿@page "/Files"
 @model FileManager.Web.Pages.Files.IndexModel
+@using FileManager.Domain.Enums
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @{
     ViewData["Title"] = "Документы";
@@ -31,6 +32,45 @@
 
     <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Поиск..." oninput="filesManager.loadFiles(this.value)" />
+        <button type="button" class="btn btn-secondary btn-small" onclick="filesManager.toggleAdvanced()">Фильтры</button>
+    </div>
+
+    <div id="advancedFilters" class="mt-3" style="display:none">
+        <div class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label">Тип файла</label>
+                <select id="filterType" class="form-select">
+                    <option value="">Все</option>
+                    @foreach (FileType t in Enum.GetValues(typeof(FileType)))
+                    {
+                        <option value="@t">@t</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="onlyMyFiles" />
+                    <label class="form-check-label" for="onlyMyFiles">Только мои</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Владелец</label>
+                <input id="ownerSearch" list="usersList" class="form-control" placeholder="email пользователя" />
+                <datalist id="usersList"></datalist>
+                <input type="hidden" id="ownerId" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">С даты</label>
+                <input type="date" id="dateFrom" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">По дату</label>
+                <input type="date" id="dateTo" class="form-control" />
+            </div>
+        </div>
+        <div class="mt-2">
+            <button type="button" class="btn btn-primary btn-sm" onclick="filesManager.applyFilters()">Применить</button>
+        </div>
     </div>
 
     <div class="view-toggle">

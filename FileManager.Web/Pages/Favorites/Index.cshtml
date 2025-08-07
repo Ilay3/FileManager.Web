@@ -1,0 +1,48 @@
+@page "/Favorites"
+@model FileManager.Web.Pages.Favorites.IndexModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Избранное";
+}
+
+<h2>Избранное</h2>
+
+@if (Model.Favorites.Count == 0)
+{
+    <p>У вас пока нет избранных элементов.</p>
+}
+else
+{
+    <ul class="favorites-list">
+    @foreach (var item in Model.Favorites)
+    {
+        <li>
+            @if (item.Type == "file")
+            {
+                <i class="bi bi-file-earmark"></i>
+                <a href="/api/files/@item.Id/content">@item.Name</a>
+            }
+            else
+            {
+                <i class="bi bi-folder"></i>
+                <a href="/Files?folderId=@item.Id">@item.Name</a>
+            }
+            <button class="btn btn-link text-danger" title="Удалить из избранного" onclick="removeFavorite('@item.Id','@item.Type')"><i class="bi bi-x"></i></button>
+        </li>
+    }
+    </ul>
+}
+
+@section Scripts {
+<script>
+async function removeFavorite(id, type) {
+    const url = type === 'file' ? `/api/favorites/files/${id}` : `/api/favorites/folders/${id}`;
+    const response = await fetch(url, { method: 'DELETE' });
+    if (response.ok) {
+        location.reload();
+    } else {
+        alert('Не удалось удалить из избранного');
+    }
+}
+</script>
+}

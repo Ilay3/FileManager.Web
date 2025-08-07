@@ -38,6 +38,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizePage("/Files/Index");
     options.Conventions.AuthorizePage("/Files");
     options.Conventions.AuthorizePage("/Admin", "AdminOnly");
+    options.Conventions.AuthorizePage("/Account/Profile");
 });
 
 // Добавляем поддержку контроллеров для API

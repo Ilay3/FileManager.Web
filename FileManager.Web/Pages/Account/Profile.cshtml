@@ -1,0 +1,60 @@
+@page "/Account/Profile"
+@model FileManager.Web.Pages.Account.ProfileModel
+@{
+    ViewData["Title"] = "Личный кабинет";
+}
+
+<h2>Личный кабинет</h2>
+<div class="profile-wrapper">
+    <div class="profile-form">
+        <form method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label asp-for="ProfileData.FullName">ФИО</label>
+                <input asp-for="ProfileData.FullName" class="form-input" />
+                <span asp-validation-for="ProfileData.FullName" class="text-error"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ProfileData.Email">Email</label>
+                <input asp-for="ProfileData.Email" class="form-input" />
+                <span asp-validation-for="ProfileData.Email" class="text-error"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ProfileData.Department">Отдел</label>
+                <input asp-for="ProfileData.Department" class="form-input" />
+            </div>
+            <div class="form-group">
+                <label asp-for="ProfileData.Photo">Фото профиля</label>
+                <input asp-for="ProfileData.Photo" type="file" class="form-input" />
+            </div>
+            <div class="form-group">
+                <label asp-for="ProfileData.CurrentPassword">Текущий пароль</label>
+                <input asp-for="ProfileData.CurrentPassword" type="password" class="form-input" />
+            </div>
+            <div class="form-group">
+                <label asp-for="ProfileData.NewPassword">Новый пароль</label>
+                <input asp-for="ProfileData.NewPassword" type="password" class="form-input" />
+            </div>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </form>
+    </div>
+    <div class="profile-info">
+        <div class="profile-avatar">
+            @if (!string.IsNullOrEmpty(Model.ImagePath))
+            {
+                <img src="@Model.ImagePath" alt="avatar" />
+            }
+            else
+            {
+                <img src="/images/default-avatar.svg" alt="avatar" />
+            }
+        </div>
+        <div class="profile-stats">
+            <p>Загружено файлов: @Model.FilesUploaded</p>
+            <p>Последний вход: @Model.LastLoginAt?.ToLocalTime().ToString("g")</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
