@@ -17,8 +17,8 @@ class FilesManager {
     }
 
     navigateTo(url) {
-        if (window.navigateWithTransition) {
-            window.navigateWithTransition(url);
+        if (window.loadPage) {
+            window.loadPage(url);
         } else {
             window.location.href = url;
         }
@@ -41,6 +41,15 @@ class FilesManager {
             searchBtn.addEventListener('click', () => {
                 this.performSearch(searchInput.value);
             });
+        }
+
+        const viewGrid = document.getElementById('viewGrid');
+        if (viewGrid) {
+            viewGrid.addEventListener('click', () => this.changeView('grid'));
+        }
+        const viewList = document.getElementById('viewList');
+        if (viewList) {
+            viewList.addEventListener('click', () => this.changeView('list'));
         }
 
         // Filter changes
@@ -306,6 +315,15 @@ class FilesManager {
         if (ownerId && ownerId.value) params['SearchRequest.OwnerId'] = ownerId.value;
 
         // Update URL and reload
+        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
+        this.navigateTo(newUrl);
+    }
+
+    changeView(view) {
+        if (this.currentView === view) return;
+        this.currentView = view;
+        const params = this.buildSearchParams();
+        params.view = view;
         const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
         this.navigateTo(newUrl);
     }
@@ -664,13 +682,6 @@ class FilesManager {
         } catch (error) {
             console.error('Error granting access:', error);
         }
-    }
-
-    // View switching
-    changeView(viewMode) {
-        const params = new URLSearchParams(window.location.search);
-        params.set('view', viewMode);
-        window.location.search = params.toString();
     }
 
     // Sorting
