@@ -515,8 +515,11 @@ class FilesManager {
 
         const modalEl = document.getElementById('propertiesModal');
         if (modalEl) {
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
+            modalEl.style.display = 'flex';
+            setTimeout(() => {
+                modalEl.classList.remove('modal-exit');
+                modalEl.classList.add('modal-enter');
+            }, 10);
         }
     }
 
@@ -726,12 +729,24 @@ function openCreateFolderModal(parentId) {
     const input = document.getElementById('createFolderName');
     if (input) input.value = '';
     const modal = document.getElementById('createFolderModal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.remove('modal-exit');
+            modal.classList.add('modal-enter');
+        }, 10);
+    }
 }
 
 function closeCreateFolderModal() {
     const modal = document.getElementById('createFolderModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.remove('modal-enter');
+        modal.classList.add('modal-exit');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
 }
 
 function submitCreateFolder() {
@@ -748,12 +763,24 @@ function openRenameFolderModal(folderId, currentName) {
     const input = document.getElementById('renameFolderName');
     if (input) input.value = currentName;
     const modal = document.getElementById('renameFolderModal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.remove('modal-exit');
+            modal.classList.add('modal-enter');
+        }, 10);
+    }
 }
 
 function closeRenameFolderModal() {
     const modal = document.getElementById('renameFolderModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.remove('modal-enter');
+        modal.classList.add('modal-exit');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
 }
 
 function submitRenameFolder() {
@@ -804,6 +831,17 @@ function toggleAdvanced() {
 function applyFilters() {
     if (filesManager) {
         filesManager.applyFilters();
+    }
+}
+
+function closePropertiesModal() {
+    const modal = document.getElementById('propertiesModal');
+    if (modal) {
+        modal.classList.remove('modal-enter');
+        modal.classList.add('modal-exit');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
     }
 }
 
