@@ -29,17 +29,9 @@ public class EmailService : IEmailService
         var subject = "Сброс пароля FileManager";
         var resetLink = $"https://localhost:7191/Account/ResetPassword?token={resetToken}&email={Uri.EscapeDataString(email)}";
 
-        var body = $@"
-            <h2>Сброс пароля</h2>
-            <p>Здравствуйте, {userName}!</p>
-            <p>Вы запросили сброс пароля для вашего аккаунта в системе FileManager.</p>
-            <p>Для создания нового пароля перейдите по ссылке:</p>
-            <p><a href='{resetLink}'>Сбросить пароль</a></p>
-            <p>Ссылка будет действительна в течение 1 часа.</p>
-            <p>Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.</p>
-            <br>
-            <p>С уважением,<br>Команда FileManager</p>
-        ";
+        var body = _emailOptions.PasswordResetTemplate
+            .Replace("{UserName}", userName)
+            .Replace("{ResetLink}", resetLink);
 
         await SendEmailAsync(email, subject, body);
     }
@@ -49,15 +41,9 @@ public class EmailService : IEmailService
         if (!_emailOptions.Enabled) return;
 
         var subject = "Ваш аккаунт заблокирован";
-        var body = $@"
-            <h2>Аккаунт заблокирован</h2>
-            <p>Здравствуйте, {userName}!</p>
-            <p>Ваш аккаунт в системе FileManager был заблокирован.</p>
-            <p><strong>Причина:</strong> {reason}</p>
-            <p>Для разблокировки аккаунта обратитесь к администратору системы.</p>
-            <br>
-            <p>С уважением,<br>Команда FileManager</p>
-        ";
+        var body = _emailOptions.AccountLockedTemplate
+            .Replace("{UserName}", userName)
+            .Replace("{Reason}", reason);
 
         await SendEmailAsync(email, subject, body);
     }
@@ -67,18 +53,10 @@ public class EmailService : IEmailService
         if (!_emailOptions.Enabled) return;
 
         var subject = "Добро пожаловать в FileManager";
-        var body = $@"
-            <h2>Добро пожаловать в FileManager</h2>
-            <p>Здравствуйте, {userName}!</p>
-            <p>Для вас был создан аккаунт в системе FileManager.</p>
-            <p><strong>Данные для входа:</strong></p>
-            <p>Email: {email}<br>
-            Временный пароль: {temporaryPassword}</p>
-            <p>После первого входа настоятельно рекомендуем сменить пароль.</p>
-            <p><a href='https://localhost:7191/Account/Login'>Войти в систему</a></p>
-            <br>
-            <p>С уважением,<br>Команда FileManager</p>
-        ";
+        var body = _emailOptions.WelcomeTemplate
+            .Replace("{UserName}", userName)
+            .Replace("{Email}", email)
+            .Replace("{Password}", temporaryPassword);
 
         await SendEmailAsync(email, subject, body);
     }
@@ -92,14 +70,9 @@ public class EmailService : IEmailService
         }
 
         var subject = "Подтверждение регистрации FileManager";
-        var body = $@"
-            <h2>Подтверждение регистрации</h2>
-            <p>Здравствуйте, {userName}!</p>
-            <p>Ваш код подтверждения: <strong>{code}</strong></p>
-            <p>Введите его на странице подтверждения email.</p>
-            <br>
-            <p>С уважением,<br>Команда FileManager</p>
-        ";
+        var body = _emailOptions.EmailConfirmationTemplate
+            .Replace("{UserName}", userName)
+            .Replace("{Code}", code);
 
         await SendEmailAsync(email, subject, body);
     }
