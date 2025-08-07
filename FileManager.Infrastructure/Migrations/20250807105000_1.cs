@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FileManager.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class main : Migration
+    public partial class _1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -40,6 +40,7 @@ namespace FileManager.Infrastructure.Migrations
                     IsAdmin = table.Column<bool>(type: "boolean", nullable: false),
                     LastLoginAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Department = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    ProfileImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     IsLocked = table.Column<bool>(type: "boolean", nullable: false),
                     LockedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     LockReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
@@ -175,7 +176,7 @@ namespace FileManager.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_access_rules", x => x.Id);
-                    table.CheckConstraint("CK_AccessRules_FileOrFolder", "(\"FileId\" IS NOT NULL AND \"FolderId\" IS NULL) OR (\"FileId\" IS NULL AND \"FolderId\" IS NOT NULL)");
+                    table.CheckConstraint("CK_AccessRules_FileOrFolder", "(\"FileId\" IS NOT NULL AND \"FolderId\" IS NULL) OR (\"FileId\" IS NULL AND \"FolderId\" IS NOT NULL) OR (\"FileId\" IS NULL AND \"FolderId\" IS NULL)");
                     table.CheckConstraint("CK_AccessRules_UserOrGroup", "(\"UserId\" IS NOT NULL AND \"GroupId\" IS NULL) OR (\"UserId\" IS NULL AND \"GroupId\" IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_access_rules_files_FileId",

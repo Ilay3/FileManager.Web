@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FileManager.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250807062948_main")]
-    partial class main
+    [Migration("20250807105000_1")]
+    partial class _1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -82,7 +82,7 @@ namespace FileManager.Infrastructure.Migrations
 
                     b.ToTable("access_rules", null, t =>
                         {
-                            t.HasCheckConstraint("CK_AccessRules_FileOrFolder", "(\"FileId\" IS NOT NULL AND \"FolderId\" IS NULL) OR (\"FileId\" IS NULL AND \"FolderId\" IS NOT NULL)");
+                            t.HasCheckConstraint("CK_AccessRules_FileOrFolder", "(\"FileId\" IS NOT NULL AND \"FolderId\" IS NULL) OR (\"FileId\" IS NULL AND \"FolderId\" IS NOT NULL) OR (\"FileId\" IS NULL AND \"FolderId\" IS NULL)");
 
                             t.HasCheckConstraint("CK_AccessRules_UserOrGroup", "(\"UserId\" IS NOT NULL AND \"GroupId\" IS NULL) OR (\"UserId\" IS NULL AND \"GroupId\" IS NOT NULL)");
                         });
@@ -625,6 +625,10 @@ namespace FileManager.Infrastructure.Migrations
 
                     b.Property<DateTime?>("PasswordResetTokenExpires")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProfileImagePath")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
