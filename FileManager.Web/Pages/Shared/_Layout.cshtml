@@ -29,6 +29,7 @@
                 @if (User.FindFirst("IsAdmin")?.Value == "True")
                 {
                     <a href="/Admin" class="sidebar-link"><i class="bi bi-gear"></i> Администрирование</a>
+                    <a href="/Admin/Settings" class="sidebar-link"><i class="bi bi-sliders"></i> Настройки</a>
                 }
                 <a href="/Docs" class="sidebar-link"><i class="bi bi-book"></i> Документация</a>
             </aside>
