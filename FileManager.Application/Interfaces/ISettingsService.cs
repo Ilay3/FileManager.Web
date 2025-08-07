@@ -18,4 +18,6 @@ public interface ISettingsService
     Task SaveVersioningOptionsAsync(VersioningSettingsDto options);
     Task<ThemeSettingsDto> GetThemeOptionsAsync();
     Task SaveThemeOptionsAsync(ThemeSettingsDto options);
+    Task<UploadSecuritySettingsDto> GetUploadSecurityOptionsAsync();
+    Task SaveUploadSecurityOptionsAsync(UploadSecuritySettingsDto options);
 }

@@ -5,6 +5,9 @@ using FileManager.Domain.Enums;
 using FileManager.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Security.Claims;
 
 namespace FileManager.Web.Controllers;
@@ -16,11 +19,19 @@ public class FileUploadController : ControllerBase
 {
     private readonly FileUploadService _fileUploadService;
     private readonly IFolderService _folderService;
+    private readonly ISettingsService _settingsService;
+    private readonly VirusScanService _virusScanService;
 
-    public FileUploadController(FileUploadService fileUploadService, IFolderService folderService)
+    public FileUploadController(
+        FileUploadService fileUploadService,
+        IFolderService folderService,
+        ISettingsService settingsService,
+        VirusScanService virusScanService)
     {
         _fileUploadService = fileUploadService;
         _folderService = folderService;
+        _settingsService = settingsService;
+        _virusScanService = virusScanService;
     }
 
     [HttpPost]
@@ -42,11 +53,53 @@ public class FileUploadController : ControllerBase
         }
 
         var results = new List<object>();
+        var options = await _settingsService.GetUploadSecurityOptionsAsync();
+        var blocked = new HashSet<string>(options.BlockedExtensions.Select(e => e.ToLowerInvariant()));
+        var quotaBytes = (long)options.UserQuotaMb * 1024 * 1024;
 
         foreach (var file in files)
         {
             try
             {
+                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (blocked.Contains(ext))
+                {
+                    results.Add(new
+                    {
+                        success = false,
+                        fileName = file.FileName,
+                        error = "Данный тип файлов запрещен"
+                    });
+                    continue;
+                }
+
+                if (quotaBytes > 0 && file.Length > quotaBytes)
+                {
+                    results.Add(new
+                    {
+                        success = false,
+                        fileName = file.FileName,
+                        error = "Размер файла превышает квоту пользователя"
+                    });
+                    continue;
+                }
+
+                if (options.EnableAntivirus)
+                {
+                    using var stream = file.OpenReadStream();
+                    var clean = await _virusScanService.ScanAsync(stream);
+                    if (!clean)
+                    {
+                        results.Add(new
+                        {
+                            success = false,
+                            fileName = file.FileName,
+                            error = "Файл заражен"
+                        });
+                        continue;
+                    }
+                }
+
                 var result = await _fileUploadService.UploadFileAsync(file, userId, folderId, comment);
                 results.Add(new
                 {

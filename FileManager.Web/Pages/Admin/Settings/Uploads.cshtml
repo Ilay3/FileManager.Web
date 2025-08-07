@@ -1,0 +1,36 @@
+@page "/Admin/Settings/Uploads"
+@model FileManager.Web.Pages.Admin.Settings.UploadsModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Настройки загрузок";
+
+    if (User.FindFirst("IsAdmin")?.Value != "True")
+    {
+        Response.Redirect("/Files");
+        return;
+    }
+}
+
+<h2>Настройки загрузок</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<form method="post">
+    <div class="mb-3 form-check">
+        <input asp-for="EnableAntivirus" class="form-check-input" type="checkbox" />
+        <label asp-for="EnableAntivirus" class="form-check-label">Включить антивирус</label>
+    </div>
+    <div class="mb-3">
+        <label asp-for="UserQuotaMb" class="form-label">Квота на пользователя (МБ)</label>
+        <input asp-for="UserQuotaMb" class="form-control" type="number" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="BlockedExtensions" class="form-label">Запрещенные расширения (через запятую)</label>
+        <input asp-for="BlockedExtensions" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>
+

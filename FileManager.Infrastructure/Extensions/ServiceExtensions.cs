@@ -28,6 +28,7 @@ public static class ServiceExtensions
         services.Configure<VersioningOptions>(configuration.GetSection(VersioningOptions.SectionName));
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
         services.Configure<ThemeOptions>(configuration.GetSection(ThemeOptions.SectionName));
+        services.Configure<UploadSecurityOptions>(configuration.GetSection(UploadSecurityOptions.SectionName));
 
         // Адаптер
         services.AddScoped<IFileStorageOptions, FileStorageOptionsAdapter>();
@@ -57,6 +58,7 @@ public static class ServiceExtensions
         services.AddScoped<ITrashService, TrashService>();
         services.AddScoped<ISettingsService, SettingsService>();
         services.AddScoped<IGroupService, GroupService>();
+        services.AddScoped<VirusScanService>();
 
         // Background services
         services.AddHostedService<FileMonitoringService>();
