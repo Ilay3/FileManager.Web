@@ -63,6 +63,30 @@ class FilesManager {
             onlyMyFiles.addEventListener('change', () => this.applyFilters());
         }
 
+        const ownerSearch = document.getElementById('ownerSearch');
+        if (ownerSearch) {
+            fetch('/api/users')
+                .then(r => r.json())
+                .then(users => {
+                    const list = document.getElementById('usersList');
+                    if (!list) return;
+                    users.forEach(u => {
+                        const opt = document.createElement('option');
+                        opt.value = u.email;
+                        opt.dataset.id = u.id;
+                        list.appendChild(opt);
+                    });
+                });
+
+            ownerSearch.addEventListener('input', () => {
+                const list = document.getElementById('usersList');
+                const match = Array.from(list.options).find(o => o.value === ownerSearch.value);
+                const hidden = document.getElementById('ownerId');
+                if (hidden) hidden.value = match ? match.dataset.id : '';
+                this.applyFilters();
+            });
+        }
+
         document.addEventListener('dblclick', (e) => {
             const item = e.target.closest('.explorer-item');
             if (!item) return;

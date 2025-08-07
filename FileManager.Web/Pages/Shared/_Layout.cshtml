@@ -41,6 +41,7 @@
                         <span><i class="bi bi-person"></i> @User.Identity.Name</span>
                         <span class="user-email">(@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value)</span>
                         <button id="themeToggle" class="btn btn-secondary btn-small" type="button"><i class="bi bi-moon"></i></button>
+                        <a href="/Account/Profile" class="btn btn-secondary btn-small">Профиль</a>
                         <a href="/Account/Logout" class="btn btn-secondary btn-small">Выход</a>
                     </div>
                 </header>

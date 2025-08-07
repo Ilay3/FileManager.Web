@@ -131,6 +131,37 @@ public class UserService
         return await _userRepository.GetAllAsync();
     }
 
+    public async Task<bool> UpdateProfileAsync(Guid userId, string email, string fullName, string? department, string? profileImagePath)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null) return false;
+
+        if (!string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase) && await _userRepository.ExistsAsync(email))
+            throw new InvalidOperationException($"Пользователь с email {email} уже существует");
+
+        user.Email = email;
+        user.FullName = fullName;
+        user.Department = department;
+        user.ProfileImagePath = profileImagePath;
+
+        await _userRepository.UpdateAsync(user);
+        return true;
+    }
+
+    public async Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null) return false;
+
+        if (user.PasswordHash != HashPassword(currentPassword))
+            return false;
+
+        ValidatePassword(newPassword);
+        user.PasswordHash = HashPassword(newPassword);
+        await _userRepository.UpdateAsync(user);
+        return true;
+    }
+
     public async Task<bool> DeleteUserAsync(Guid userId)
     {
         var user = await _userRepository.GetByIdAsync(userId);
