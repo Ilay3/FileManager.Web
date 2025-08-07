@@ -186,6 +186,28 @@ public class SettingsService : ISettingsService
         await File.WriteAllTextAsync(path, json);
     }
 
+    public Task<UploadSecuritySettingsDto> GetUploadSecurityOptionsAsync()
+    {
+        var options = new UploadSecuritySettingsDto();
+        _configuration.GetSection("UploadSecurity").Bind(options);
+        return Task.FromResult(options);
+    }
+
+    public async Task SaveUploadSecurityOptionsAsync(UploadSecuritySettingsDto options)
+    {
+        var path = Path.Combine(_environment.ContentRootPath, "appsettings.json");
+        JsonNode? root = JsonNode.Parse(await File.ReadAllTextAsync(path)) ?? new JsonObject();
+        var upload = new JsonObject
+        {
+            ["EnableAntivirus"] = options.EnableAntivirus,
+            ["UserQuotaMb"] = options.UserQuotaMb,
+            ["BlockedExtensions"] = new JsonArray(options.BlockedExtensions.Select(e => JsonValue.Create(e)).ToArray())
+        };
+        root["UploadSecurity"] = upload;
+        var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(path, json);
+    }
+
     public async Task<bool> SendTestEmailAsync(EmailSettingsDto options)
     {
         try
