@@ -164,6 +164,28 @@ public class SettingsService : ISettingsService
         await File.WriteAllTextAsync(path, json);
     }
 
+    public Task<ThemeSettingsDto> GetThemeOptionsAsync()
+    {
+        var options = new ThemeSettingsDto();
+        _configuration.GetSection("Theme").Bind(options);
+        return Task.FromResult(options);
+    }
+
+    public async Task SaveThemeOptionsAsync(ThemeSettingsDto options)
+    {
+        var path = Path.Combine(_environment.ContentRootPath, "appsettings.json");
+        JsonNode? root = JsonNode.Parse(await File.ReadAllTextAsync(path)) ?? new JsonObject();
+        var theme = new JsonObject
+        {
+            ["Theme"] = options.Theme,
+            ["LogoUrl"] = options.LogoUrl,
+            ["AccentColor"] = options.AccentColor
+        };
+        root["Theme"] = theme;
+        var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(path, json);
+    }
+
     public async Task<bool> SendTestEmailAsync(EmailSettingsDto options)
     {
         try

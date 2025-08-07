@@ -27,6 +27,7 @@ public static class ServiceExtensions
         services.Configure<AuditOptions>(configuration.GetSection(AuditOptions.SectionName));
         services.Configure<VersioningOptions>(configuration.GetSection(VersioningOptions.SectionName));
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
+        services.Configure<ThemeOptions>(configuration.GetSection(ThemeOptions.SectionName));
 
         // Адаптер
         services.AddScoped<IFileStorageOptions, FileStorageOptionsAdapter>();

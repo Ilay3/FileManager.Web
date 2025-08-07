@@ -1,4 +1,6 @@
 ﻿<!DOCTYPE html>
+@using FileManager.Infrastructure.Configuration
+@inject Microsoft.Extensions.Options.IOptions<ThemeOptions> ThemeOptions
 <html lang="ru">
 <head>
     <meta charset="utf-8" />
@@ -7,12 +9,22 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
 </head>
-<body>
+@{ var theme = ThemeOptions.Value; }
+<body class="@theme.Theme" style="--accent-color: @theme.AccentColor;">
     @if (User.Identity?.IsAuthenticated == true)
     {
         <div class="app-shell">
             <aside class="sidebar">
-                <div class="sidebar-logo">FileManager</div>
+                <div class="sidebar-logo">
+                    @if (!string.IsNullOrEmpty(theme.LogoUrl))
+                    {
+                        <img src="@theme.LogoUrl" alt="Logo" />
+                    }
+                    else
+                    {
+                        <span>FileManager</span>
+                    }
+                </div>
                 <a href="/Files" class="sidebar-link"><i class="bi bi-folder"></i> Мои документы</a>
                 @if (User.FindFirst("IsAdmin")?.Value == "True")
                 {
