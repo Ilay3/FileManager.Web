@@ -1,0 +1,47 @@
+@page "/Admin/Settings/Security"
+@model FileManager.Web.Pages.Admin.Settings.SecurityModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Настройки безопасности";
+
+    if (User.FindFirst("IsAdmin")?.Value != "True")
+    {
+        Response.Redirect("/Files");
+        return;
+    }
+}
+
+<h2>Настройки безопасности</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<form method="post">
+    <div class="mb-3 form-check">
+        <input asp-for="RequireTwoFactor" class="form-check-input" type="checkbox" />
+        <label asp-for="RequireTwoFactor" class="form-check-label">Требовать двухфакторную аутентификацию</label>
+    </div>
+    <div class="mb-3">
+        <label asp-for="PasswordComplexity" class="form-label">Сложность пароля</label>
+        <select asp-for="PasswordComplexity" class="form-select">
+            <option>Low</option>
+            <option>Medium</option>
+            <option>High</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label asp-for="MaxLoginAttempts" class="form-label">Максимальное число попыток входа</label>
+        <input asp-for="MaxLoginAttempts" class="form-control" type="number" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="LockoutMinutes" class="form-label">Блокировка (минут)</label>
+        <input asp-for="LockoutMinutes" class="form-control" type="number" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="SessionTimeoutMinutes" class="form-label">Таймаут сессии (минут)</label>
+        <input asp-for="SessionTimeoutMinutes" class="form-control" type="number" />
+    </div>
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>
