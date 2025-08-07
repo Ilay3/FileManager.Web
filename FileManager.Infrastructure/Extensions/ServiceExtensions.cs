@@ -59,7 +59,6 @@ public static class ServiceExtensions
         services.AddScoped<IFavoriteService, FavoriteService>();
         services.AddScoped<ITrashService, TrashService>();
         services.AddScoped<ISettingsService, SettingsService>();
-        services.AddScoped<IGroupService, GroupService>();
         services.AddScoped<VirusScanService>();
 
         // Background services
