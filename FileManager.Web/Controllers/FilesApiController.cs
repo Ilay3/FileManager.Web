@@ -24,8 +24,7 @@ public class FilesApiController : ControllerBase
     {
         var userId = GetCurrentUserId();
         var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
-
-        var result = await _fileService.GetFilesAsync(request, userId, isAdmin);
+        var result = await _fileService.SearchFilesAsync(request, userId, isAdmin);
         return Ok(result);
     }
 
