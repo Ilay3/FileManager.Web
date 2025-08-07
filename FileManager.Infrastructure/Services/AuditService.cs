@@ -2,8 +2,10 @@
 using FileManager.Domain.Enums;
 using FileManager.Domain.Interfaces;
 using FileManager.Infrastructure.Data;
+using FileManager.Infrastructure.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace FileManager.Infrastructure.Services;
 
@@ -11,11 +13,13 @@ public class AuditService : IAuditService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<AuditService> _logger;
+    private readonly AuditOptions _options;
 
-    public AuditService(AppDbContext context, ILogger<AuditService> logger)
+    public AuditService(AppDbContext context, IOptions<AuditOptions> options, ILogger<AuditService> logger)
     {
         _context = context;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task LogAsync(AuditAction action, Guid? userId = null, Guid? fileId = null,
@@ -25,6 +29,9 @@ public class AuditService : IAuditService
     {
         try
         {
+            if (IsDisabled(action))
+                return;
+
             var auditLog = new AuditLog
             {
                 Action = action,
@@ -40,13 +47,29 @@ public class AuditService : IAuditService
             _context.AuditLogs.Add(auditLog);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Audit log created: {Action} by {UserId} for {FileId}/{FolderId}",
+            _logger.Log(_options.LogLevel,
+                "Audit log created: {Action} by {UserId} for {FileId}/{FolderId}",
                 action, userId, fileId, folderId);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create audit log for action {Action}", action);
         }
+    }
+
+    private bool IsDisabled(AuditAction action)
+    {
+        bool isFile = action is AuditAction.FileUpload or AuditAction.FileDownload or AuditAction.FileView or
+                       AuditAction.FileEdit or AuditAction.FileDelete or AuditAction.FileRestore or
+                       AuditAction.FilePreview or AuditAction.FileOpenForEdit;
+        bool isUser = action is AuditAction.Login or AuditAction.Logout;
+        bool isAccess = action is AuditAction.AccessGranted or AuditAction.AccessRevoked or AuditAction.AccessChanged;
+
+        if (isFile && !_options.EnableFileActions) return true;
+        if (isUser && !_options.EnableUserActions) return true;
+        if (isAccess && !_options.EnableAccessLog) return true;
+
+        return false;
     }
 
     public async Task<IEnumerable<AuditLog>> GetLogsAsync(DateTime? from = null, DateTime? to = null,

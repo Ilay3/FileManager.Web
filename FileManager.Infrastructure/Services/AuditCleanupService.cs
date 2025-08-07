@@ -14,6 +14,7 @@ public class AuditCleanupService : BackgroundService
     private readonly ILogger<AuditCleanupService> _logger;
     private readonly TimeSpan _interval = TimeSpan.FromDays(1);
     private readonly int _retentionDays;
+    private readonly LogLevel _logLevel;
 
     public AuditCleanupService(IServiceProvider serviceProvider,
         IOptions<AuditOptions> options,
@@ -22,11 +23,12 @@ public class AuditCleanupService : BackgroundService
         _serviceProvider = serviceProvider;
         _logger = logger;
         _retentionDays = options.Value.RetentionDays;
+        _logLevel = options.Value.LogLevel;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Audit cleanup service started");
+        _logger.Log(_logLevel, "Audit cleanup service started");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -42,7 +44,7 @@ public class AuditCleanupService : BackgroundService
             await Task.Delay(_interval, stoppingToken);
         }
 
-        _logger.LogInformation("Audit cleanup service stopped");
+        _logger.Log(_logLevel, "Audit cleanup service stopped");
     }
 
     private async Task CleanupOldLogsAsync()
@@ -61,6 +63,6 @@ public class AuditCleanupService : BackgroundService
         context.AuditLogs.RemoveRange(oldLogs);
         await context.SaveChangesAsync();
 
-        _logger.LogInformation("Removed {Count} audit logs older than {Days} days", oldLogs.Count, _retentionDays);
+        _logger.Log(_logLevel, "Removed {Count} audit logs older than {Days} days", oldLogs.Count, _retentionDays);
     }
 }

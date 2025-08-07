@@ -86,6 +86,30 @@ public class SettingsService : ISettingsService
         await File.WriteAllTextAsync(path, json);
     }
 
+    public Task<AuditSettingsDto> GetAuditOptionsAsync()
+    {
+        var options = new AuditSettingsDto();
+        _configuration.GetSection("Audit").Bind(options);
+        return Task.FromResult(options);
+    }
+
+    public async Task SaveAuditOptionsAsync(AuditSettingsDto options)
+    {
+        var path = Path.Combine(_environment.ContentRootPath, "appsettings.json");
+        JsonNode? root = JsonNode.Parse(await File.ReadAllTextAsync(path)) ?? new JsonObject();
+        var audit = new JsonObject
+        {
+            ["EnableFileActions"] = options.EnableFileActions,
+            ["EnableUserActions"] = options.EnableUserActions,
+            ["EnableAccessLog"] = options.EnableAccessLog,
+            ["RetentionDays"] = options.RetentionDays,
+            ["LogLevel"] = options.LogLevel
+        };
+        root["Audit"] = audit;
+        var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(path, json);
+    }
+
     public Task<EmailSettingsDto> GetEmailOptionsAsync()
     {
         var options = new EmailSettingsDto();
