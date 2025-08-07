@@ -9,4 +9,7 @@ public interface ISettingsService
     Task<SecuritySettingsDto> GetSecurityOptionsAsync();
     Task SaveSecurityOptionsAsync(SecuritySettingsDto options);
     bool ValidateSecurityOptions(SecuritySettingsDto options);
+    Task<EmailSettingsDto> GetEmailOptionsAsync();
+    Task SaveEmailOptionsAsync(EmailSettingsDto options);
+    Task<bool> SendTestEmailAsync(EmailSettingsDto options);
 }

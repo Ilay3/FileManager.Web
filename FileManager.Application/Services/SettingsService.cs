@@ -7,6 +7,8 @@ using FileManager.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 
 namespace FileManager.Application.Services;
 
@@ -82,5 +84,65 @@ public class SettingsService : ISettingsService
         root["Security"] = security;
         var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(path, json);
+    }
+
+    public Task<EmailSettingsDto> GetEmailOptionsAsync()
+    {
+        var options = new EmailSettingsDto();
+        _configuration.GetSection("Email").Bind(options);
+        return Task.FromResult(options);
+    }
+
+    public async Task SaveEmailOptionsAsync(EmailSettingsDto options)
+    {
+        var path = Path.Combine(_environment.ContentRootPath, "appsettings.json");
+        JsonNode? root = JsonNode.Parse(await File.ReadAllTextAsync(path)) ?? new JsonObject();
+        var email = new JsonObject
+        {
+            ["SmtpServer"] = options.SmtpServer,
+            ["SmtpPort"] = options.SmtpPort,
+            ["Username"] = options.Username,
+            ["Password"] = options.Password,
+            ["FromName"] = options.FromName,
+            ["EnableSsl"] = options.EnableSsl,
+            ["Enabled"] = options.Enabled,
+            ["PasswordResetTemplate"] = options.PasswordResetTemplate,
+            ["AccountLockedTemplate"] = options.AccountLockedTemplate,
+            ["WelcomeTemplate"] = options.WelcomeTemplate,
+            ["EmailConfirmationTemplate"] = options.EmailConfirmationTemplate,
+            ["TestTemplate"] = options.TestTemplate,
+            ["TestEmail"] = options.TestEmail
+        };
+        root["Email"] = email;
+        var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(path, json);
+    }
+
+    public async Task<bool> SendTestEmailAsync(EmailSettingsDto options)
+    {
+        try
+        {
+            using var client = new SmtpClient(options.SmtpServer, options.SmtpPort)
+            {
+                Credentials = new NetworkCredential(options.Username, options.Password),
+                EnableSsl = options.EnableSsl
+            };
+
+            var message = new MailMessage
+            {
+                From = new MailAddress(options.Username, options.FromName),
+                Subject = "Тестовое письмо",
+                Body = string.IsNullOrWhiteSpace(options.TestTemplate) ? "Тестовое письмо" : options.TestTemplate,
+                IsBodyHtml = true
+            };
+            message.To.Add(options.TestEmail);
+
+            await client.SendMailAsync(message);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
