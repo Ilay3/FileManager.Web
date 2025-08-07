@@ -7,4 +7,6 @@ public class SecurityOptions
     public int MaxLoginAttempts { get; set; } = 5;
     public int LockoutMinutes { get; set; } = 30;
     public int SessionTimeoutMinutes { get; set; } = 480;
+    public bool RequireTwoFactor { get; set; } = false;
+    public string PasswordComplexity { get; set; } = "Medium";
 }
