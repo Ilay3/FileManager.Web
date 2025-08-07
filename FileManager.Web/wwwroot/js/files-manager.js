@@ -61,24 +61,44 @@ class FilesManager {
 
     bindContextMenu() {
         document.addEventListener('contextmenu', (e) => {
-            const item = e.target.closest('.explorer-item');
-            if (!item) return;
+            const within = e.target.closest('.files-wrapper');
+            if (!within) return;
             e.preventDefault();
             const menu = document.getElementById('contextMenu');
             if (!menu) return;
-            this.contextItem = {
-                id: item.dataset.id,
-                name: item.dataset.name,
-                type: item.dataset.type
-            };
+            const item = e.target.closest('.explorer-item');
+            if (item) {
+                this.contextItem = {
+                    id: item.dataset.id,
+                    name: item.dataset.name,
+                    type: item.dataset.type
+                };
+                menu.querySelector('[data-action="upload"]').style.display = 'none';
+                menu.querySelector('[data-action="create-folder"]').style.display = 'none';
+                menu.querySelector('[data-action="manage-access"]').style.display = 'none';
+                menu.querySelector('[data-action="rename"]').style.display = this.contextItem.type === 'folder' ? 'flex' : 'none';
+                menu.querySelector('[data-action="download"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
+                menu.querySelector('[data-action="preview"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
+                menu.querySelector('[data-action="edit"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
+                menu.querySelector('[data-action="access"]').style.display = 'flex';
+                menu.querySelector('[data-action="delete"]').style.display = 'flex';
+                menu.querySelector('[data-action="properties"]').style.display = 'flex';
+            } else {
+                this.contextItem = null;
+                menu.querySelector('[data-action="upload"]').style.display = 'flex';
+                menu.querySelector('[data-action="create-folder"]').style.display = 'flex';
+                menu.querySelector('[data-action="manage-access"]').style.display = 'flex';
+                menu.querySelector('[data-action="rename"]').style.display = 'none';
+                menu.querySelector('[data-action="download"]').style.display = 'none';
+                menu.querySelector('[data-action="preview"]').style.display = 'none';
+                menu.querySelector('[data-action="edit"]').style.display = 'none';
+                menu.querySelector('[data-action="access"]').style.display = 'none';
+                menu.querySelector('[data-action="delete"]').style.display = 'none';
+                menu.querySelector('[data-action="properties"]').style.display = 'none';
+            }
             menu.style.display = 'block';
             menu.style.left = e.pageX + 'px';
             menu.style.top = e.pageY + 'px';
-            // show/hide actions
-            menu.querySelector('[data-action="rename"]').style.display = this.contextItem.type === 'folder' ? 'block' : 'none';
-            menu.querySelector('[data-action="download"]').style.display = this.contextItem.type === 'file' ? 'block' : 'none';
-            menu.querySelector('[data-action="preview"]').style.display = this.contextItem.type === 'file' ? 'block' : 'none';
-            menu.querySelector('[data-action="edit"]').style.display = this.contextItem.type === 'file' ? 'block' : 'none';
         });
 
         document.addEventListener('click', () => this.hideContextMenu());
@@ -86,7 +106,7 @@ class FilesManager {
         const menu = document.getElementById('contextMenu');
         if (menu) {
             menu.addEventListener('click', (e) => {
-                const action = e.target.dataset.action;
+                const action = e.target.dataset.action || e.target.closest('li')?.dataset.action;
                 if (action) {
                     this.handleContextAction(action);
                 }
@@ -100,6 +120,21 @@ class FilesManager {
     }
 
     handleContextAction(action) {
+        if (['upload', 'create-folder', 'manage-access'].includes(action)) {
+            switch (action) {
+                case 'upload':
+                    openUploadModal(this.currentFolderId);
+                    break;
+                case 'create-folder':
+                    openCreateFolderModal(this.currentFolderId);
+                    break;
+                case 'manage-access':
+                    openAccessModal(this.currentFolderId, true);
+                    break;
+            }
+            this.hideContextMenu();
+            return;
+        }
         if (!this.contextItem) return;
         const { id, name, type } = this.contextItem;
         switch (action) {
