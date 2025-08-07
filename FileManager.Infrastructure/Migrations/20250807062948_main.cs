@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FileManager.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class main : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -20,7 +20,8 @@ namespace FileManager.Infrastructure.Migrations
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -39,9 +40,23 @@ namespace FileManager.Infrastructure.Migrations
                     IsAdmin = table.Column<bool>(type: "boolean", nullable: false),
                     LastLoginAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Department = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    IsLocked = table.Column<bool>(type: "boolean", nullable: false),
+                    LockedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LockReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    LockedById = table.Column<Guid>(type: "uuid", nullable: true),
+                    FailedLoginAttempts = table.Column<int>(type: "integer", nullable: false),
+                    LastFailedLoginAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    PasswordResetToken = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    PasswordResetTokenExpires = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    PasswordResetAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastActivityAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastIpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    IsEmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                    EmailConfirmationCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -59,7 +74,8 @@ namespace FileManager.Infrastructure.Migrations
                     CreatedById = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -119,7 +135,8 @@ namespace FileManager.Infrastructure.Migrations
                     Tags = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -152,7 +169,8 @@ namespace FileManager.Infrastructure.Migrations
                     GrantedById = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -207,7 +225,8 @@ namespace FileManager.Infrastructure.Migrations
                     ErrorMessage = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -233,6 +252,76 @@ namespace FileManager.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "favorites",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    FileId = table.Column<Guid>(type: "uuid", nullable: true),
+                    FolderId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_favorites", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_favorites_files_FileId",
+                        column: x => x.FileId,
+                        principalTable: "files",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_favorites_folders_FolderId",
+                        column: x => x.FolderId,
+                        principalTable: "folders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_favorites_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "file_edit_sessions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    FileId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    YandexEditUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    UserAgent = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_file_edit_sessions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_file_edit_sessions_files_FileId",
+                        column: x => x.FileId,
+                        principalTable: "files",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_file_edit_sessions_users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "file_versions",
                 columns: table => new
                 {
@@ -246,7 +335,8 @@ namespace FileManager.Infrastructure.Migrations
                     IsCurrentVersion = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -280,7 +370,8 @@ namespace FileManager.Infrastructure.Migrations
                     SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -358,6 +449,48 @@ namespace FileManager.Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_UserId",
                 table: "audit_logs",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_favorites_FileId",
+                table: "favorites",
+                column: "FileId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_favorites_FolderId",
+                table: "favorites",
+                column: "FolderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Favorites_User_File",
+                table: "favorites",
+                columns: new[] { "UserId", "FileId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Favorites_User_Folder",
+                table: "favorites",
+                columns: new[] { "UserId", "FolderId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FileEditSessions_FileId",
+                table: "file_edit_sessions",
+                column: "FileId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FileEditSessions_FileId_StartedAt",
+                table: "file_edit_sessions",
+                columns: new[] { "FileId", "StartedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FileEditSessions_StartedAt",
+                table: "file_edit_sessions",
+                column: "StartedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FileEditSessions_UserId",
+                table: "file_edit_sessions",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
@@ -459,6 +592,26 @@ namespace FileManager.Infrastructure.Migrations
                 name: "IX_Users_IsActive",
                 table: "users",
                 column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_IsEmailConfirmed",
+                table: "users",
+                column: "IsEmailConfirmed");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_IsLocked",
+                table: "users",
+                column: "IsLocked");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_LastActivityAt",
+                table: "users",
+                column: "LastActivityAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_PasswordResetToken",
+                table: "users",
+                column: "PasswordResetToken");
         }
 
         /// <inheritdoc />
@@ -469,6 +622,12 @@ namespace FileManager.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "audit_logs");
+
+            migrationBuilder.DropTable(
+                name: "favorites");
+
+            migrationBuilder.DropTable(
+                name: "file_edit_sessions");
 
             migrationBuilder.DropTable(
                 name: "file_versions");

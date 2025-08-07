@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FileManager.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250801045947_UpdeteUser")]
-    partial class UpdeteUser
+    [Migration("20250807062948_main")]
+    partial class main
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -35,6 +35,9 @@ namespace FileManager.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("FileId")
@@ -98,6 +101,9 @@ namespace FileManager.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -154,6 +160,109 @@ namespace FileManager.Infrastructure.Migrations
                     b.ToTable("audit_logs", (string)null);
                 });
 
+            modelBuilder.Entity("FileManager.Domain.Entities.Favorite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("FileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("FolderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileId");
+
+                    b.HasIndex("FolderId");
+
+                    b.HasIndex("UserId", "FileId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Favorites_User_File");
+
+                    b.HasIndex("UserId", "FolderId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Favorites_User_Folder");
+
+                    b.ToTable("favorites", (string)null);
+                });
+
+            modelBuilder.Entity("FileManager.Domain.Entities.FileEditSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("YandexEditUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileId")
+                        .HasDatabaseName("IX_FileEditSessions_FileId");
+
+                    b.HasIndex("StartedAt")
+                        .HasDatabaseName("IX_FileEditSessions_StartedAt");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_FileEditSessions_UserId");
+
+                    b.HasIndex("FileId", "StartedAt")
+                        .HasDatabaseName("IX_FileEditSessions_FileId_StartedAt");
+
+                    b.ToTable("file_edit_sessions", (string)null);
+                });
+
             modelBuilder.Entity("FileManager.Domain.Entities.FileVersion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -169,6 +278,9 @@ namespace FileManager.Infrastructure.Migrations
 
                     b.Property<Guid>("CreatedById")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("FileId")
                         .HasColumnType("uuid");
@@ -217,6 +329,9 @@ namespace FileManager.Infrastructure.Migrations
 
                     b.Property<Guid?>("CurrentVersionId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Extension")
                         .IsRequired()
@@ -290,6 +405,9 @@ namespace FileManager.Infrastructure.Migrations
                     b.Property<Guid>("CreatedById")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -332,6 +450,9 @@ namespace FileManager.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -363,6 +484,9 @@ namespace FileManager.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("FileId")
@@ -426,6 +550,9 @@ namespace FileManager.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Department")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -434,6 +561,10 @@ namespace FileManager.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EmailConfirmationCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<int>("FailedLoginAttempts")
                         .HasColumnType("integer");
@@ -450,6 +581,9 @@ namespace FileManager.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEmailConfirmed")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsLocked")
@@ -503,6 +637,9 @@ namespace FileManager.Infrastructure.Migrations
 
                     b.HasIndex("IsActive")
                         .HasDatabaseName("IX_Users_IsActive");
+
+                    b.HasIndex("IsEmailConfirmed")
+                        .HasDatabaseName("IX_Users_IsEmailConfirmed");
 
                     b.HasIndex("IsLocked")
                         .HasDatabaseName("IX_Users_IsLocked");
@@ -590,6 +727,50 @@ namespace FileManager.Infrastructure.Migrations
                     b.Navigation("File");
 
                     b.Navigation("Folder");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FileManager.Domain.Entities.Favorite", b =>
+                {
+                    b.HasOne("FileManager.Domain.Entities.Files", "File")
+                        .WithMany()
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("FileManager.Domain.Entities.Folder", "Folder")
+                        .WithMany()
+                        .HasForeignKey("FolderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("FileManager.Domain.Entities.User", "User")
+                        .WithMany("Favorites")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("File");
+
+                    b.Navigation("Folder");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FileManager.Domain.Entities.FileEditSession", b =>
+                {
+                    b.HasOne("FileManager.Domain.Entities.Files", "File")
+                        .WithMany()
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FileManager.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("File");
 
                     b.Navigation("User");
                 });
@@ -720,6 +901,8 @@ namespace FileManager.Infrastructure.Migrations
                     b.Navigation("AuditLogs");
 
                     b.Navigation("CreatedFolders");
+
+                    b.Navigation("Favorites");
 
                     b.Navigation("FileVersions");
 
