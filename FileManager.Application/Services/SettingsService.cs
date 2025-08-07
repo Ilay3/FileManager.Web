@@ -208,6 +208,27 @@ public class SettingsService : ISettingsService
         await File.WriteAllTextAsync(path, json);
     }
 
+    public Task<CleanupSettingsDto> GetCleanupOptionsAsync()
+    {
+        var options = new CleanupSettingsDto();
+        _configuration.GetSection("Cleanup").Bind(options);
+        return Task.FromResult(options);
+    }
+
+    public async Task SaveCleanupOptionsAsync(CleanupSettingsDto options)
+    {
+        var path = Path.Combine(_environment.ContentRootPath, "appsettings.json");
+        JsonNode? root = JsonNode.Parse(await File.ReadAllTextAsync(path)) ?? new JsonObject();
+        var cleanup = new JsonObject
+        {
+            ["TrashRetentionDays"] = options.TrashRetentionDays,
+            ["ArchiveCleanupDays"] = options.ArchiveCleanupDays
+        };
+        root["Cleanup"] = cleanup;
+        var json = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(path, json);
+    }
+
     public async Task<bool> SendTestEmailAsync(EmailSettingsDto options)
     {
         try

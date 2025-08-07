@@ -1,0 +1,31 @@
+@page "/Admin/Settings/Cleanup"
+@model FileManager.Web.Pages.Admin.Settings.CleanupModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Очистка";
+
+    if (User.FindFirst("IsAdmin")?.Value != "True")
+    {
+        Response.Redirect("/Files");
+        return;
+    }
+}
+
+<h2>Очистка</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="TrashRetentionDays" class="form-label">Срок хранения в корзине (дней)</label>
+        <input asp-for="TrashRetentionDays" class="form-control" type="number" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="ArchiveCleanupDays" class="form-label">Срок хранения архива версий (дней)</label>
+        <input asp-for="ArchiveCleanupDays" class="form-control" type="number" />
+    </div>
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>

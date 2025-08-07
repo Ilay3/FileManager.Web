@@ -20,4 +20,6 @@ public interface ISettingsService
     Task SaveThemeOptionsAsync(ThemeSettingsDto options);
     Task<UploadSecuritySettingsDto> GetUploadSecurityOptionsAsync();
     Task SaveUploadSecurityOptionsAsync(UploadSecuritySettingsDto options);
+    Task<CleanupSettingsDto> GetCleanupOptionsAsync();
+    Task SaveCleanupOptionsAsync(CleanupSettingsDto options);
 }
