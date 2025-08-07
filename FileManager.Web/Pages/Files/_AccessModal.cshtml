@@ -1,8 +1,7 @@
-<div id="accessModal" class="modal" style="display:none;">
+<div id="accessModal" class="modal modal-exit" style="display:none;">
     <div class="modal-content">
         <div class="modal-header">
             <h3>Настройки доступа</h3>
-            <span class="modal-close" onclick="closeAccessModal()">&times;</span>
         </div>
         <div class="modal-body">
             <div class="form-group">
@@ -27,13 +26,23 @@
 
     async function openAccessModal(targetId, isFolder) {
         accessTarget = { id: targetId, isFolder: isFolder };
-        document.getElementById('accessModal').style.display = 'flex';
+        const modal = document.getElementById('accessModal');
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.remove('modal-exit');
+            modal.classList.add('modal-enter');
+        }, 10);
         await loadAccessLists();
         await loadCurrentAccess();
     }
 
     function closeAccessModal() {
-        document.getElementById('accessModal').style.display = 'none';
+        const modal = document.getElementById('accessModal');
+        modal.classList.remove('modal-enter');
+        modal.classList.add('modal-exit');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
     }
 
     async function loadAccessLists() {

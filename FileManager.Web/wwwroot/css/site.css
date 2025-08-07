@@ -1901,6 +1901,16 @@ body {
     justify-content: center;
 }
 
+.modal-enter {
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
+.modal-exit {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
 .modal-content {
     background: white;
     border-radius: 8px;

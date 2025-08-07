@@ -1,37 +1,34 @@
-<div class="modal fade" id="propertiesModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Свойства</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-                <table class="table table-sm">
-                    <tr>
-                        <th>Путь</th>
-                        <td id="propPath"></td>
-                    </tr>
-                    <tr>
-                        <th>Размер</th>
-                        <td id="propSize"></td>
-                    </tr>
-                    <tr>
-                        <th>Создатель</th>
-                        <td id="propCreator"></td>
-                    </tr>
-                    <tr>
-                        <th>Дата создания</th>
-                        <td id="propCreated"></td>
-                    </tr>
-                    <tr>
-                        <th>Дата изменения</th>
-                        <td id="propUpdated"></td>
-                    </tr>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            </div>
+<div id="propertiesModal" class="modal modal-exit" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Свойства</h3>
+        </div>
+        <div class="modal-body">
+            <table>
+                <tr>
+                    <th>Путь</th>
+                    <td id="propPath"></td>
+                </tr>
+                <tr>
+                    <th>Размер</th>
+                    <td id="propSize"></td>
+                </tr>
+                <tr>
+                    <th>Создатель</th>
+                    <td id="propCreator"></td>
+                </tr>
+                <tr>
+                    <th>Дата создания</th>
+                    <td id="propCreated"></td>
+                </tr>
+                <tr>
+                    <th>Дата изменения</th>
+                    <td id="propUpdated"></td>
+                </tr>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closePropertiesModal()">Закрыть</button>
         </div>
     </div>
 </div>
