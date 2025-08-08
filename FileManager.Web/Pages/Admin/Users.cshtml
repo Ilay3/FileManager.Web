@@ -12,10 +12,10 @@
 
 <h2>Пользователи</h2>
 <a class="btn btn-primary mb-3" href="/Admin/CreateUser">Создать пользователя</a>
-<table class="table table-striped" id="usersTable">
+<table class="table table-striped table-hover" id="usersTable">
     <thead>
         <tr>
-            <th>Email</th>
+            <th>Эл. почта</th>
             <th>ФИО</th>
             <th>Отдел</th>
             <th>Администратор</th>
@@ -38,7 +38,7 @@ async function loadUsers() {
             <td>${u.fullName}</td>
             <td>${u.department ?? ''}</td>
             <td><input type="checkbox" ${u.isAdmin ? 'checked' : ''} onchange="toggleAdmin('${u.id}', this.checked)" /></td>
-            <td><button class="btn btn-secondary btn-small" onclick="deleteUser('${u.id}')">Удалить</button></td>`;
+            <td><button class="btn btn-secondary btn-sm" onclick="deleteUser('${u.id}')">Удалить</button></td>`;
         tbody.appendChild(tr);
     }
 }

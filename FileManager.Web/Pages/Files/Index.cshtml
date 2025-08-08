@@ -22,7 +22,7 @@
                     }
                     else
                     {
-                        <a href="?folderId=@breadcrumb.Id&view=@Model.ViewMode"><i class="@breadcrumb.Icon"></i> @breadcrumb.Name</a>
+                        <a href="?folderId=@breadcrumb.Id"><i class="@breadcrumb.Icon"></i> @breadcrumb.Name</a>
                         <span class="breadcrumb-separator">/</span>
                     }
                 </span>
@@ -31,14 +31,14 @@
     }
 
     <div class="action-bar">
-        <button type="button" id="btnUpload" class="btn btn-accent btn-small"><i class="bi bi-upload"></i> Загрузить</button>
-        <button type="button" id="btnCreateFolder" class="btn btn-accent btn-small"><i class="bi bi-folder-plus"></i> Создать папку</button>
-        <button type="button" id="btnManageAccess" class="btn btn-accent btn-small"><i class="bi bi-shield-lock"></i> Управление доступом</button>
+        <button type="button" id="btnUpload" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> Загрузить</button>
+        <button type="button" id="btnCreateFolder" class="btn btn-primary btn-sm"><i class="bi bi-folder-plus"></i> Создать папку</button>
+        <button type="button" id="btnManageAccess" class="btn btn-primary btn-sm"><i class="bi bi-shield-lock"></i> Управление доступом</button>
     </div>
 
     <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Поиск..." oninput="filesManager.loadFiles(this.value)" />
-        <button type="button" class="btn btn-secondary btn-small" onclick="filesManager.toggleAdvanced()">Фильтры</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="filesManager.toggleAdvanced()">Фильтры</button>
     </div>
 
     <div id="advancedFilters" class="mt-3" style="display:none">
@@ -79,37 +79,20 @@
         </div>
     </div>
 
-    <div class="view-toggle">
-        <button id="viewList" class="btn btn-secondary btn-small" type="button" title="Список"><i class="bi bi-list"></i></button>
-        <button id="viewGrid" class="btn btn-secondary btn-small" type="button" title="Сетка"><i class="bi bi-grid"></i></button>
-    </div>
-
     <!-- Content Area -->
     <div class="content-area">
-        @if (Model.ViewMode == "grid")
-        {
-            <div class="grid-view">
-                @await Html.PartialAsync("_FilesGrid", Model.GridItems)
-            </div>
-        }
-        else
-        {
-            <div class="list-view">
-                @if (Model.CurrentFolderContents != null)
-                {
-                    @await Html.PartialAsync("_ExplorerList", Model.CurrentFolderContents)
-                }
-            </div>
-        }
+        <div class="grid-view">
+            @await Html.PartialAsync("_FilesGrid", Model.GridItems)
+        </div>
     </div>
 
     <!-- Pagination -->
-    @if (Model.ViewMode == "grid" && Model.FilesResult.TotalPages > 1)
+    @if (Model.FilesResult.TotalPages > 1)
     {
         <div class="pagination">
             @if (Model.FilesResult.HasPreviousPage)
             {
-                <a href="?page=@(Model.FilesResult.CurrentPage - 1)&folderId=@Model.CurrentFolderId&view=@Model.ViewMode" class="btn btn-pagination">← Предыдущая</a>
+                <a href="?page=@(Model.FilesResult.CurrentPage - 1)&folderId=@Model.CurrentFolderId" class="btn btn-secondary btn-sm">← Предыдущая</a>
             }
 
             <span class="pagination-info">
@@ -119,7 +102,7 @@
 
             @if (Model.FilesResult.HasNextPage)
             {
-                <a href="?page=@(Model.FilesResult.CurrentPage + 1)&folderId=@Model.CurrentFolderId&view=@Model.ViewMode" class="btn btn-pagination">Следующая →</a>
+                <a href="?page=@(Model.FilesResult.CurrentPage + 1)&folderId=@Model.CurrentFolderId" class="btn btn-secondary btn-sm">Следующая →</a>
             }
         </div>
     }

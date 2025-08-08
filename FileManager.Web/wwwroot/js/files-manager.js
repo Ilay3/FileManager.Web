@@ -3,7 +3,6 @@
 class FilesManager {
     constructor() {
         this.currentFolderId = null;
-        this.currentView = 'list';
         this.selectedFiles = new Set();
         this.contextItem = null;
         this.init();
@@ -41,15 +40,6 @@ class FilesManager {
             searchBtn.addEventListener('click', () => {
                 this.performSearch(searchInput.value);
             });
-        }
-
-        const viewGrid = document.getElementById('viewGrid');
-        if (viewGrid) {
-            viewGrid.addEventListener('click', () => this.changeView('grid'));
-        }
-        const viewList = document.getElementById('viewList');
-        if (viewList) {
-            viewList.addEventListener('click', () => this.changeView('list'));
         }
 
         // Filter changes
@@ -93,7 +83,7 @@ class FilesManager {
             const id = item.dataset.id;
             const type = item.dataset.type;
             if (type === 'folder') {
-                this.navigateTo(`?folderId=${id}&view=${this.currentView}`);
+                this.navigateTo(`?folderId=${id}`);
             } else {
                 this.previewFile(id);
             }
@@ -275,7 +265,6 @@ class FilesManager {
         // Load based on current URL parameters
         const params = new URLSearchParams(window.location.search);
         this.currentFolderId = params.get('folderId') || null;
-        this.currentView = params.get('view') || 'list';
     }
 
     async loadFiles(searchTerm = '') {
@@ -353,15 +342,6 @@ class FilesManager {
         if (ownerId && ownerId.value) params['SearchRequest.OwnerId'] = ownerId.value;
 
         // Update URL and reload
-        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
-        this.navigateTo(newUrl);
-    }
-
-    changeView(view) {
-        if (this.currentView === view) return;
-        this.currentView = view;
-        const params = this.buildSearchParams();
-        params.view = view;
         const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
         this.navigateTo(newUrl);
     }
@@ -457,7 +437,7 @@ class FilesManager {
             content.innerHTML = `
                 ${nodeData.hasChildren ? '<span class="tree-toggle" onclick="filesManager.toggleTreeNode(\'' + nodeData.id + '\')">▶</span>' : '<span class="tree-spacer"></span>'}
                 <span class="tree-icon">${nodeData.icon}</span>
-                <a href="?folderId=${nodeData.id}&view=tree" class="tree-link folder-link">${nodeData.name}</a>
+                <a href="?folderId=${nodeData.id}" class="tree-link folder-link">${nodeData.name}</a>
                 ${nodeData.itemsCount ? '<span class="tree-count">(' + nodeData.itemsCount + ')</span>' : ''}
                 <div class="tree-file-actions">
                     <button class="btn btn-tiny" onclick="openRenameFolderModal('${nodeData.id}', '${safeName}')" title="Переименовать">✏️</button>
@@ -895,12 +875,6 @@ function moveFolder(folderId) {
 function shareAccess(type, id) {
     if (filesManager) {
         filesManager.shareAccess(type, id);
-    }
-}
-
-function changeView(viewMode) {
-    if (filesManager) {
-        filesManager.changeView(viewMode);
     }
 }
 

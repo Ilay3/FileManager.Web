@@ -3,17 +3,6 @@
     --accent-color: #667eea;
     --bg-color: #f5f5f5;
     --text-color: #333;
-    --accent-color-dark: #8899f7;
-    --bg-color-dark: #1e1e1e;
-    --text-color-dark: #f5f5f5;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --accent-color: var(--accent-color-dark);
-        --bg-color: var(--bg-color-dark);
-        --text-color: var(--text-color-dark);
-    }
 }
 
 * {
@@ -25,12 +14,104 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
+}
+
+/* App shell layout */
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 240px;
+    background-color: var(--bg-color);
+    transition: width 0.3s ease, background-color 0.3s;
+    overflow: hidden;
+    border-right: 1px solid #eee;
+}
+
+.sidebar-logo {
+    padding: 20px;
+    text-align: center;
+}
+
+.sidebar-logo img {
+    max-width: 100%;
+    height: auto;
+}
+
+.sidebar .sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background-color 0.3s;
+}
+
+.sidebar .sidebar-link i {
+    margin-right: 10px;
+}
+
+.sidebar .link-text {
+    white-space: nowrap;
+}
+
+.sidebar .sidebar-link:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar.sidebar-collapsed {
+    width: 60px;
+}
+
+.sidebar.sidebar-collapsed .link-text {
+    display: none;
+}
+
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.app-header .search-input {
+    flex: 1;
+    margin-left: 10px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 6px;
+    font-size: 1.2rem;
+    transition: color 0.3s, background-color 0.3s;
+}
+
+.icon-button:hover {
+    color: var(--accent-color);
 }
 
 /* Ñòèëè äëÿ ñòðàíèö âõîäà */
@@ -43,29 +124,70 @@ body {
     padding: 20px;
 }
 
-.login-container {
-    width: 100%;
-    max-width: 400px;
-}
-
-.login-card {
+.auth-card {
     background: var(--bg-color);
     padding: 40px;
     border-radius: 8px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     text-align: center;
+    width: 100%;
+    max-width: 400px;
 }
 
-    .login-card h2 {
+    .auth-card h2 {
         margin: 0 0 10px 0;
         color: var(--text-color);
         font-size: 28px;
     }
 
-    .login-card p {
+    .auth-card p {
         margin: 0 0 30px 0;
         color: #666;
     }
+
+    .auth-card .form-input {
+        padding: 12px 16px;
+        font-size: 16px;
+        border-radius: 6px;
+    }
+
+    .auth-card .btn-primary {
+        padding: 12px;
+        font-size: 16px;
+        border: none;
+        border-radius: 6px;
+        background-color: var(--accent-color);
+        color: #fff;
+        width: 100%;
+    }
+
+.auth-links {
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.auth-links a {
+    color: var(--accent-color);
+    font-size: 1.5rem;
+    text-decoration: none;
+}
+
+    .auth-links a:hover {
+        filter: brightness(90%);
+    }
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon .password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+}
 
 /* Ôîðìû */
 .form-group {
@@ -118,46 +240,12 @@ body {
     color: var(--text-color);
 }
 
-.btn-primary {
-    background-color: var(--accent-color);
-    color: white;
-    width: 100%;
-}
-
-    .btn-primary:hover {
-        filter: brightness(90%);
-    }
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-
-    .btn-secondary:hover {
-        background-color: #5a6268;
-    }
-
-.btn-small {
-    padding: 6px 12px;
-    font-size: 14px;
-    margin-right: 5px;
-}
-
 .action-bar {
     margin-bottom: 15px;
 }
 
 .action-bar .btn {
     margin-right: 5px;
-}
-
-.btn-accent {
-    background-color: var(--accent-color);
-    color: #fff;
-}
-
-.btn-accent:hover {
-    filter: brightness(90%);
 }
 
 .context-menu {
@@ -223,20 +311,6 @@ body {
     color: #dc3545;
     font-size: 14px;
 }
-
-/* Ññûëêè íà ñòðàíèöå âõîäà */
-.login-links {
-    margin: 20px 0;
-}
-
-.login-links a {
-        color: var(--accent-color);
-        text-decoration: none;
-    }
-
-        .login-links a:hover {
-            text-decoration: underline;
-        }
 
 .login-info {
     margin-top: 30px;
@@ -679,19 +753,6 @@ body {
     gap: 4px;
 }
 
-.btn-small {
-    padding: 4px 8px;
-    font-size: 12px;
-    border: 1px solid #ddd;
-    background: #f8f9fa;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-    .btn-small:hover {
-        background: #e9ecef;
-    }
-
 /* Grid view */
 .files-grid {
     display: grid;
@@ -842,19 +903,6 @@ body {
     gap: 2px;
 }
 
-.btn-tiny {
-    padding: 2px 4px;
-    font-size: 10px;
-    border: 1px solid #ddd;
-    background: #f8f9fa;
-    border-radius: 2px;
-    cursor: pointer;
-}
-
-    .btn-tiny:hover {
-        background: #e9ecef;
-    }
-
 .tree-children {
     margin-left: 20px;
 }
@@ -880,19 +928,6 @@ body {
     margin-top: 30px;
     padding: 20px 0;
 }
-
-.btn-pagination {
-    padding: 8px 16px;
-    background: var(--accent-color);
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    border: none;
-}
-
-    .btn-pagination:hover {
-        filter: brightness(90%);
-    }
 
 .pagination-info {
     color: #666;
@@ -1213,19 +1248,6 @@ body {
     gap: 4px;
 }
 
-.btn-small {
-    padding: 4px 8px;
-    font-size: 12px;
-    border: 1px solid #ddd;
-    background: #f8f9fa;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-    .btn-small:hover {
-        background: #e9ecef;
-    }
-
 /* Grid view */
 .files-grid {
     display: grid;
@@ -1422,19 +1444,6 @@ body {
     padding: 20px 0;
 }
 
-.btn-pagination {
-    padding: 8px 16px;
-    background: var(--accent-color);
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    border: none;
-}
-
-    .btn-pagination:hover {
-        background: var(--accent-color);
-    }
-
 .pagination-info {
     color: #666;
     font-size: 14px;
@@ -1502,31 +1511,6 @@ body {
     justify-content: center;
 }
 
-.login-container {
-    width: 100%;
-    max-width: 400px;
-    padding: 20px;
-}
-
-.login-card {
-    background: var(--bg-color);
-    padding: 40px 30px;
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    text-align: center;
-}
-
-    .login-card h2 {
-        margin: 0 0 10px 0;
-        color: var(--text-color);
-        font-size: 28px;
-    }
-
-    .login-card p {
-        margin: 0 0 30px 0;
-        color: #666;
-    }
-
 .form-group {
     margin-bottom: 20px;
     text-align: left;
@@ -1592,19 +1576,6 @@ body {
     color: #721c24;
 }
 
-.login-links {
-    margin: 20px 0;
-}
-
-    .login-links a {
-        color: var(--accent-color);
-        text-decoration: none;
-    }
-
-        .login-links a:hover {
-            text-decoration: underline;
-        }
-
 .login-info {
     margin-top: 30px;
     padding-top: 20px;
@@ -1666,51 +1637,6 @@ body {
 /* Äîïîëíèòåëüíûå ñòèëè äëÿ ïðåäïðîñìîòðà ôàéëîâ */
 
 /* Îáùèå ñòèëè äëÿ êíîïîê */
-.btn {
-    display: inline-block;
-    padding: 8px 16px;
-    margin: 2px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    text-decoration: none;
-    font-size: 14px;
-    transition: background-color 0.2s;
-}
-
-.btn-primary {
-    background-color: var(--accent-color);
-    color: white;
-}
-
-    .btn-primary:hover {
-        background-color: var(--accent-color);
-    }
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-
-    .btn-secondary:hover {
-        background-color: #545b62;
-    }
-
-.btn-small {
-    padding: 4px 8px;
-    font-size: 12px;
-}
-
-.btn-tiny {
-    padding: 2px 6px;
-    font-size: 11px;
-}
-
-.btn-large {
-    padding: 12px 24px;
-    font-size: 16px;
-}
-
 /* Ñòèëè äëÿ ñïèñêà ôàéëîâ */
 .files-table {
     width: 100%;

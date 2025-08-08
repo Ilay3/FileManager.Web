@@ -15,6 +15,17 @@ document.addEventListener('DOMContentLoaded', function () {
         firstInput.focus();
     }
 
+    // Переключение видимости пароля
+    document.querySelectorAll('.password-toggle').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const input = document.getElementById(this.dataset.target);
+            if (!input) return;
+            const isPassword = input.getAttribute('type') === 'password';
+            input.setAttribute('type', isPassword ? 'text' : 'password');
+            this.innerHTML = isPassword ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+        });
+    });
+
     // Подтверждение удаления
     const deleteButtons = document.querySelectorAll('[data-confirm]');
     deleteButtons.forEach(button => {
@@ -39,24 +50,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const themeToggle = document.getElementById('themeToggle');
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-theme');
-    }
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function () {
-            document.body.classList.toggle('dark-theme');
-            const mode = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
-            localStorage.setItem('theme', mode);
-        });
-    }
-
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
+    const savedSidebar = localStorage.getItem('sidebar');
+    if (sidebar && savedSidebar === 'collapsed') {
+        sidebar.classList.add('sidebar-collapsed');
+    }
     if (sidebar && sidebarToggle) {
         sidebarToggle.addEventListener('click', function () {
             sidebar.classList.toggle('sidebar-collapsed');
+            const state = sidebar.classList.contains('sidebar-collapsed') ? 'collapsed' : 'expanded';
+            localStorage.setItem('sidebar', state);
         });
     }
 
