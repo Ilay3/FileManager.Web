@@ -1056,6 +1056,7 @@ let filesManager;
 
 // Инициализация при загрузке DOM
 function initializeFilesManager() {
+
     try {
         filesManager = new ModernFilesManager();
         window.filesManager = filesManager;
@@ -1065,6 +1066,7 @@ function initializeFilesManager() {
 }
 
 document.addEventListener('DOMContentLoaded', initializeFilesManager);
+
 
 // Глобальные функции для обратной совместимости
 window.changeView = function (view) {
@@ -1085,5 +1087,6 @@ window.toggleAdvanced = function () {
         if (!block) return;
         const isVisible = block.style.display !== 'none';
         block.style.display = isVisible ? 'none' : 'block';
+
     }
 };
