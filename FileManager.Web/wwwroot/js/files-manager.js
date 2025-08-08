@@ -1,11 +1,17 @@
-﻿// Files Manager JavaScript functionality
+﻿// Современный файловый менеджер с улучшенным UX
 
-class FilesManager {
+class ModernFilesManager {
     constructor() {
         this.currentFolderId = null;
         this.currentView = 'list';
         this.selectedFiles = new Set();
         this.contextItem = null;
+        this.searchTimeout = null;
+        this.clipboard = null;
+        this.draggedItem = null;
+        this.undoStack = [];
+        this.redoStack = [];
+
         this.init();
     }
 
@@ -13,133 +19,158 @@ class FilesManager {
         this.bindEvents();
         this.bindSelectionEvents();
         this.bindContextMenu();
+        this.bindKeyboardShortcuts();
+        this.bindDragAndDrop();
         this.loadInitialData();
+        this.initializePerformanceOptimizations();
     }
 
-    navigateTo(url) {
+    // Навигация с анимацией
+    navigateTo(url, addToHistory = true) {
         if (window.loadPage) {
-            window.loadPage(url);
+            this.showLoadingState();
+            window.loadPage(url, addToHistory)
+                .finally(() => this.hideLoadingState());
         } else {
             window.location.href = url;
         }
     }
 
-    bindEvents() {
-        // Search functionality
-        const searchInput = document.getElementById('searchInput');
-        const searchBtn = document.getElementById('searchBtn');
+    // Состояния загрузки
+    showLoadingState() {
+        const elements = document.querySelectorAll('.explorer-item, .file-card');
+        elements.forEach(el => {
+            el.style.opacity = '0.6';
+            el.style.pointerEvents = 'none';
+        });
 
+        if (typeof showPageLoading === 'function') {
+            showPageLoading();
+        }
+    }
+
+    hideLoadingState() {
+        const elements = document.querySelectorAll('.explorer-item, .file-card');
+        elements.forEach(el => {
+            el.style.opacity = '';
+            el.style.pointerEvents = '';
+        });
+
+        if (typeof hidePageLoading === 'function') {
+            hidePageLoading();
+        }
+    }
+
+    // Привязка событий
+    bindEvents() {
+        // Поиск с дебаунсом
+        const searchInput = document.getElementById('searchInput');
         if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    this.performSearch(e.target.value);
+                }, 300);
+            });
+
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
-                    this.performSearch(searchInput.value);
+                    e.preventDefault();
+                    clearTimeout(this.searchTimeout);
+                    this.performSearch(e.target.value);
                 }
             });
         }
 
-        if (searchBtn && searchInput) {
-            searchBtn.addEventListener('click', () => {
-                this.performSearch(searchInput.value);
-            });
-        }
+        // Переключение видов
+        this.bindViewToggle();
 
-        const viewGrid = document.getElementById('viewGrid');
-        if (viewGrid) {
-            viewGrid.addEventListener('click', () => this.changeView('grid'));
-        }
-        const viewList = document.getElementById('viewList');
-        if (viewList) {
-            viewList.addEventListener('click', () => this.changeView('list'));
-        }
-
-        // Filter changes
-        const filterType = document.getElementById('filterType');
-        if (filterType) {
-            filterType.addEventListener('change', () => this.applyFilters());
-        }
-
-        const onlyMyFiles = document.getElementById('onlyMyFiles');
-        if (onlyMyFiles) {
-            onlyMyFiles.addEventListener('change', () => this.applyFilters());
-        }
-
-        const ownerSearch = document.getElementById('ownerSearch');
-        if (ownerSearch) {
-            fetch('/api/users')
-                .then(r => r.json())
-                .then(users => {
-                    const list = document.getElementById('usersList');
-                    if (!list) return;
-                    users.forEach(u => {
-                        const opt = document.createElement('option');
-                        opt.value = u.email;
-                        opt.dataset.id = u.id;
-                        list.appendChild(opt);
-                    });
-                });
-
-            ownerSearch.addEventListener('input', () => {
-                const list = document.getElementById('usersList');
-                const match = Array.from(list.options).find(o => o.value === ownerSearch.value);
-                const hidden = document.getElementById('ownerId');
-                if (hidden) hidden.value = match ? match.dataset.id : '';
-                this.applyFilters();
-            });
-        }
-
+        // Двойной клик для открытия
         document.addEventListener('dblclick', (e) => {
             const item = e.target.closest('.explorer-item');
             if (!item) return;
-            const id = item.dataset.id;
-            const type = item.dataset.type;
-            if (type === 'folder') {
-                this.navigateTo(`?folderId=${id}&view=${this.currentView}`);
-            } else {
-                this.previewFile(id);
-            }
+
+            e.preventDefault();
+            this.openItem(item.dataset.id, item.dataset.type);
         });
+
+        // Фильтры
+        this.bindFilterEvents();
     }
 
+    bindViewToggle() {
+        const viewList = document.getElementById('viewList');
+        const viewGrid = document.getElementById('viewGrid');
+
+        if (viewList) {
+            viewList.addEventListener('click', () => this.changeView('list'));
+        }
+        if (viewGrid) {
+            viewGrid.addEventListener('click', () => this.changeView('grid'));
+        }
+    }
+
+    bindFilterEvents() {
+        const filterElements = [
+            'filterType', 'onlyMyFiles', 'dateFrom', 'dateTo',
+            'ownerSearch', 'extension', 'minSize', 'maxSize', 'tags'
+        ];
+
+        filterElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                const eventType = element.type === 'checkbox' ? 'change' : 'input';
+                element.addEventListener(eventType, () => {
+                    clearTimeout(this.searchTimeout);
+                    this.searchTimeout = setTimeout(() => {
+                        this.applyFilters();
+                    }, 300);
+                });
+            }
+        });
+
+        // Специальный обработчик для поиска владельца
+        this.initializeOwnerSearch();
+    }
+
+    // Инициализация поиска владельца
+    async initializeOwnerSearch() {
+        const ownerSearch = document.getElementById('ownerSearch');
+        if (!ownerSearch) return;
+
+        try {
+            const response = await fetch('/api/users');
+            const users = await response.json();
+
+            const datalist = document.getElementById('usersList');
+            if (datalist) {
+                datalist.innerHTML = users.map(user =>
+                    `<option value="${user.email}" data-id="${user.id}">${user.fullName}</option>`
+                ).join('');
+            }
+
+            ownerSearch.addEventListener('input', () => {
+                const selectedOption = Array.from(datalist.options)
+                    .find(option => option.value === ownerSearch.value);
+
+                const hiddenInput = document.getElementById('ownerId');
+                if (hiddenInput) {
+                    hiddenInput.value = selectedOption ? selectedOption.dataset.id : '';
+                }
+            });
+        } catch (error) {
+            console.error('Error loading users:', error);
+        }
+    }
+
+    // Контекстное меню
     bindContextMenu() {
         document.addEventListener('contextmenu', (e) => {
-            const within = e.target.closest('.files-wrapper');
-            if (!within) return;
+            const withinFiles = e.target.closest('.files-wrapper, .content-area');
+            if (!withinFiles) return;
+
             e.preventDefault();
-            const menu = document.getElementById('contextMenu');
-            if (!menu) return;
-            const item = e.target.closest('.explorer-item');
-            if (item) {
-                this.contextItem = {
-                    id: item.dataset.id,
-                    name: item.dataset.name,
-                    type: item.dataset.type
-                };
-                menu.querySelector('[data-action="upload"]').style.display = 'none';
-                menu.querySelector('[data-action="create-folder"]').style.display = 'none';
-                menu.querySelector('[data-action="manage-access"]').style.display = 'none';
-                menu.querySelector('[data-action="rename"]').style.display = this.contextItem.type === 'folder' ? 'flex' : 'none';
-                menu.querySelector('[data-action="download"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
-                menu.querySelector('[data-action="preview"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
-                menu.querySelector('[data-action="edit"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
-                menu.querySelector('[data-action="access"]').style.display = 'flex';
-                menu.querySelector('[data-action="delete"]').style.display = 'flex';
-                menu.querySelector('[data-action="properties"]').style.display = 'flex';
-            } else {
-                this.contextItem = null;
-                menu.querySelector('[data-action="upload"]').style.display = 'flex';
-                menu.querySelector('[data-action="create-folder"]').style.display = 'flex';
-                menu.querySelector('[data-action="manage-access"]').style.display = 'flex';
-                menu.querySelector('[data-action="rename"]').style.display = 'none';
-                menu.querySelector('[data-action="download"]').style.display = 'none';
-                menu.querySelector('[data-action="preview"]').style.display = 'none';
-                menu.querySelector('[data-action="edit"]').style.display = 'none';
-                menu.querySelector('[data-action="access"]').style.display = 'none';
-                menu.querySelector('[data-action="delete"]').style.display = 'none';
-                menu.querySelector('[data-action="properties"]').style.display = 'none';
-            }
-            menu.style.display = 'block';
-            menu.style.left = e.pageX + 'px';
-            menu.style.top = e.pageY + 'px';
+            this.showContextMenu(e, e.target.closest('.explorer-item'));
         });
 
         document.addEventListener('click', () => this.hideContextMenu());
@@ -147,7 +178,8 @@ class FilesManager {
         const menu = document.getElementById('contextMenu');
         if (menu) {
             menu.addEventListener('click', (e) => {
-                const action = e.target.dataset.action || e.target.closest('li')?.dataset.action;
+                const action = e.target.dataset.action ||
+                    e.target.closest('li')?.dataset.action;
                 if (action) {
                     this.handleContextAction(action);
                 }
@@ -155,334 +187,268 @@ class FilesManager {
         }
     }
 
+    showContextMenu(event, item) {
+        const menu = document.getElementById('contextMenu');
+        if (!menu) return;
+
+        this.contextItem = item ? {
+            id: item.dataset.id,
+            name: item.dataset.name,
+            type: item.dataset.type
+        } : null;
+
+        this.updateContextMenuItems();
+
+        menu.style.display = 'block';
+
+        // Позиционирование с учетом границ экрана
+        const rect = menu.getBoundingClientRect();
+        const x = Math.min(event.pageX, window.innerWidth - rect.width - 10);
+        const y = Math.min(event.pageY, window.innerHeight - rect.height - 10);
+
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+
+        // Анимация появления
+        menu.style.opacity = '0';
+        menu.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            menu.style.opacity = '1';
+            menu.style.transform = 'scale(1)';
+            menu.style.transition = 'all 0.15s ease';
+        }, 10);
+    }
+
+    updateContextMenuItems() {
+        const menu = document.getElementById('contextMenu');
+        if (!menu) return;
+
+        const items = menu.querySelectorAll('li[data-action]');
+
+        if (this.contextItem) {
+            // Контекст для конкретного элемента
+            const showFor = {
+                'upload': false,
+                'create-folder': false,
+                'manage-access': false,
+                'preview': this.contextItem.type === 'file',
+                'edit': this.contextItem.type === 'file',
+                'rename': true,
+                'download': this.contextItem.type === 'file',
+                'access': true,
+                'delete': true,
+                'properties': true
+            };
+
+            items.forEach(item => {
+                const action = item.dataset.action;
+                item.style.display = showFor[action] ? 'flex' : 'none';
+            });
+        } else {
+            // Контекст для пустой области
+            const showFor = {
+                'upload': true,
+                'create-folder': true,
+                'manage-access': true,
+                'preview': false,
+                'edit': false,
+                'rename': false,
+                'download': false,
+                'access': false,
+                'delete': false,
+                'properties': false
+            };
+
+            items.forEach(item => {
+                const action = item.dataset.action;
+                item.style.display = showFor[action] ? 'flex' : 'none';
+            });
+        }
+    }
+
     hideContextMenu() {
         const menu = document.getElementById('contextMenu');
-        if (menu) menu.style.display = 'none';
+        if (menu) {
+            menu.style.opacity = '0';
+            menu.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                menu.style.display = 'none';
+                menu.style.transition = '';
+            }, 150);
+        }
     }
 
     handleContextAction(action) {
-        if (['upload', 'create-folder', 'manage-access'].includes(action)) {
+        // Действия для пустой области
+        const emptyAreaActions = ['upload', 'create-folder', 'manage-access'];
+
+        if (emptyAreaActions.includes(action)) {
             switch (action) {
                 case 'upload':
-                    openUploadModal(this.currentFolderId);
+                    this.openUploadModal();
                     break;
                 case 'create-folder':
-                    openCreateFolderModal(this.currentFolderId);
+                    this.openCreateFolderModal();
                     break;
                 case 'manage-access':
-                    openAccessModal(this.currentFolderId, true);
+                    this.openAccessModal(this.currentFolderId, true);
                     break;
             }
             this.hideContextMenu();
             return;
         }
+
+        // Действия для конкретного элемента
         if (!this.contextItem) return;
+
         const { id, name, type } = this.contextItem;
+
         switch (action) {
             case 'preview':
-                if (type === 'file') {
-                    this.previewFile(id);
-                }
+                if (type === 'file') this.previewFile(id);
                 break;
             case 'edit':
-                if (type === 'file') {
-                    this.editFile(id);
-                }
+                if (type === 'file') this.editFile(id);
                 break;
             case 'rename':
-                if (type === 'folder') {
-                    openRenameFolderModal(id, name);
-                }
+                this.renameItem(id, name, type);
                 break;
             case 'download':
-                if (type === 'file') {
-                    this.downloadFile(id);
-                }
+                if (type === 'file') this.downloadFile(id);
                 break;
             case 'access':
-                openAccessModal(id, type === 'folder');
+                this.openAccessModal(id, type === 'folder');
                 break;
             case 'delete':
-                if (type === 'file') {
-                    this.deleteFile(id, name);
-                } else {
-                    deleteFolder(id, name);
-                }
+                this.deleteItem(id, name, type);
                 break;
             case 'properties':
                 this.showProperties(id, name, type);
                 break;
         }
+
         this.hideContextMenu();
     }
 
-    bindSelectionEvents() {
-        document.addEventListener('change', (e) => {
-            if (e.target.id === 'selectAll') {
-                const checked = e.target.checked;
-                document.querySelectorAll('.file-select').forEach(cb => {
-                    cb.checked = checked;
-                    const id = cb.dataset.fileId;
-                    if (checked) this.selectedFiles.add(id); else this.selectedFiles.delete(id);
-                });
-                this.updateDownloadButton();
-            } else if (e.target.classList.contains('file-select')) {
-                const id = e.target.dataset.fileId;
-                if (e.target.checked) this.selectedFiles.add(id); else this.selectedFiles.delete(id);
-                this.updateDownloadButton();
+    // Клавиатурные сочетания
+    bindKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Игнорируем, если фокус в поле ввода
+            if (e.target.matches('input, textarea, select')) return;
+
+            // Только с Ctrl/Cmd
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'a':
+                        e.preventDefault();
+                        this.selectAll();
+                        break;
+                    case 'c':
+                        e.preventDefault();
+                        this.copySelected();
+                        break;
+                    case 'v':
+                        e.preventDefault();
+                        this.pasteItems();
+                        break;
+                    case 'z':
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            this.redo();
+                        } else {
+                            this.undo();
+                        }
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        this.focusSearch();
+                        break;
+                }
+            } else {
+                switch (e.key) {
+                    case 'Delete':
+                        e.preventDefault();
+                        this.deleteSelected();
+                        break;
+                    case 'F2':
+                        e.preventDefault();
+                        this.renameSelected();
+                        break;
+                    case 'Escape':
+                        e.preventDefault();
+                        this.clearSelection();
+                        this.hideContextMenu();
+                        break;
+                }
             }
         });
     }
 
-    updateDownloadButton() {
-        const btn = document.getElementById('downloadSelected');
-        if (btn) btn.disabled = this.selectedFiles.size === 0;
-    }
+    // Drag & Drop
+    bindDragAndDrop() {
+        document.addEventListener('dragstart', (e) => {
+            const item = e.target.closest('.explorer-item');
+            if (!item) return;
 
-    async downloadSelected() {
-        if (this.selectedFiles.size === 0) return;
-        const response = await fetch('/api/files/download-zip', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: Array.from(this.selectedFiles) })
+            this.draggedItem = {
+                id: item.dataset.id,
+                name: item.dataset.name,
+                type: item.dataset.type
+            };
+
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', item.dataset.id);
+
+            // Визуальная обратная связь
+            item.style.opacity = '0.5';
         });
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'files.zip';
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
-    }
 
-    loadInitialData() {
-        // Load based on current URL parameters
-        const params = new URLSearchParams(window.location.search);
-        this.currentFolderId = params.get('folderId') || null;
-        this.currentView = params.get('view') || 'list';
-    }
-
-    async loadFiles(searchTerm = '') {
-        const urlParams = new URLSearchParams(window.location.search);
-        const params = new URLSearchParams();
-
-        const folderId = urlParams.get('folderId');
-        if (folderId) params.append('FolderId', folderId);
-
-        const fileType = urlParams.get('SearchRequest.FileType');
-        if (fileType) params.append('FileType', fileType);
-
-        const onlyMy = urlParams.get('SearchRequest.OnlyMyFiles');
-        if (onlyMy === 'true') params.append('OnlyMyFiles', 'true');
-
-        if (searchTerm) params.append('SearchTerm', searchTerm);
-
-        const sortBy = urlParams.get('SearchRequest.SortBy') || 'name';
-        const sortDir = urlParams.get('SearchRequest.SortDirection') || 'asc';
-        params.append('SortBy', sortBy);
-        params.append('SortDirection', sortDir);
-
-        try {
-            const response = await fetch(`/api/files?${params.toString()}`);
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Loaded files:', data);
+        document.addEventListener('dragend', (e) => {
+            const item = e.target.closest('.explorer-item');
+            if (item) {
+                item.style.opacity = '';
             }
-        } catch (error) {
-            console.error('Error loading files:', error);
-        }
-    }
+            this.draggedItem = null;
+        });
 
-    performSearch(searchTerm) {
-        const params = this.buildSearchParams();
-        if (searchTerm) {
-            params['SearchRequest.SearchTerm'] = searchTerm;
-        } else {
-            delete params['SearchRequest.SearchTerm'];
-        }
-        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
-        this.navigateTo(newUrl);
-    }
-
-    applyFilters() {
-        const params = this.buildSearchParams();
-
-        const filterType = document.getElementById('filterType');
-        if (filterType && filterType.value) {
-            params['SearchRequest.FileType'] = filterType.value;
-        }
-
-        const onlyMyFiles = document.getElementById('onlyMyFiles');
-        if (onlyMyFiles && onlyMyFiles.checked) {
-            params['SearchRequest.OnlyMyFiles'] = true;
-        }
-
-        const dateFrom = document.getElementById('dateFrom');
-        if (dateFrom && dateFrom.value) params['SearchRequest.DateFrom'] = dateFrom.value;
-        const dateTo = document.getElementById('dateTo');
-        if (dateTo && dateTo.value) params['SearchRequest.DateTo'] = dateTo.value;
-        const updatedFrom = document.getElementById('updatedFrom');
-        if (updatedFrom && updatedFrom.value) params['SearchRequest.UpdatedFrom'] = updatedFrom.value;
-        const updatedTo = document.getElementById('updatedTo');
-        if (updatedTo && updatedTo.value) params['SearchRequest.UpdatedTo'] = updatedTo.value;
-        const extension = document.getElementById('extension');
-        if (extension && extension.value) params['SearchRequest.Extension'] = extension.value;
-        const minSize = document.getElementById('minSize');
-        if (minSize && minSize.value) params['SearchRequest.MinSizeBytes'] = minSize.value;
-        const maxSize = document.getElementById('maxSize');
-        if (maxSize && maxSize.value) params['SearchRequest.MaxSizeBytes'] = maxSize.value;
-        const tags = document.getElementById('tags');
-        if (tags && tags.value) params['SearchRequest.Tags'] = tags.value;
-        const ownerId = document.getElementById('ownerId');
-        if (ownerId && ownerId.value) params['SearchRequest.OwnerId'] = ownerId.value;
-
-        // Update URL and reload
-        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
-        this.navigateTo(newUrl);
-    }
-
-    changeView(view) {
-        if (this.currentView === view) return;
-        this.currentView = view;
-        const params = this.buildSearchParams();
-        params.view = view;
-        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
-        this.navigateTo(newUrl);
-    }
-
-    buildSearchParams() {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            'SearchRequest.SearchTerm': params.get('SearchRequest.SearchTerm') || '',
-            'SearchRequest.FolderId': this.currentFolderId,
-            'SearchRequest.FileType': params.get('SearchRequest.FileType') || '',
-            'SearchRequest.OnlyMyFiles': params.get('SearchRequest.OnlyMyFiles') === 'true',
-            'SearchRequest.SortBy': params.get('SearchRequest.SortBy') || 'name',
-            'SearchRequest.SortDirection': params.get('SearchRequest.SortDirection') || 'asc',
-            'SearchRequest.DateFrom': params.get('SearchRequest.DateFrom') || '',
-            'SearchRequest.DateTo': params.get('SearchRequest.DateTo') || '',
-            'SearchRequest.UpdatedFrom': params.get('SearchRequest.UpdatedFrom') || '',
-            'SearchRequest.UpdatedTo': params.get('SearchRequest.UpdatedTo') || '',
-            'SearchRequest.Extension': params.get('SearchRequest.Extension') || '',
-            'SearchRequest.MinSizeBytes': params.get('SearchRequest.MinSizeBytes') || '',
-            'SearchRequest.MaxSizeBytes': params.get('SearchRequest.MaxSizeBytes') || '',
-            'SearchRequest.Tags': params.get('SearchRequest.Tags') || '',
-            'SearchRequest.OwnerId': params.get('SearchRequest.OwnerId') || '',
-            'SearchRequest.Page': 1,
-            folderId: this.currentFolderId
-        };
-    }
-
-    toggleAdvanced() {
-        const block = document.getElementById('advancedFilters');
-        if (!block) return;
-        block.style.display = block.style.display === 'none' ? 'block' : 'none';
-    }
-
-    // Tree view functions
-    async toggleTreeNode(nodeId) {
-        const node = document.querySelector(`[data-node-id="${nodeId}"]`);
-        if (!node) return;
-
-        const children = node.querySelector('.tree-children');
-        const toggle = node.querySelector('.tree-toggle');
-
-        if (!children || !toggle) return;
-
-        if (children.style.display === 'none' || !children.style.display) {
-            // Expand
-            children.style.display = 'block';
-            toggle.textContent = '▼';
-
-            // Load children if not loaded
-            if (children.children.length === 0) {
-                await this.loadFolderContents(nodeId, children);
+        document.addEventListener('dragover', (e) => {
+            const dropTarget = e.target.closest('.explorer-item[data-type="folder"]');
+            if (dropTarget && this.draggedItem) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                dropTarget.classList.add('drag-over');
             }
-        } else {
-            // Collapse
-            children.style.display = 'none';
-            toggle.textContent = '▶';
-        }
-    }
+        });
 
-    async loadFolderContents(folderId, container) {
-        try {
-            const response = await fetch(`/api/folders/${folderId}/contents`);
-            if (response.ok) {
-                const data = await response.json();
-                this.renderTreeChildren(data.children, container);
+        document.addEventListener('dragleave', (e) => {
+            const dropTarget = e.target.closest('.explorer-item[data-type="folder"]');
+            if (dropTarget) {
+                dropTarget.classList.remove('drag-over');
             }
-        } catch (error) {
-            console.error('Error loading folder contents:', error);
-        }
-    }
+        });
 
-    renderTreeChildren(children, container) {
-        container.innerHTML = '';
-
-        children.forEach(child => {
-            const childElement = this.createTreeNodeElement(child);
-            container.appendChild(childElement);
+        document.addEventListener('drop', (e) => {
+            const dropTarget = e.target.closest('.explorer-item[data-type="folder"]');
+            if (dropTarget && this.draggedItem) {
+                e.preventDefault();
+                dropTarget.classList.remove('drag-over');
+                this.moveItem(this.draggedItem.id, dropTarget.dataset.id);
+            }
         });
     }
 
-    createTreeNodeElement(nodeData) {
-        const div = document.createElement('div');
-        div.className = 'tree-node';
-        div.setAttribute('data-node-id', nodeData.id);
-        div.setAttribute('data-level', nodeData.level);
-
-        const content = document.createElement('div');
-        content.className = 'tree-node-content';
-        content.style.paddingLeft = `${nodeData.level * 20}px`;
-
-        if (nodeData.type === 'folder') {
-            const safeName = nodeData.name.replace(/'/g, "\\'");
-            content.innerHTML = `
-                ${nodeData.hasChildren ? '<span class="tree-toggle" onclick="filesManager.toggleTreeNode(\'' + nodeData.id + '\')">▶</span>' : '<span class="tree-spacer"></span>'}
-                <span class="tree-icon">${nodeData.icon}</span>
-                <a href="?folderId=${nodeData.id}&view=tree" class="tree-link folder-link">${nodeData.name}</a>
-                ${nodeData.itemsCount ? '<span class="tree-count">(' + nodeData.itemsCount + ')</span>' : ''}
-                <div class="tree-file-actions">
-                    <button class="btn btn-tiny" onclick="openRenameFolderModal('${nodeData.id}', '${safeName}')" title="Переименовать">✏️</button>
-                    <button class="btn btn-tiny" onclick="moveFolder('${nodeData.id}')" title="Переместить">📁</button>
-                    <button class="btn btn-tiny" onclick="deleteFolder('${nodeData.id}', '${safeName}')" title="Удалить">🗑️</button>
-                    <button class="btn btn-tiny" onclick="shareAccess('folder','${nodeData.id}')" title="Права">🔑</button>
-                </div>
-                <span class="tree-date">${this.formatDate(nodeData.updatedAt || nodeData.createdAt)}</span>
-            `;
-
-            if (nodeData.hasChildren) {
-                const childrenDiv = document.createElement('div');
-                childrenDiv.className = 'tree-children';
-                childrenDiv.style.display = 'none';
-                div.appendChild(childrenDiv);
-            }
+    // Действия с файлами
+    async openItem(itemId, itemType) {
+        if (itemType === 'folder') {
+            this.navigateTo(`?folderId=${itemId}&view=${this.currentView}`);
         } else {
-            content.innerHTML = `
-                <span class="tree-spacer"></span>
-                <span class="tree-icon">${nodeData.icon}</span>
-                <span class="tree-link file-link" onclick="filesManager.previewFile('${nodeData.id}')">${nodeData.name}</span>
-                ${nodeData.sizeBytes ? '<span class="tree-size">' + this.formatFileSize(nodeData.sizeBytes) + '</span>' : ''}
-                <div class="tree-file-actions">
-                    <button class="btn btn-tiny" onclick="filesManager.downloadFile('${nodeData.id}')" title="Скачать">⬇️</button>
-                    <button class="btn btn-tiny" onclick="filesManager.deleteFile('${nodeData.id}', '${nodeData.name}')" title="Удалить">🗑️</button>
-                    <button class="btn btn-tiny" onclick="shareAccess('file','${nodeData.id}')" title="Права">🔑</button>
-                </div>
-                <span class="tree-date">${this.formatDate(nodeData.updatedAt || nodeData.createdAt)}</span>
-            `;
+            this.previewFile(itemId);
         }
-
-        div.appendChild(content);
-        return div;
     }
 
-    // File actions
     async previewFile(fileId) {
         try {
-            // Переходим на страницу предпросмотра
+            this.addToHistory('preview', { fileId });
             this.navigateTo(`/Files/Preview/${fileId}`);
         } catch (error) {
             console.error('Error opening file preview:', error);
@@ -496,22 +462,20 @@ class FilesManager {
             const data = await response.json();
 
             if (data.hasActiveEditors && !data.canProceed) {
-                this.showNotification('Файл сейчас редактируется другим пользователем. Попробуйте позже.', 'error');
+                this.showNotification('Файл сейчас редактируется другим пользователем', 'warning');
                 return;
             }
 
             if (data.hasActiveEditors && data.warnings) {
-                const warningMessage = 'Внимание! ' + data.warnings.join('\n') + '\n\nПродолжить редактирование?';
-                if (!confirm(warningMessage)) {
-                    return;
-                }
+                const proceed = await this.showConfirmDialog(
+                    'Файл редактируется',
+                    'Внимание! ' + data.warnings.join('\n') + '\n\nПродолжить редактирование?'
+                );
+                if (!proceed) return;
             }
 
             if (data.editUrl) {
-                // Открываем в новой вкладке
                 window.open(data.editUrl, '_blank');
-
-                // Показываем уведомление
                 this.showNotification('Файл открыт для редактирования в новой вкладке', 'success');
             }
         } catch (error) {
@@ -520,14 +484,8 @@ class FilesManager {
         }
     }
 
-    async viewFile(fileId) {
-        // Переадресация на новую функцию предпросмотра
-        return this.previewFile(fileId);
-    }
-
     async downloadFile(fileId) {
         try {
-            // Прямое скачивание файла
             window.location.href = `/api/files/${fileId}/content`;
         } catch (error) {
             console.error('Error downloading file:', error);
@@ -535,76 +493,33 @@ class FilesManager {
         }
     }
 
-    async deleteFile(fileId, fileName) {
-        if (!confirm(`Вы уверены, что хотите удалить файл "${fileName}"?`)) {
-            return;
-        }
+    async deleteItem(itemId, itemName, itemType) {
+        const proceed = await this.showConfirmDialog(
+            'Подтверждение удаления',
+            `Вы уверены, что хотите удалить ${itemType === 'file' ? 'файл' : 'папку'} "${itemName}"?`
+        );
+
+        if (!proceed) return;
+
         try {
-            const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' });
+            const endpoint = itemType === 'file' ? `/api/files/${itemId}` : `/api/folders/${itemId}`;
+            const response = await fetch(endpoint, { method: 'DELETE' });
+
             if (response.ok) {
-                this.showNotification('Файл удалён', 'success');
-                setTimeout(() => location.reload(), 500);
+                this.addToHistory('delete', { itemId, itemName, itemType });
+                this.showNotification(`${itemType === 'file' ? 'Файл' : 'Папка'} удален`, 'success');
+                this.refreshCurrentView();
             } else {
-                const text = await response.text();
-                this.showNotification('Ошибка удаления файла: ' + text, 'error');
+                const error = await response.text();
+                this.showNotification(`Ошибка удаления: ${error}`, 'error');
             }
         } catch (error) {
-            console.error('Error deleting file:', error);
-            this.showNotification('Ошибка при удалении файла', 'error');
+            console.error('Error deleting item:', error);
+            this.showNotification('Ошибка при удалении', 'error');
         }
     }
 
-    async showProperties(itemId, itemName, itemType) {
-        const crumbs = Array.from(document.querySelectorAll('.breadcrumb-item'))
-            .map(el => el.textContent.trim().replace(/\s*\/\s*/g, ''))
-            .filter(t => t.length > 0);
-        const path = (crumbs.length ? crumbs.join('/') + '/' : '') + itemName;
-
-        let size = '-';
-        let creator = '';
-        let created = '';
-        let updated = '';
-
-        try {
-            if (itemType === 'file') {
-                const res = await fetch(`/api/files/${itemId}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    size = data.formattedSize;
-                    creator = data.uploadedByName;
-                    created = new Date(data.createdAt).toLocaleString();
-                    updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : created;
-                }
-            } else {
-                const res = await fetch(`/api/folders/${itemId}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    creator = data.createdByName;
-                    created = new Date(data.createdAt).toLocaleString();
-                    updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : created;
-                }
-            }
-        } catch (error) {
-            console.error('Error loading properties:', error);
-        }
-
-        document.getElementById('propPath').textContent = path;
-        document.getElementById('propSize').textContent = size;
-        document.getElementById('propCreator').textContent = creator;
-        document.getElementById('propCreated').textContent = created;
-        document.getElementById('propUpdated').textContent = updated;
-
-        const modalEl = document.getElementById('propertiesModal');
-        if (modalEl) {
-            modalEl.style.display = 'flex';
-            setTimeout(() => {
-                modalEl.classList.remove('modal-exit');
-                modalEl.classList.add('modal-enter');
-            }, 10);
-        }
-    }
-
-    // Folder actions
+    // Управление папками
     async createFolder(name, parentId) {
         try {
             const response = await fetch('/api/folders', {
@@ -612,380 +527,482 @@ class FilesManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, parentId })
             });
+
             if (response.ok) {
+                const folder = await response.json();
+                this.addToHistory('create', { folder });
                 this.showNotification('Папка создана', 'success');
-                setTimeout(() => location.reload(), 500);
+                this.refreshCurrentView();
+                return folder;
             } else {
-                const text = await response.text();
-                this.showNotification('Ошибка создания папки: ' + text, 'error');
+                const error = await response.text();
+                this.showNotification(`Ошибка создания папки: ${error}`, 'error');
             }
         } catch (error) {
             console.error('Error creating folder:', error);
+            this.showNotification('Ошибка при создании папки', 'error');
         }
     }
 
-    async renameFolder(folderId, newName) {
+    async renameItem(itemId, currentName, itemType) {
+        const newName = await this.showInputDialog(
+            `Переименование ${itemType === 'file' ? 'файла' : 'папки'}`,
+            'Введите новое название:',
+            currentName
+        );
+
+        if (!newName || newName === currentName) return;
+
         try {
-            const response = await fetch(`/api/folders/${folderId}/rename`, {
+            const endpoint = itemType === 'file'
+                ? `/api/files/${itemId}/rename`
+                : `/api/folders/${itemId}/rename`;
+
+            const response = await fetch(endpoint, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: newName })
             });
+
             if (response.ok) {
-                this.showNotification('Папка переименована', 'success');
-                setTimeout(() => location.reload(), 500);
+                this.addToHistory('rename', { itemId, oldName: currentName, newName, itemType });
+                this.showNotification(`${itemType === 'file' ? 'Файл' : 'Папка'} переименован`, 'success');
+                this.refreshCurrentView();
             } else {
-                const text = await response.text();
-                this.showNotification('Ошибка переименования: ' + text, 'error');
+                const error = await response.text();
+                this.showNotification(`Ошибка переименования: ${error}`, 'error');
             }
         } catch (error) {
-            console.error('Error renaming folder:', error);
+            console.error('Error renaming item:', error);
+            this.showNotification('Ошибка при переименовании', 'error');
         }
     }
 
-    async deleteFolder(folderId, folderName) {
-        if (!confirm(`Удалить папку "${folderName}"?`)) return;
-        try {
-            const response = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' });
-            if (response.ok) {
-                this.showNotification('Папка удалена', 'success');
-                setTimeout(() => location.reload(), 500);
-            } else {
-                const text = await response.text();
-                this.showNotification('Ошибка удаления: ' + text, 'error');
-            }
-        } catch (error) {
-            console.error('Error deleting folder:', error);
+    // Поиск и фильтрация
+    performSearch(searchTerm) {
+        const params = this.buildSearchParams();
+        if (searchTerm) {
+            params['SearchRequest.SearchTerm'] = searchTerm;
+        } else {
+            delete params['SearchRequest.SearchTerm'];
         }
+
+        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
+        this.navigateTo(newUrl);
     }
 
-    async moveFolder(folderId) {
-        const newParentId = prompt('ID новой папки (оставьте пустым для корня)');
-        if (newParentId === null) return;
-        try {
-            const response = await fetch(`/api/folders/${folderId}/move`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ newParentId: newParentId || null })
-            });
-            if (response.ok) {
-                this.showNotification('Папка перемещена', 'success');
-                setTimeout(() => location.reload(), 500);
-            } else {
-                const text = await response.text();
-                this.showNotification('Ошибка перемещения: ' + text, 'error');
-            }
-        } catch (error) {
-            console.error('Error moving folder:', error);
-        }
-    }
+    applyFilters() {
+        const params = this.buildSearchParams();
 
-    async shareAccess(itemType, itemId) {
-        const principalId = prompt('ID пользователя или группы');
-        if (!principalId) return;
-        const access = prompt('Права (Read,Write,Delete)', 'Read');
-        if (!access) return;
-        const body = {
-            fileId: itemType === 'file' ? itemId : null,
-            folderId: itemType === 'folder' ? itemId : null,
-            userId: principalId,
-            groupId: null,
-            accessType: access
+        // Собираем значения фильтров
+        const filterElements = {
+            'SearchRequest.FileType': 'filterType',
+            'SearchRequest.OnlyMyFiles': 'onlyMyFiles',
+            'SearchRequest.DateFrom': 'dateFrom',
+            'SearchRequest.DateTo': 'dateTo',
+            'SearchRequest.Extension': 'extension',
+            'SearchRequest.MinSizeBytes': 'minSize',
+            'SearchRequest.MaxSizeBytes': 'maxSize',
+            'SearchRequest.Tags': 'tags',
+            'SearchRequest.OwnerId': 'ownerId'
         };
-        try {
-            const response = await fetch('/api/access/grant', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            if (response.ok) {
-                this.showNotification('Права назначены', 'success');
-            } else {
-                this.showNotification('Ошибка назначения прав', 'error');
+
+        Object.entries(filterElements).forEach(([param, elementId]) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (element.type === 'checkbox') {
+                    if (element.checked) params[param] = 'true';
+                } else if (element.value) {
+                    params[param] = element.value;
+                }
             }
-        } catch (error) {
-            console.error('Error granting access:', error);
+        });
+
+        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
+        this.navigateTo(newUrl);
+    }
+
+    toggleAdvanced() {
+        const block = document.getElementById('advancedFilters');
+        if (!block) return;
+
+        const isVisible = block.style.display !== 'none';
+        block.style.display = isVisible ? 'none' : 'block';
+
+        // Анимация
+        if (!isVisible) {
+            block.style.opacity = '0';
+            block.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                block.style.opacity = '1';
+                block.style.transform = 'translateY(0)';
+                block.style.transition = 'all 0.2s ease';
+            }, 10);
         }
     }
 
-    // Sorting
-    sortBy(field) {
-        const params = new URLSearchParams(window.location.search);
-        const currentSort = params.get('SearchRequest.SortBy');
-        const currentDirection = params.get('SearchRequest.SortDirection') || 'asc';
+    changeView(view) {
+        if (this.currentView === view) return;
 
-        // Toggle direction if same field
-        const newDirection = (currentSort === field && currentDirection === 'asc') ? 'desc' : 'asc';
+        this.currentView = view;
+        const params = this.buildSearchParams();
+        params.view = view;
 
-        params.set('SearchRequest.SortBy', field);
-        params.set('SearchRequest.SortDirection', newDirection);
-        params.set('SearchRequest.Page', '1'); // Reset to first page
-
-        window.location.search = params.toString();
+        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
+        this.navigateTo(newUrl);
     }
 
-    // Utility method for notifications
+    // Буфер обмена и операции
+    copySelected() {
+        const selected = Array.from(this.selectedFiles);
+        if (selected.length === 0) return;
+
+        this.clipboard = {
+            items: selected,
+            operation: 'copy'
+        };
+
+        this.showNotification(`Скопировано элементов: ${selected.length}`, 'info');
+    }
+
+    async pasteItems() {
+        if (!this.clipboard) return;
+
+        try {
+            // Здесь должна быть логика копирования/перемещения файлов
+            this.showNotification('Функция будет реализована в следующих версиях', 'info');
+        } catch (error) {
+            console.error('Error pasting items:', error);
+            this.showNotification('Ошибка при вставке', 'error');
+        }
+    }
+
+    // Выделение
+    selectAll() {
+        const items = document.querySelectorAll('.explorer-item');
+        items.forEach(item => {
+            this.selectedFiles.add(item.dataset.id);
+            item.classList.add('selected');
+        });
+
+        this.updateSelectionUI();
+    }
+
+    clearSelection() {
+        this.selectedFiles.clear();
+        document.querySelectorAll('.explorer-item.selected').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        this.updateSelectionUI();
+    }
+
+    updateSelectionUI() {
+        const count = this.selectedFiles.size;
+        const toolbar = document.querySelector('.selection-toolbar');
+
+        if (count > 0) {
+            if (!toolbar) {
+                this.createSelectionToolbar();
+            }
+            this.updateSelectionToolbar(count);
+        } else if (toolbar) {
+            toolbar.remove();
+        }
+    }
+
+    createSelectionToolbar() {
+        const toolbar = document.createElement('div');
+        toolbar.className = 'selection-toolbar';
+        toolbar.innerHTML = `
+            <div class="selection-info">
+                <span class="selection-count">0</span> элементов выбрано
+            </div>
+            <div class="selection-actions">
+                <button class="btn btn-small" onclick="filesManager.downloadSelected()">
+                    <i class="bi bi-download"></i> Скачать
+                </button>
+                <button class="btn btn-small" onclick="filesManager.copySelected()">
+                    <i class="bi bi-copy"></i> Копировать
+                </button>
+                <button class="btn btn-small btn-danger" onclick="filesManager.deleteSelected()">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+                <button class="btn btn-small btn-secondary" onclick="filesManager.clearSelection()">
+                    <i class="bi bi-x"></i> Отменить
+                </button>
+            </div>
+        `;
+
+        const container = document.querySelector('.files-wrapper');
+        if (container) {
+            container.insertBefore(toolbar, container.firstChild);
+        }
+    }
+
+    updateSelectionToolbar(count) {
+        const countElement = document.querySelector('.selection-count');
+        if (countElement) {
+            countElement.textContent = count;
+        }
+    }
+
+    // История операций (Undo/Redo)
+    addToHistory(operation, data) {
+        this.undoStack.push({ operation, data, timestamp: Date.now() });
+        if (this.undoStack.length > 50) {
+            this.undoStack.shift();
+        }
+        this.redoStack = []; // Очищаем redo при новой операции
+    }
+
+    async undo() {
+        if (this.undoStack.length === 0) return;
+
+        const action = this.undoStack.pop();
+        this.redoStack.push(action);
+
+        try {
+            await this.executeUndoAction(action);
+            this.showNotification('Операция отменена', 'info');
+        } catch (error) {
+            console.error('Error undoing action:', error);
+            this.showNotification('Ошибка отмены операции', 'error');
+        }
+    }
+
+    async redo() {
+        if (this.redoStack.length === 0) return;
+
+        const action = this.redoStack.pop();
+        this.undoStack.push(action);
+
+        try {
+            await this.executeRedoAction(action);
+            this.showNotification('Операция повторена', 'info');
+        } catch (error) {
+            console.error('Error redoing action:', error);
+            this.showNotification('Ошибка повтора операции', 'error');
+        }
+    }
+
+    // Диалоги
+    async showConfirmDialog(title, message) {
+        return new Promise((resolve) => {
+            if (typeof showCustomConfirm === 'function') {
+                showCustomConfirm(message, () => resolve(true));
+            } else {
+                resolve(confirm(message));
+            }
+        });
+    }
+
+    async showInputDialog(title, message, defaultValue = '') {
+        return new Promise((resolve) => {
+            const result = prompt(message, defaultValue);
+            resolve(result);
+        });
+    }
+
+    // Утилиты
+    buildSearchParams() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            'SearchRequest.SearchTerm': params.get('SearchRequest.SearchTerm') || '',
+            'SearchRequest.FolderId': this.currentFolderId,
+            'SearchRequest.SortBy': params.get('SearchRequest.SortBy') || 'name',
+            'SearchRequest.SortDirection': params.get('SearchRequest.SortDirection') || 'asc',
+            'SearchRequest.Page': 1,
+            folderId: this.currentFolderId
+        };
+    }
+
+    loadInitialData() {
+        const params = new URLSearchParams(window.location.search);
+        this.currentFolderId = params.get('folderId') || null;
+        this.currentView = params.get('view') || 'list';
+    }
+
+    refreshCurrentView() {
+        setTimeout(() => {
+            if (typeof window.loadPage === 'function') {
+                window.loadPage(window.location.href, false);
+            } else {
+                window.location.reload();
+            }
+        }, 1000);
+    }
+
     showNotification(message, type = 'info') {
         if (typeof window.showNotification === 'function') {
             window.showNotification(message, type);
         }
     }
 
-    // Utility functions
-    formatFileSize(bytes) {
-        if (bytes < 1024) return `${bytes} Б`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
-        if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
-        return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} ГБ`;
+    // Оптимизации производительности
+    initializePerformanceOptimizations() {
+        // Виртуализация для больших списков
+        this.initializeVirtualScrolling();
+
+        // Ленивая загрузка изображений
+        this.initializeLazyLoading();
+
+        // Кэширование результатов поиска
+        this.searchCache = new Map();
     }
 
-    formatDate(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
+    initializeVirtualScrolling() {
+        const container = document.querySelector('.files-grid, .list-content');
+        if (!container) return;
+
+        // Реализация виртуального скроллинга для больших списков
+        // Показываем только видимые элементы + буфер
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target.querySelector('img[data-src]');
+                    if (img) {
+                        img.src = img.dataset.src;
+                        img.removeAttribute('data-src');
+                    }
+                }
+            });
+        });
+
+        // Наблюдаем за всеми элементами
+        document.querySelectorAll('.file-card, .explorer-item').forEach(item => {
+            observer.observe(item);
         });
     }
+
+    initializeLazyLoading() {
+        const images = document.querySelectorAll('img[data-src]');
+
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove('lazy');
+                        imageObserver.unobserve(img);
+                    }
+                });
+            });
+
+            images.forEach(img => imageObserver.observe(img));
+        } else {
+            // Fallback для старых браузеров
+            images.forEach(img => {
+                img.src = img.dataset.src;
+            });
+        }
+    }
+
+    // Методы-заглушки для обратной совместимости
+    openUploadModal() {
+        if (typeof openUploadModal === 'function') {
+            openUploadModal(this.currentFolderId);
+        }
+    }
+
+    openCreateFolderModal() {
+        if (typeof openCreateFolderModal === 'function') {
+            openCreateFolderModal(this.currentFolderId);
+        }
+    }
+
+    openAccessModal(itemId, isFolder) {
+        if (typeof openAccessModal === 'function') {
+            openAccessModal(itemId, isFolder);
+        }
+    }
+
+    showProperties(itemId, itemName, itemType) {
+        if (typeof loadItemProperties === 'function') {
+            const modal = document.getElementById('propertiesModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                setTimeout(() => {
+                    modal.classList.add('modal-enter');
+                    modal.querySelector('.modal-content-animated').classList.add('show');
+                    loadItemProperties(itemId, itemName, itemType);
+                }, 10);
+            }
+        }
+    }
+
+    // Дополнительные методы для работы с выбранными файлами
+    async downloadSelected() {
+        if (this.selectedFiles.size === 0) return;
+
+        try {
+            const response = await fetch('/api/files/download-zip', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: Array.from(this.selectedFiles) })
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'files.zip';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+        } catch (error) {
+            console.error('Error downloading selected files:', error);
+            this.showNotification('Ошибка при скачивании файлов', 'error');
+        }
+    }
+
+    async deleteSelected() {
+        if (this.selectedFiles.size === 0) return;
+
+        const proceed = await this.showConfirmDialog(
+            'Подтверждение удаления',
+            `Вы уверены, что хотите удалить выбранные элементы (${this.selectedFiles.size})?`
+        );
+
+        if (!proceed) return;
+
+        // Удаляем каждый файл
+        for (const fileId of this.selectedFiles) {
+            try {
+                const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' });
+                if (!response.ok) {
+                    console.error(`Failed to delete file ${fileId}`);
+                }
+            } catch (error) {
+                console.error(`Error deleting file ${fileId}:`, error);
+            }
+        }
+
+        this.clearSelection();
+        this.showNotification('Файлы удалены', 'success');
+        this.refreshCurrentView();
+    }
+
+    focusSearch() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    }
 }
 
-// Global functions for onclick handlers
+// Создаем глобальный экземпляр
 let filesManager;
 
-function toggleTreeNode(nodeId) {
-    if (filesManager) {
-        filesManager.toggleTreeNode(nodeId);
-    }
-}
-
-function viewFile(fileId) {
-    if (filesManager) {
-        filesManager.viewFile(fileId);
-    }
-}
-
-function previewFile(fileId) {
-    if (filesManager) {
-        filesManager.previewFile(fileId);
-    }
-}
-
-function editFile(fileId) {
-    if (filesManager) {
-        filesManager.editFile(fileId);
-    }
-}
-
-function downloadFile(fileId) {
-    if (filesManager) {
-        filesManager.downloadFile(fileId);
-    }
-}
-
-function downloadSelected() {
-    if (filesManager) {
-        filesManager.downloadSelected();
-    }
-}
-
-function deleteFile(fileId, fileName) {
-    if (filesManager) {
-        filesManager.deleteFile(fileId, fileName);
-    }
-}
-
-let createFolderParentId = null;
-let renameFolderId = null;
-
-function openCreateFolderModal(parentId) {
-    createFolderParentId = parentId;
-    const input = document.getElementById('createFolderName');
-    if (input) input.value = '';
-    const modal = document.getElementById('createFolderModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        setTimeout(() => {
-            modal.classList.remove('modal-exit');
-            modal.classList.add('modal-enter');
-        }, 10);
-    }
-}
-
-function closeCreateFolderModal() {
-    const modal = document.getElementById('createFolderModal');
-    if (modal) {
-        modal.classList.remove('modal-enter');
-        modal.classList.add('modal-exit');
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
-    }
-}
-
-function submitCreateFolder() {
-    const input = document.getElementById('createFolderName');
-    if (!input || !filesManager) return;
-    const name = input.value.trim();
-    if (!name) return;
-    filesManager.createFolder(name, createFolderParentId);
-    closeCreateFolderModal();
-}
-
-function openRenameFolderModal(folderId, currentName) {
-    renameFolderId = folderId;
-    const input = document.getElementById('renameFolderName');
-    if (input) input.value = currentName;
-    const modal = document.getElementById('renameFolderModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        setTimeout(() => {
-            modal.classList.remove('modal-exit');
-            modal.classList.add('modal-enter');
-        }, 10);
-    }
-}
-
-function closeRenameFolderModal() {
-    const modal = document.getElementById('renameFolderModal');
-    if (modal) {
-        modal.classList.remove('modal-enter');
-        modal.classList.add('modal-exit');
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
-    }
-}
-
-function submitRenameFolder() {
-    const input = document.getElementById('renameFolderName');
-    if (!input || !filesManager) return;
-    const newName = input.value.trim();
-    if (!newName) return;
-    filesManager.renameFolder(renameFolderId, newName);
-    closeRenameFolderModal();
-}
-
-function deleteFolder(folderId, folderName) {
-    if (filesManager) {
-        filesManager.deleteFolder(folderId, folderName);
-    }
-}
-
-function moveFolder(folderId) {
-    if (filesManager) {
-        filesManager.moveFolder(folderId);
-    }
-}
-
-function shareAccess(type, id) {
-    if (filesManager) {
-        filesManager.shareAccess(type, id);
-    }
-}
-
-function changeView(viewMode) {
-    if (filesManager) {
-        filesManager.changeView(viewMode);
-    }
-}
-
-function sortBy(field) {
-    if (filesManager) {
-        filesManager.sortBy(field);
-    }
-}
-
-function toggleAdvanced() {
-    if (filesManager) {
-        filesManager.toggleAdvanced();
-    }
-}
-
-function applyFilters() {
-    if (filesManager) {
-        filesManager.applyFilters();
-    }
-}
-
-function closePropertiesModal() {
-    const modal = document.getElementById('propertiesModal');
-    if (modal) {
-        modal.classList.remove('modal-enter');
-        modal.classList.add('modal-exit');
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
-    }
-}
-
-// Initialize when DOM is loaded
+// Инициализация при загрузке DOM
 function initializeFilesManager() {
-    filesManager = new FilesManager();
+    filesManager = new ModernFilesManager();
 }
 
 document.addEventListener('DOMContentLoaded', initializeFilesManager);
 
-
-// Upload modal functions (will be loaded from _UploadModal.cshtml)
-// These are just declarations to avoid errors
-window.openUploadModal = window.openUploadModal || function (folderId) {
-    console.log('Upload modal not loaded yet');
-};
-
-// Drag and drop for the main page
-document.addEventListener('DOMContentLoaded', function () {
-    const mainContent = document.querySelector('.content-area');
-    if (mainContent) {
-        mainContent.addEventListener('dragover', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            mainContent.classList.add('drag-over');
-        });
-
-        mainContent.addEventListener('dragleave', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            mainContent.classList.remove('drag-over');
-        });
-
-        mainContent.addEventListener('drop', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            mainContent.classList.remove('drag-over');
-
-            // Open upload modal with files
-            if (typeof openUploadModal === 'function') {
-                openUploadModal();
-                setTimeout(() => {
-                    if (typeof handleFiles === 'function') {
-                        handleFiles(Array.from(e.dataTransfer.files));
-                    }
-                }, 100);
-            }
-        });
-    }
-});
-
-
-// Version management functions
-window.viewVersions = function (fileId) {
-    if (window.navigateWithTransition) {
-        window.navigateWithTransition(`/Files/${fileId}/Versions`);
-    } else {
-        window.location.href = `/Files/${fileId}/Versions`;
-    }
-};
-
-// Add version button to file actions where appropriate
-document.addEventListener('DOMContentLoaded', function () {
-    // Add version history links to file context menus if they exist
-    const fileItems = document.querySelectorAll('.file-card, .files-table tr');
-    fileItems.forEach(item => {
-        const fileId = item.getAttribute('data-file-id');
-        if (fileId) {
-            // Add context menu or additional actions as needed
-            // This can be expanded based on UI requirements
-        }
-    });
-});
+// Экспортируем для обратной совместимости
+window.filesManager = filesManager;

@@ -1,34 +1,718 @@
-<div id="propertiesModal" class="modal modal-exit" style="display:none;">
-    <div class="modal-content">
+<div id="propertiesModal" class="modal" style="display:none;">
+    <div class="modal-content modal-content-animated properties-modal-content">
         <div class="modal-header">
-            <h3>Свойства</h3>
+            <h3>
+                <i class="bi bi-info-circle"></i>
+                Свойства элемента
+            </h3>
+            <button class="modal-close" onclick="closePropertiesModal()" title="Закрыть">
+                <i class="bi bi-x"></i>
+            </button>
         </div>
+
         <div class="modal-body">
-            <table>
-                <tr>
-                    <th>Путь</th>
-                    <td id="propPath"></td>
-                </tr>
-                <tr>
-                    <th>Размер</th>
-                    <td id="propSize"></td>
-                </tr>
-                <tr>
-                    <th>Создатель</th>
-                    <td id="propCreator"></td>
-                </tr>
-                <tr>
-                    <th>Дата создания</th>
-                    <td id="propCreated"></td>
-                </tr>
-                <tr>
-                    <th>Дата изменения</th>
-                    <td id="propUpdated"></td>
-                </tr>
-            </table>
+            <!-- Информация об элементе -->
+            <div class="properties-preview">
+                <div class="preview-icon" id="propertiesIcon">
+                    <i class="bi bi-file-earmark"></i>
+                </div>
+                <div class="preview-details">
+                    <h4 id="propertiesName" class="item-name">—</h4>
+                    <p id="propertiesType" class="item-type">Файл</p>
+                </div>
+            </div>
+
+            <!-- Основная информация -->
+            <div class="properties-section">
+                <h5 class="section-title">
+                    <i class="bi bi-info"></i>
+                    Основная информация
+                </h5>
+                <div class="properties-grid">
+                    <div class="property-item">
+                        <label class="property-label">Полный путь:</label>
+                        <span class="property-value" id="propPath">—</span>
+                    </div>
+                    <div class="property-item">
+                        <label class="property-label">Размер:</label>
+                        <span class="property-value" id="propSize">—</span>
+                    </div>
+                    <div class="property-item">
+                        <label class="property-label">Тип:</label>
+                        <span class="property-value" id="propFileType">—</span>
+                    </div>
+                    <div class="property-item">
+                        <label class="property-label">Расширение:</label>
+                        <span class="property-value" id="propExtension">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Даты и время -->
+            <div class="properties-section">
+                <h5 class="section-title">
+                    <i class="bi bi-clock"></i>
+                    Временные метки
+                </h5>
+                <div class="properties-grid">
+                    <div class="property-item">
+                        <label class="property-label">Создан:</label>
+                        <span class="property-value" id="propCreated">—</span>
+                    </div>
+                    <div class="property-item">
+                        <label class="property-label">Изменен:</label>
+                        <span class="property-value" id="propUpdated">—</span>
+                    </div>
+                    <div class="property-item">
+                        <label class="property-label">Последний доступ:</label>
+                        <span class="property-value" id="propAccessed">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Права и доступ -->
+            <div class="properties-section">
+                <h5 class="section-title">
+                    <i class="bi bi-person"></i>
+                    Права и доступ
+                </h5>
+                <div class="properties-grid">
+                    <div class="property-item">
+                        <label class="property-label">Владелец:</label>
+                        <span class="property-value" id="propCreator">—</span>
+                    </div>
+                    <div class="property-item">
+                        <label class="property-label">Права доступа:</label>
+                        <span class="property-value" id="propPermissions">—</span>
+                    </div>
+                    <div class="property-item">
+                        <label class="property-label">Общий доступ:</label>
+                        <span class="property-value" id="propSharing">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Дополнительная информация -->
+            <div class="properties-section">
+                <h5 class="section-title">
+                    <i class="bi bi-gear"></i>
+                    Дополнительно
+                </h5>
+                <div class="properties-grid">
+                    <div class="property-item">
+                        <label class="property-label">Версии:</label>
+                        <span class="property-value" id="propVersions">—</span>
+                    </div>
+                    <div class="property-item">
+                        <label class="property-label">Облачная синхронизация:</label>
+                        <span class="property-value" id="propSync">—</span>
+                    </div>
+                    <div class="property-item">
+                        <label class="property-label">ID элемента:</label>
+                        <span class="property-value property-id" id="propId">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Теги -->
+            <div class="properties-section">
+                <h5 class="section-title">
+                    <i class="bi bi-tags"></i>
+                    Теги и метаданные
+                </h5>
+                <div class="tags-editor">
+                    <div class="tags-container" id="propTags">
+                        <!-- Теги будут добавлены динамически -->
+                    </div>
+                    <div class="tags-input-container">
+                        <input type="text"
+                               id="newTagInput"
+                               class="tag-input"
+                               placeholder="Добавить тег..."
+                               onkeypress="handleTagInput(event)" />
+                        <button type="button"
+                                class="btn btn-small btn-primary"
+                                onclick="addNewTag()">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
+
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closePropertiesModal()">Закрыть</button>
+            <button class="btn btn-secondary" onclick="closePropertiesModal()">
+                <i class="bi bi-x"></i>
+                Закрыть
+            </button>
+            <button class="btn btn-primary" onclick="saveProperties()" id="savePropertiesBtn">
+                <i class="bi bi-check"></i>
+                Сохранить изменения
+            </button>
         </div>
     </div>
 </div>
+
+<style>
+    /* Стили для модального окна свойств */
+    .properties-modal-content {
+        max-width: 650px;
+        max-height: 85vh;
+    }
+
+    /* Предпросмотр элемента */
+    .properties-preview {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: var(--surface-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius);
+        margin-bottom: 24px;
+    }
+
+    .preview-icon {
+        width: 64px;
+        height: 64px;
+        background: var(--primary);
+        color: white;
+        border-radius: var(--radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        flex-shrink: 0;
+        box-shadow: var(--shadow);
+    }
+
+    .preview-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .item-name {
+        margin: 0 0 4px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        word-break: break-word;
+    }
+
+    .item-type {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Секции свойств */
+    .properties-section {
+        margin-bottom: 24px;
+        padding: 16px;
+        background: var(--surface);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius);
+    }
+
+    .section-title {
+        margin: 0 0 16px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    /* Сетка свойств */
+    .properties-grid {
+        display: grid;
+        gap: 12px;
+    }
+
+    .property-item {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: center;
+        padding: 8px 0;
+    }
+
+    .property-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .property-value {
+        font-size: 13px;
+        color: var(--text);
+        word-break: break-word;
+        padding: 4px 8px;
+        background: var(--surface-tertiary);
+        border-radius: var(--radius-sm);
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+    }
+
+        .property-value:hover {
+            border-color: var(--border);
+        }
+
+    .property-id {
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        background: var(--surface-secondary);
+        color: var(--text-muted);
+    }
+
+    /* Редактор тегов */
+    .tags-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-height: 32px;
+        padding: 8px;
+        background: var(--surface-tertiary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-sm);
+    }
+
+    .tag-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--primary);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        animation: tagAppear 0.2s ease;
+    }
+
+    .tag-remove {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        padding: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        transition: all 0.15s ease;
+    }
+
+        .tag-remove:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+    .tags-input-container {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .tag-input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        background: var(--surface);
+    }
+
+        .tag-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+    /* Состояния значений */
+    .property-value.loading {
+        background: var(--surface-secondary);
+        color: var(--text-muted);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .property-value.loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+    .property-value.error {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--error);
+        border-color: var(--error);
+    }
+
+    .property-value.success {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+        border-color: var(--success);
+    }
+
+    /* Анимации */
+    @@keyframes tagAppear {
+        from
+
+    {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    }
+
+    @@keyframes shimmer {
+        0%
+
+    {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+
+    }
+
+    /* Адаптивность */
+    @@media (max-width: 768px) {
+        .properties-modal-content
+
+    {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .property-item {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+
+    .property-label {
+        font-weight: 600;
+    }
+
+    .properties-preview {
+        flex-direction: column;
+        text-align: center;
+        padding: 16px;
+    }
+
+    .preview-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 28px;
+    }
+
+    .tags-input-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    }
+
+    /* Темная тема */
+    [data-theme="dark"] .property-value {
+        background: var(--surface-secondary);
+    }
+
+        [data-theme="dark"] .property-value:hover {
+            background: var(--surface-tertiary);
+        }
+</style>
+
+<script>
+    let currentItemData = null;
+    let currentTags = [];
+
+    // Функция закрытия модального окна
+    function closePropertiesModal() {
+        const modal = document.getElementById('propertiesModal');
+        modal.classList.remove('modal-enter');
+        modal.querySelector('.modal-content-animated').classList.remove('show');
+
+        setTimeout(() => {
+            modal.style.display = 'none';
+            resetPropertiesModal();
+        }, 200);
+    }
+
+    // Сброс данных модального окна
+    function resetPropertiesModal() {
+        currentItemData = null;
+        currentTags = [];
+
+        // Сбрасываем все значения
+        const propertyValues = document.querySelectorAll('.property-value');
+        propertyValues.forEach(el => {
+            el.textContent = '—';
+            el.className = 'property-value';
+        });
+
+        // Очищаем теги
+        document.getElementById('propTags').innerHTML = '';
+        document.getElementById('newTagInput').value = '';
+    }
+
+    // Загрузка данных свойств элемента
+    async function loadItemProperties(itemId, itemName, itemType) {
+        currentItemData = { id: itemId, name: itemName, type: itemType };
+
+        // Обновляем заголовок
+        document.getElementById('propertiesName').textContent = itemName;
+        document.getElementById('propertiesType').textContent = itemType === 'file' ? 'Файл' : 'Папка';
+
+        // Обновляем иконку
+        const iconEl = document.getElementById('propertiesIcon').querySelector('i');
+        iconEl.className = itemType === 'file' ? 'bi bi-file-earmark' : 'bi bi-folder';
+
+        // Показываем состояние загрузки
+        showLoadingState();
+
+        try {
+            let data;
+            if (itemType === 'file') {
+                const response = await fetch(`/api/files/${itemId}`);
+                data = response.ok ? await response.json() : null;
+            } else {
+                const response = await fetch(`/api/folders/${itemId}`);
+                data = response.ok ? await response.json() : null;
+            }
+
+            if (data) {
+                populateProperties(data, itemType);
+            } else {
+                showErrorState();
+            }
+
+        } catch (error) {
+            console.error('Error loading properties:', error);
+            showErrorState();
+        }
+    }
+
+    // Заполнение свойств данными
+    function populateProperties(data, itemType) {
+        // Базовая информация
+        setValue('propPath', buildItemPath(data));
+        setValue('propSize', itemType === 'file' ? data.formattedSize || '—' : '—');
+        setValue('propFileType', itemType === 'file' ? (data.fileType || '—') : 'Папка');
+        setValue('propExtension', itemType === 'file' ? (data.extension || '—') : '—');
+
+        // Временные метки
+        setValue('propCreated', formatDateTime(data.createdAt));
+        setValue('propUpdated', formatDateTime(data.updatedAt));
+        setValue('propAccessed', '—'); // Эти данные нужно добавить в API
+
+        // Права и доступ
+        setValue('propCreator', data.createdByName || data.uploadedByName || '—');
+        setValue('propPermissions', 'Чтение/Запись'); // Нужно добавить в API
+        setValue('propSharing', data.isNetworkAvailable ? 'Включен' : 'Отключен');
+
+        // Дополнительная информация
+        setValue('propVersions', itemType === 'file' ? 'Доступно' : '—');
+        setValue('propSync', data.isNetworkAvailable ? 'Активна' : 'Неактивна');
+        setValue('propId', data.id);
+
+        // Теги
+        loadTags(data.tags || '');
+
+        // Убираем состояние загрузки
+        clearLoadingState();
+    }
+
+    // Установка значения свойства
+    function setValue(elementId, value, state = 'normal') {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = value || '—';
+            element.className = `property-value ${state}`;
+        }
+    }
+
+    // Показ состояния загрузки
+    function showLoadingState() {
+        const propertyValues = document.querySelectorAll('.property-value');
+        propertyValues.forEach(el => {
+            el.textContent = 'Загрузка...';
+            el.className = 'property-value loading';
+        });
+    }
+
+    // Показ состояния ошибки
+    function showErrorState() {
+        const propertyValues = document.querySelectorAll('.property-value');
+        propertyValues.forEach(el => {
+            el.textContent = 'Ошибка загрузки';
+            el.className = 'property-value error';
+        });
+    }
+
+    // Очистка состояния загрузки
+    function clearLoadingState() {
+        const propertyValues = document.querySelectorAll('.property-value');
+        propertyValues.forEach(el => {
+            el.className = 'property-value';
+        });
+    }
+
+    // Построение пути к элементу
+    function buildItemPath(data) {
+        // Здесь нужно построить полный путь, используя breadcrumbs или API
+        return data.folderName ? `/${data.folderName}/${data.name}` : `/${data.name}`;
+    }
+
+    // Форматирование даты и времени
+    function formatDateTime(dateString) {
+        if (!dateString) return '—';
+
+        const date = new Date(dateString);
+        return date.toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // Загрузка тегов
+    function loadTags(tagsString) {
+        currentTags = tagsString ? tagsString.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+        renderTags();
+    }
+
+    // Отображение тегов
+    function renderTags() {
+        const container = document.getElementById('propTags');
+
+        if (currentTags.length === 0) {
+            container.innerHTML = '<span class="no-tags">Теги не добавлены</span>';
+            return;
+        }
+
+        container.innerHTML = currentTags.map(tag => `
+            <div class="tag-item">
+                <span>${tag}</span>
+                <button type="button" class="tag-remove" onclick="removeTag('${tag}')" title="Удалить тег">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    // Добавление нового тега
+    function addNewTag() {
+        const input = document.getElementById('newTagInput');
+        const tag = input.value.trim();
+
+        if (tag && !currentTags.includes(tag)) {
+            currentTags.push(tag);
+            input.value = '';
+            renderTags();
+        }
+    }
+
+    // Удаление тега
+    function removeTag(tagToRemove) {
+        currentTags = currentTags.filter(tag => tag !== tagToRemove);
+        renderTags();
+    }
+
+    // Обработка ввода тегов
+    function handleTagInput(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            addNewTag();
+        }
+    }
+
+    // Сохранение изменений
+    async function saveProperties() {
+        if (!currentItemData) return;
+
+        const btn = document.getElementById('savePropertiesBtn');
+        if (typeof addButtonLoading === 'function') {
+            addButtonLoading(btn);
+        }
+
+        try {
+            // Сохраняем только теги (пока что)
+            const tagsString = currentTags.join(', ');
+
+            if (currentItemData.type === 'file') {
+                const response = await fetch(`/api/files/${currentItemData.id}/tags`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tags: tagsString })
+                });
+
+                if (response.ok) {
+                    if (typeof showNotification === 'function') {
+                        showNotification('Свойства сохранены', 'success');
+                    }
+                } else {
+                    throw new Error('Failed to save tags');
+                }
+            }
+
+        } catch (error) {
+            console.error('Error saving properties:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Ошибка сохранения свойств', 'error');
+            }
+        } finally {
+            if (typeof removeButtonLoading === 'function') {
+                removeButtonLoading(btn);
+            }
+        }
+    }
+
+    // CSS для отсутствующих тегов
+    const noTagsStyle = `
+        .no-tags {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 13px;
+            padding: 8px;
+        }
+    `;
+
+    // Добавляем стили в head
+    if (!document.getElementById('properties-styles')) {
+        const style = document.createElement('style');
+        style.id = 'properties-styles';
+        style.textContent = noTagsStyle;
+        document.head.appendChild(style);
+    }
+</script>

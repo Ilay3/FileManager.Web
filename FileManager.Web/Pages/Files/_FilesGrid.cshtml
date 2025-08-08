@@ -3,93 +3,341 @@
 
 @if (Model.Any())
 {
-    <div class="sort-controls">
-        <span>Сортировка:</span>
-        <a href="javascript:void(0)" onclick="sortBy('name')" class="sort-link">По имени</a>
-        <a href="javascript:void(0)" onclick="sortBy('date')" class="sort-link">По дате</a>
-        <a href="javascript:void(0)" onclick="sortBy('size')" class="sort-link">По размеру</a>
-        <a href="javascript:void(0)" onclick="sortBy('type')" class="sort-link">По типу</a>
-    </div>
-
     <div class="files-grid">
-    @foreach (var item in Model)
-    {
-        if (item.Type == "folder")
+        @foreach (var item in Model)
         {
-            <div class="file-card explorer-item" data-type="folder" data-id="@item.Id" data-name="@item.Name">
-                <div class="file-card-icon">
-                    <i class="bi bi-folder"></i>
-                    @if (item.IsNetworkAvailable)
-                    {
-                        <i class="bi bi-cloud-check network-icon"></i>
-                    }
-                </div>
-                <div class="file-card-content">
-                    <h4 class="file-card-title" title="@item.Name">@item.Name</h4>
-                    <p class="file-card-info">
-                        <span class="file-date">@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy"))</span>
-                    </p>
-                    <p class="file-card-author">@item.UploadedByName</p>
-                </div>
-            </div>
-        }
-        else
-        {
-            <div class="file-card explorer-item" data-type="file" data-id="@item.Id" data-name="@item.Name">
+            <div class="file-card file-hover-effect explorer-item wave-animation"
+                 data-type="@item.Type"
+                 data-id="@item.Id"
+                 data-name="@item.Name"
+                 style="animation-delay: @(Model.ToList().IndexOf(item) * 0.05)s">
+
                 <div class="file-card-icon">
                     <i class="@item.IconClass"></i>
                     @if (item.IsNetworkAvailable)
                     {
-                        <i class="bi bi-cloud-check network-icon"></i>
+                        <i class="network-icon bi bi-cloud-check" title="Доступен в облаке"></i>
                     }
                 </div>
+
                 <div class="file-card-content">
                     <h4 class="file-card-title" title="@item.Name">@item.Name</h4>
-                    <p class="file-card-info">
-                        <span class="file-size">@FormatSize(item.SizeBytes ?? 0)</span>
-                        <span class="file-date">@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy"))</span>
-                    </p>
-                    <p class="file-card-author">@item.UploadedByName</p>
+
+                    <div class="file-card-meta">
+                        @if (item.Type == "file" && item.SizeBytes.HasValue)
+                        {
+                            <span class="file-size">@FormatSize(item.SizeBytes.Value)</span>
+                            <span class="meta-separator">•</span>
+                        }
+                        <span class="file-date">@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yy"))</span>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(item.UploadedByName))
+                    {
+                        <div class="file-card-author">@item.UploadedByName</div>
+                    }
+                </div>
+
+                <!-- Действия при наведении -->
+                <div class="file-card-actions">
+                    @if (item.Type == "file")
+                    {
+                        <button class="action-btn" onclick="previewFile('@item.Id')" title="Предпросмотр">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="action-btn" onclick="downloadFile('@item.Id')" title="Скачать">
+                            <i class="bi bi-download"></i>
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="action-btn" onclick="window.location.href='?folderId=@item.Id&view=grid'" title="Открыть">
+                            <i class="bi bi-folder-open"></i>
+                        </button>
+                        <button class="action-btn" onclick="openRenameFolderModal('@item.Id', '@item.Name')" title="Переименовать">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    }
+                    <button class="action-btn action-btn-danger" onclick="@(item.Type == "file" ? $"deleteFile('{item.Id}', '{item.Name}')" : $"deleteFolder('{item.Id}', '{item.Name}')")" title="Удалить">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+
+                <!-- Индикатор загрузки -->
+                <div class="loading-overlay" style="display: none;">
+                    <div class="spinner"></div>
                 </div>
             </div>
         }
-    }
     </div>
 }
 else
 {
-    <div class="empty-state">
-        <div style="font-size: 64px; margin-bottom: 20px;"><i class="bi bi-file-earmark"></i></div>
-        <h3>Файлы не найдены</h3>
-        <p style="color: #999; margin-bottom: 30px;">
-        @if (!string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["SearchRequest.SearchTerm"]))
-        {
-            <span>По вашему запросу ничего не найдено. Попробуйте изменить критерии поиска.</span>
+    <div class="empty-state fade-in">
+        <div class="empty-icon">
+            <i class="bi bi-folder2-open"></i>
+        </div>
+        <h3>Папка пуста</h3>
+        <p>Здесь пока нет файлов. Загрузите первый файл, чтобы начать работу.</p>
+        @{
+            var currentFolder = ViewContext.HttpContext.Request.Query["folderId"].ToString();
         }
-        else
-        {
-            <span>В данной папке пока нет файлов. Загрузите первый файл, чтобы начать работу.</span>
-        }
-        </p>
-        @{ var currentFolder = ViewContext.HttpContext.Request.Query["folderId"].ToString(); }
         <button class="btn btn-primary" onclick="openUploadModal('@currentFolder')">
-            <i class="bi bi-upload"></i> Загрузить файл
+            <i class="bi bi-upload"></i>
+            Загрузить файлы
         </button>
     </div>
 }
 
-<script>
-    function sortBy(field) {
-        const params = new URLSearchParams(window.location.search);
-        const currentSort = params.get('SearchRequest.SortBy');
-        const currentDirection = params.get('SearchRequest.SortDirection') || 'asc';
-        const newDirection = (currentSort === field && currentDirection === 'asc') ? 'desc' : 'asc';
-        params.set('SearchRequest.SortBy', field);
-        params.set('SearchRequest.SortDirection', newDirection);
-        params.set('SearchRequest.Page', '1');
-        window.location.search = params.toString();
+<style>
+    .files-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 16px;
+        padding: 20px;
     }
-</script>
+
+    .file-card {
+        position: relative;
+        background: var(--surface);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius);
+        padding: 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+
+        .file-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+            .file-card:hover .file-card-actions {
+                opacity: 1;
+                visibility: visible;
+            }
+
+    /* Иконка файла */
+    .file-card-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+        color: var(--text-secondary);
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 48px;
+    }
+
+    .network-icon {
+        position: absolute;
+        bottom: -4px;
+        right: -4px;
+        font-size: 14px;
+        color: var(--success);
+        background: var(--surface);
+        border-radius: 50%;
+        padding: 2px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* Контент карточки */
+    .file-card-content {
+        margin-bottom: 12px;
+    }
+
+    .file-card-title {
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0 0 8px 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--text);
+        line-height: 1.2;
+    }
+
+    .file-card-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .meta-separator {
+        opacity: 0.5;
+    }
+
+    .file-card-author {
+        font-size: 11px;
+        color: var(--text-muted);
+        opacity: 0.8;
+    }
+
+    /* Действия */
+    .file-card-actions {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        display: flex;
+        gap: 4px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: var(--radius-sm);
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(8px);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        transition: all 0.15s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+        .action-btn:hover {
+            background: var(--surface);
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+    .action-btn-danger:hover {
+        background: var(--error);
+        color: white;
+    }
+
+    /* Оверлей загрузки */
+    .loading-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius);
+    }
+
+    /* Пустое состояние */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.3;
+    }
+
+    .empty-state h3 {
+        margin: 0 0 8px 0;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 18px;
+    }
+
+    .empty-state p {
+        margin: 0 0 24px 0;
+        color: var(--text-secondary);
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Адаптивность */
+    @@media (max-width: 768px) {
+        .files-grid
+
+    {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .file-card {
+        padding: 12px;
+    }
+
+    .file-card-icon {
+        font-size: 28px;
+        height: 40px;
+    }
+
+    .file-card-actions {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        justify-content: center;
+        margin-top: 8px;
+    }
+
+    }
+
+    @@media (max-width: 480px) {
+        .files-grid
+
+    {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+    }
+
+    .file-card-title {
+        font-size: 12px;
+    }
+
+    .file-card-meta {
+        font-size: 10px;
+    }
+
+    }
+
+    /* Анимации */
+    .wave-animation {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: waveIn 0.6s ease forwards;
+    }
+
+    @@keyframes waveIn {
+        to
+
+    {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    /* Темная тема */
+    [data-theme="dark"] .action-btn {
+        background: rgba(30, 41, 59, 0.9);
+        color: var(--text-secondary);
+    }
+
+        [data-theme="dark"] .action-btn:hover {
+            background: var(--surface-tertiary);
+        }
+
+    [data-theme="dark"] .loading-overlay {
+        background: rgba(30, 41, 59, 0.9);
+    }
+</style>
 
 @functions {
     private string FormatSize(long size)
