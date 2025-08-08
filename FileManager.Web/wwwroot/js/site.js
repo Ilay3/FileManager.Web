@@ -51,6 +51,14 @@ document.addEventListener('DOMContentLoaded', function () {
             localStorage.setItem('theme', mode);
         });
     }
+
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebar && sidebarToggle) {
+        sidebarToggle.addEventListener('click', function () {
+            sidebar.classList.toggle('sidebar-collapsed');
+        });
+    }
 });
 
 window.loadPage = async function (url, addToHistory = true) {

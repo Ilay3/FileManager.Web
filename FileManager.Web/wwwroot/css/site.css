@@ -2019,11 +2019,12 @@ body {
 .sidebar {
     width: 220px;
     background: var(--bg-color);
-    border-right: 1px solid #eee;
-    padding: 20px 15px;
+    border-right: 1px solid #ddd;
+    padding: 30px 20px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
+    transition: width 0.3s ease;
 }
 
 .sidebar-logo {
@@ -2056,8 +2057,19 @@ body {
 
 .app-header {
     background: var(--bg-color);
-    border-bottom: 1px solid #eee;
-    padding: 10px 20px;
+    border-bottom: 1px solid #ddd;
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-toggle {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .content-main {
@@ -2069,6 +2081,13 @@ body {
     display: flex;
     align-items: center;
     gap: 15px;
+}
+
+.sidebar.sidebar-collapsed {
+    width: 0;
+    padding: 0;
+    border: none;
+    overflow: hidden;
 }
 
 .user-email {
@@ -2086,7 +2105,12 @@ body {
         flex-direction: row;
         overflow-x: auto;
         border-right: none;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #ddd;
+        padding: 10px;
+    }
+
+    .sidebar.sidebar-collapsed {
+        display: none;
     }
 
     .content-main {
