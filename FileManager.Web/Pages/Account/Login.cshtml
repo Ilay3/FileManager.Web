@@ -5,55 +5,56 @@
     Layout = "_LoginLayout";
 }
 
-<div class="login-container">
-    <div class="login-card">
-        <h2>FileManager</h2>
-        <p>Вход в систему</p>
+<div class="auth-card">
+    <h2>FileManager</h2>
+    <p>Вход в систему</p>
 
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <div class="alert alert-error">
-                @Model.ErrorMessage
-            </div>
-        }
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-error">
+            @Model.ErrorMessage
+        </div>
+    }
 
-        <form method="post">
-            <div class="form-group">
-                <label asp-for="LoginData.Email">Email:</label>
-                <input asp-for="LoginData.Email" class="form-input" autocomplete="username" />
-                <span asp-validation-for="LoginData.Email" class="text-error"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="LoginData.Password">Пароль:</label>
-                <input asp-for="LoginData.Password" type="password" class="form-input" autocomplete="current-password" />
-                <span asp-validation-for="LoginData.Password" class="text-error"></span>
-            </div>
-
-            <div class="form-group">
-                <label>
-                    <input asp-for="LoginData.RememberMe" type="checkbox" /> Запомнить меня
-                </label>
-            </div>
-
-            <input type="hidden" asp-for="LoginData.ReturnUrl" />
-
-            <button type="submit" class="btn btn-primary">Войти</button>
-        </form>
-
-        <div class="login-links">
-            <p><a href="/Account/ForgotPassword">Забыли пароль?</a></p>
-            <p><a href="/Account/Register">Регистрация</a></p>
+    <form method="post">
+        <div class="form-group">
+            <label asp-for="LoginData.Email">Email:</label>
+            <input asp-for="LoginData.Email" class="form-input" autocomplete="username" />
+            <span asp-validation-for="LoginData.Email" class="text-error"></span>
         </div>
 
-        <div class="login-info">
-            <small>Для входа используйте ваш корпоративный email и пароль</small>
-            <hr style="margin: 15px 0;">
-            <small>
-                <strong>Тестовые аккаунты:</strong><br>
-                Админ: admin@filemanager.com / admin123<br>
-                Пользователь: user@filemanager.com / user123
-            </small>
+        <div class="form-group">
+            <label asp-for="LoginData.Password">Пароль:</label>
+            <div class="input-with-icon">
+                <input asp-for="LoginData.Password" type="password" class="form-input" autocomplete="current-password" id="loginPassword" />
+                <button type="button" class="icon-button password-toggle" data-target="loginPassword" aria-label="Показать пароль"><i class="bi bi-eye"></i></button>
+            </div>
+            <span asp-validation-for="LoginData.Password" class="text-error"></span>
         </div>
+
+        <div class="form-group">
+            <label>
+                <input asp-for="LoginData.RememberMe" type="checkbox" /> Запомнить меня
+            </label>
+        </div>
+
+        <input type="hidden" asp-for="LoginData.ReturnUrl" />
+
+        <button type="submit" class="btn btn-primary">Войти</button>
+    </form>
+
+    <div class="auth-links">
+        <a href="/Account/ForgotPassword" title="Забыли пароль?"><i class="bi bi-question-circle"></i></a>
+        <a href="/Account/Register" title="Регистрация"><i class="bi bi-person-plus"></i></a>
+    </div>
+
+    <div class="login-info">
+        <small>Для входа используйте ваш корпоративный email и пароль</small>
+        <hr style="margin: 15px 0;">
+        <small>
+            <strong>Тестовые аккаунты:</strong><br>
+            Админ: admin@filemanager.com / admin123<br>
+            Пользователь: user@filemanager.com / user123
+        </small>
     </div>
 </div>

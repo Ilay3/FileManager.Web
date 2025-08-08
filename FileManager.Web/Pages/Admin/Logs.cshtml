@@ -40,7 +40,7 @@
                 <option value="">Все</option>
                 @foreach (var act in Enum.GetValues(typeof(AuditAction)).Cast<AuditAction>())
                 {
-                    <option value="@act" selected="@(Model.Action == act ? "selected" : null)">@act</option>
+                    <option value="@act" selected="@(Model.Action == act ? "selected" : null)">@Translate(act)</option>
                 }
             </select>
         </div>
@@ -50,7 +50,7 @@
     </div>
 </form>
 
-<table class="table table-striped">
+<table class="table table-striped table-hover">
     <thead>
         <tr>
             <th>Дата</th>
@@ -66,7 +66,7 @@
             <tr>
                 <td>@log.CreatedAt.ToLocalTime()</td>
                 <td>@(log.User?.Email ?? "-")</td>
-                <td>@log.Action</td>
+                <td>@Translate(log.Action)</td>
                 <td>
                     @if (log.File != null)
                     {
@@ -85,5 +85,33 @@
             </tr>
         }
     </tbody>
+
 </table>
+
+@functions {
+    private string Translate(AuditAction action) => action switch
+    {
+        AuditAction.Login => "Вход",
+        AuditAction.Logout => "Выход",
+        AuditAction.FileUpload => "Загрузка файла",
+        AuditAction.FileDownload => "Скачивание файла",
+        AuditAction.FileView => "Просмотр файла",
+        AuditAction.FileEdit => "Редактирование файла",
+        AuditAction.FileDelete => "Удаление файла",
+        AuditAction.FileRestore => "Восстановление файла",
+        AuditAction.FilePreview => "Предпросмотр файла",
+        AuditAction.FileOpenForEdit => "Открытие для редактирования",
+        AuditAction.FolderCreate => "Создание папки",
+        AuditAction.FolderDelete => "Удаление папки",
+        AuditAction.FolderRename => "Переименование папки",
+        AuditAction.FolderMove => "Перемещение папки",
+        AuditAction.FolderRestore => "Восстановление папки",
+        AuditAction.AccessGranted => "Предоставление доступа",
+        AuditAction.AccessRevoked => "Отзыв доступа",
+        AuditAction.AccessChanged => "Изменение доступа",
+        AuditAction.Error => "Ошибка",
+        AuditAction.UnauthorizedAccess => "Неавторизованный доступ",
+        _ => action.ToString()
+    };
+}
 

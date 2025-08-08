@@ -69,13 +69,13 @@
                         </div>
 
                         <div class="version-actions">
-                            <button class="btn btn-small btn-secondary" onclick="downloadVersion('@version.Id')">
+                            <button class="btn btn-secondary btn-sm" onclick="downloadVersion('@version.Id')">
                                 ⬇️ Скачать
                             </button>
 
                             @if (!version.IsCurrentVersion)
                             {
-                                <button class="btn btn-small btn-primary" onclick="openRestoreModal('@version.Id', @version.VersionNumber)">
+                                <button class="btn btn-primary btn-sm" onclick="openRestoreModal('@version.Id', @version.VersionNumber)">
                                     <i class="bi bi-arrow-counterclockwise"></i> Восстановить
                                 </button>
                             }
@@ -524,26 +524,4 @@
         transition: all 0.2s;
     }
 
-    .btn-primary {
-        background-color: #007bff;
-        color: white;
-    }
-
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
-
-        .btn-secondary:hover {
-            background-color: #545b62;
-        }
-
-    .btn-small {
-        padding: 5px 10px;
-        font-size: 12px;
-    }
 </style>

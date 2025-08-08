@@ -36,7 +36,7 @@
         <select asp-for="LogLevel" class="form-select">
             @foreach (var level in Model.LogLevels)
             {
-                <option>@level</option>
+                <option value="@level">@TranslateLevel(level)</option>
             }
         </select>
     </div>
@@ -46,3 +46,17 @@
     </div>
     <button type="submit" class="btn btn-primary">Сохранить</button>
 </form>
+
+@functions {
+    private string TranslateLevel(string level) => level switch
+    {
+        "Trace" => "Трассировка",
+        "Debug" => "Отладка",
+        "Information" => "Информация",
+        "Warning" => "Предупреждение",
+        "Error" => "Ошибка",
+        "Critical" => "Критический",
+        "None" => "Нет",
+        _ => level
+    };
+}
