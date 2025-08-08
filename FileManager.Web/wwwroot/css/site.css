@@ -655,7 +655,8 @@ body {
     }
 
 .file-icon {
-    font-size: 18px;
+    width: 24px;
+    height: 24px;
     margin-right: 8px;
 }
 
@@ -1188,7 +1189,8 @@ body {
     }
 
 .file-icon {
-    font-size: 18px;
+    width: 24px;
+    height: 24px;
     margin-right: 8px;
 }
 
@@ -1729,7 +1731,8 @@ body {
     }
 
 .file-icon {
-    font-size: 16px;
+    width: 24px;
+    height: 24px;
     margin-right: 8px;
 }
 
