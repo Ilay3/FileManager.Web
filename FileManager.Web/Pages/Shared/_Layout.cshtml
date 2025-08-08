@@ -14,7 +14,7 @@
     @if (User.Identity?.IsAuthenticated == true)
     {
         <div class="app-shell">
-            <aside class="sidebar">
+            <nav class="sidebar" id="sidebar">
                 <div class="sidebar-logo">
                     @if (!string.IsNullOrEmpty(theme.LogoUrl))
                     {
@@ -35,16 +35,17 @@
                     <a href="/Admin/Settings" class="sidebar-link"><i class="bi bi-sliders"></i> Настройки</a>
                 }
                 <a href="/Docs" class="sidebar-link"><i class="bi bi-book"></i> Документация</a>
-            </aside>
+            </nav>
             <div class="content">
                 <header class="app-header">
-                    <div class="user-menu">
+                    <button id="sidebarToggle" class="sidebar-toggle" type="button"><i class="bi bi-list"></i></button>
+                    <nav class="user-menu">
                         <span><i class="bi bi-person"></i> @User.Identity.Name</span>
                         <span class="user-email">(@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value)</span>
                         <button id="themeToggle" class="btn btn-secondary btn-small" type="button"><i class="bi bi-moon"></i></button>
                         <a href="/Account/Profile" class="btn btn-secondary btn-small">Профиль</a>
                         <a href="/Account/Logout" class="btn btn-secondary btn-small">Выход</a>
-                    </div>
+                    </nav>
                 </header>
                 <main class="content-main">
                     <div class="container" id="pageContainer">
