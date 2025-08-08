@@ -133,6 +133,51 @@ class ModernFilesManager {
         this.initializeOwnerSearch();
     }
 
+    bindSelectionEvents() {
+        let lastSelected = null;
+        document.addEventListener('click', (e) => {
+            const item = e.target.closest('.explorer-item');
+            if (!item) {
+                if (!e.ctrlKey && !e.metaKey && !e.target.closest('.selection-toolbar')) {
+                    this.clearSelection();
+                }
+                return;
+            }
+
+            const id = item.dataset.id;
+            if (!id) return;
+
+            if (e.shiftKey && lastSelected) {
+                const items = Array.from(document.querySelectorAll('.explorer-item'));
+                const start = items.indexOf(lastSelected);
+                const end = items.indexOf(item);
+                if (start !== -1 && end !== -1) {
+                    this.clearSelection();
+                    const [min, max] = start < end ? [start, end] : [end, start];
+                    for (let i = min; i <= max; i++) {
+                        const el = items[i];
+                        this.selectedFiles.add(el.dataset.id);
+                        el.classList.add('selected');
+                    }
+                }
+            } else {
+                if (!e.ctrlKey && !e.metaKey) {
+                    this.clearSelection();
+                }
+                if (this.selectedFiles.has(id)) {
+                    this.selectedFiles.delete(id);
+                    item.classList.remove('selected');
+                } else {
+                    this.selectedFiles.add(id);
+                    item.classList.add('selected');
+                }
+                lastSelected = item;
+            }
+
+            this.updateSelectionUI();
+        });
+    }
+
     // Инициализация поиска владельца
     async initializeOwnerSearch() {
         const ownerSearch = document.getElementById('ownerSearch');
@@ -231,6 +276,8 @@ class ModernFilesManager {
                 'upload': false,
                 'create-folder': false,
                 'manage-access': false,
+                'view-grid': false,
+                'view-list': false,
                 'preview': this.contextItem.type === 'file',
                 'edit': this.contextItem.type === 'file',
                 'rename': true,
@@ -250,6 +297,8 @@ class ModernFilesManager {
                 'upload': true,
                 'create-folder': true,
                 'manage-access': true,
+                'view-grid': true,
+                'view-list': true,
                 'preview': false,
                 'edit': false,
                 'rename': false,
@@ -280,7 +329,7 @@ class ModernFilesManager {
 
     handleContextAction(action) {
         // Действия для пустой области
-        const emptyAreaActions = ['upload', 'create-folder', 'manage-access'];
+        const emptyAreaActions = ['upload', 'create-folder', 'manage-access', 'view-grid', 'view-list'];
 
         if (emptyAreaActions.includes(action)) {
             switch (action) {
@@ -292,6 +341,12 @@ class ModernFilesManager {
                     break;
                 case 'manage-access':
                     this.openAccessModal(this.currentFolderId, true);
+                    break;
+                case 'view-grid':
+                    this.changeView('grid');
+                    break;
+                case 'view-list':
+                    this.changeView('list');
                     break;
             }
             this.hideContextMenu();
@@ -852,6 +907,8 @@ class ModernFilesManager {
     }
 
     initializeVirtualScrolling() {
+        if (!('IntersectionObserver' in window)) return;
+
         const container = document.querySelector('.files-grid, .list-content');
         if (!container) return;
 
@@ -999,10 +1056,34 @@ let filesManager;
 
 // Инициализация при загрузке DOM
 function initializeFilesManager() {
-    filesManager = new ModernFilesManager();
+    try {
+        filesManager = new ModernFilesManager();
+        window.filesManager = filesManager;
+    } catch (error) {
+        console.error('Не удалось инициализировать файловый менеджер', error);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', initializeFilesManager);
 
-// Экспортируем для обратной совместимости
-window.filesManager = filesManager;
+// Глобальные функции для обратной совместимости
+window.changeView = function (view) {
+    if (window.filesManager) {
+        window.filesManager.changeView(view);
+    } else {
+        const params = new URLSearchParams(window.location.search);
+        params.set('view', view);
+        window.location.search = params.toString();
+    }
+};
+
+window.toggleAdvanced = function () {
+    if (window.filesManager) {
+        window.filesManager.toggleAdvanced();
+    } else {
+        const block = document.getElementById('advancedFilters');
+        if (!block) return;
+        const isVisible = block.style.display !== 'none';
+        block.style.display = isVisible ? 'none' : 'block';
+    }
+};

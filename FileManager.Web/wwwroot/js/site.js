@@ -326,7 +326,8 @@ function initializeTooltips() {
         element.addEventListener('mouseleave', function () {
             if (tooltip) {
                 tooltip.style.opacity = '0';
-                setTimeout(() => tooltip.remove(), 200);
+                const toRemove = tooltip;
+                setTimeout(() => toRemove.remove(), 200);
                 tooltip = null;
             }
 

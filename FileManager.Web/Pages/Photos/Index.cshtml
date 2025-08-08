@@ -5,25 +5,26 @@
     ViewData["Title"] = "Фото";
 }
 
-<h2>Фото</h2>
+<div class="files-wrapper fade-in-up">
+    <h2>Фото</h2>
 
-<div class="photo-gallery">
-@foreach (var photo in Model.Photos)
-{
-    <div class="photo-item">
-        <img src="/api/files/@photo.Id/content" alt="@photo.Name" />
-        <div class="photo-actions">
-            <a href="/api/files/@photo.Id/content" download>Скачать</a>
-            <a href="javascript:void(0)" onclick="openAccessModal('@photo.Id', false)">Доступ</a>
-            <a href="javascript:void(0)" onclick="showProperties('@photo.Id','@photo.Name')">Свойства</a>
-            <a href="javascript:void(0)" onclick="deletePhoto('@photo.Id','@photo.Name')">Удалить</a>
+    <div class="content-area">
+        <div class="photo-gallery">
+        @foreach (var photo in Model.Photos)
+        {
+            <div class="photo-item">
+                <img src="/api/files/@photo.Id/content" alt="@photo.Name" />
+                <div class="photo-actions">
+                    <a href="/api/files/@photo.Id/content" download>Скачать</a>
+                    <a href="javascript:void(0)" onclick="openAccessModal('@photo.Id', false)">Доступ</a>
+                    <a href="javascript:void(0)" onclick="showProperties('@photo.Id','@photo.Name')">Свойства</a>
+                    <a href="javascript:void(0)" onclick="deletePhoto('@photo.Id','@photo.Name')">Удалить</a>
+                </div>
+            </div>
+        }
         </div>
     </div>
-}
 </div>
-
-<partial name="~/Pages/Files/_AccessModal.cshtml" />
-<partial name="~/Pages/Files/_PropertiesModal.cshtml" />
 
 @section Scripts {
 <script>
