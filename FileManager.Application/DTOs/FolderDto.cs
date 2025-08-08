@@ -34,6 +34,7 @@ public class TreeNodeDto
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty; // "folder" or "file"
     public string IconClass { get; set; } = string.Empty;
+    public string IconName => GetIconName();
     public bool IsNetworkAvailable { get; set; } = true;
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
@@ -52,4 +53,25 @@ public class TreeNodeDto
     public bool HasChildren { get; set; }
     public bool IsExpanded { get; set; } = false;
     public int Level { get; set; } = 0;
+
+    private string GetIconName()
+    {
+        if (Type == "folder")
+            return "folder";
+
+        var ext = Extension?.ToLowerInvariant();
+        return ext switch
+        {
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".svg" => "image",
+            ".pdf" => "pdf",
+            ".zip" or ".rar" or ".7z" => "archive",
+            ".mp3" or ".wav" or ".flac" => "audio",
+            ".mp4" or ".avi" or ".mov" or ".mkv" => "video",
+            ".doc" or ".docx" => "docx",
+            ".xls" or ".xlsx" => "xlsx",
+            ".ppt" or ".pptx" => "pptx",
+            ".txt" or ".md" => "txt",
+            _ => "file"
+        };
+    }
 }
