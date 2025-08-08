@@ -2155,3 +2155,18 @@ body {
 
 @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pageFadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* Hover and selection styles for explorer items */
+.file-card:hover,
+.file-card.selected {
+    border-color: var(--accent-color);
+    background-color: var(--accent-color);
+    color: #fff;
+}
+
+.explorer-item:hover,
+.explorer-item.selected {
+    border-color: var(--accent-color);
+    background-color: var(--accent-color);
+    color: #fff;
+}
