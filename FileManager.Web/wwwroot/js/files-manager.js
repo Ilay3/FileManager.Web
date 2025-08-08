@@ -265,6 +265,36 @@ class FilesManager {
         // Load based on current URL parameters
         const params = new URLSearchParams(window.location.search);
         this.currentFolderId = params.get('folderId') || null;
+        this.restoreFiltersFromUrl(params);
+    }
+
+    restoreFiltersFromUrl(params = new URLSearchParams(window.location.search)) {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = params.get('SearchRequest.SearchTerm') || '';
+        const filterType = document.getElementById('filterType');
+        if (filterType) filterType.value = params.get('SearchRequest.FileType') || '';
+        const onlyMyFiles = document.getElementById('onlyMyFiles');
+        if (onlyMyFiles) onlyMyFiles.checked = params.get('SearchRequest.OnlyMyFiles') === 'true';
+        const dateFrom = document.getElementById('dateFrom');
+        if (dateFrom) dateFrom.value = params.get('SearchRequest.DateFrom') || '';
+        const dateTo = document.getElementById('dateTo');
+        if (dateTo) dateTo.value = params.get('SearchRequest.DateTo') || '';
+        const updatedFrom = document.getElementById('updatedFrom');
+        if (updatedFrom) updatedFrom.value = params.get('SearchRequest.UpdatedFrom') || '';
+        const updatedTo = document.getElementById('updatedTo');
+        if (updatedTo) updatedTo.value = params.get('SearchRequest.UpdatedTo') || '';
+        const extension = document.getElementById('extension');
+        if (extension) extension.value = params.get('SearchRequest.Extension') || '';
+        const minSize = document.getElementById('minSize');
+        if (minSize) minSize.value = params.get('SearchRequest.MinSizeBytes') || '';
+        const maxSize = document.getElementById('maxSize');
+        if (maxSize) maxSize.value = params.get('SearchRequest.MaxSizeBytes') || '';
+        const tags = document.getElementById('tags');
+        if (tags) tags.value = params.get('SearchRequest.Tags') || '';
+        const ownerId = document.getElementById('ownerId');
+        if (ownerId) ownerId.value = params.get('SearchRequest.OwnerId') || '';
+        const ownerSearch = document.getElementById('ownerSearch');
+        if (ownerSearch) ownerSearch.value = params.get('SearchRequest.OwnerEmail') || '';
     }
 
     async loadFiles(searchTerm = '') {
@@ -338,6 +368,8 @@ class FilesManager {
         if (maxSize && maxSize.value) params['SearchRequest.MaxSizeBytes'] = maxSize.value;
         const tags = document.getElementById('tags');
         if (tags && tags.value) params['SearchRequest.Tags'] = tags.value;
+        const ownerSearch = document.getElementById('ownerSearch');
+        if (ownerSearch && ownerSearch.value) params['SearchRequest.OwnerEmail'] = ownerSearch.value;
         const ownerId = document.getElementById('ownerId');
         if (ownerId && ownerId.value) params['SearchRequest.OwnerId'] = ownerId.value;
 
@@ -363,6 +395,7 @@ class FilesManager {
             'SearchRequest.MinSizeBytes': params.get('SearchRequest.MinSizeBytes') || '',
             'SearchRequest.MaxSizeBytes': params.get('SearchRequest.MaxSizeBytes') || '',
             'SearchRequest.Tags': params.get('SearchRequest.Tags') || '',
+            'SearchRequest.OwnerEmail': params.get('SearchRequest.OwnerEmail') || '',
             'SearchRequest.OwnerId': params.get('SearchRequest.OwnerId') || '',
             'SearchRequest.Page': 1,
             folderId: this.currentFolderId
