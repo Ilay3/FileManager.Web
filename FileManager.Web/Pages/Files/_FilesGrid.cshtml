@@ -37,7 +37,7 @@
         {
             <div class="file-card explorer-item" data-type="file" data-id="@item.Id" data-name="@item.Name">
                 <div class="file-card-icon">
-                    <i class="@item.IconClass"></i>
+                    @Html.Raw(GetFileIcon(item.Extension))
                     @if (item.IsNetworkAvailable)
                     {
                         <i class="bi bi-cloud-check network-icon"></i>
@@ -92,6 +92,24 @@ else
 </script>
 
 @functions {
+    private string GetFileIcon(string? extension)
+    {
+        var ext = extension?.ToLowerInvariant();
+        return ext switch
+        {
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".svg" => "<i class='bi bi-file-earmark-image'></i>",
+            ".pdf" => "<i class='bi bi-file-earmark-pdf'></i>",
+            ".zip" or ".rar" or ".7z" => "<i class='bi bi-file-earmark-zip'></i>",
+            ".mp3" or ".wav" or ".flac" => "<i class='bi bi-file-earmark-music'></i>",
+            ".mp4" or ".avi" or ".mov" or ".mkv" => "<i class='bi bi-file-earmark-play'></i>",
+            ".doc" or ".docx" => "<i class='bi bi-file-earmark-word'></i>",
+            ".xls" or ".xlsx" => "<i class='bi bi-file-earmark-excel'></i>",
+            ".ppt" or ".pptx" => "<i class='bi bi-file-earmark-ppt'></i>",
+            ".txt" or ".md" => "<i class='bi bi-file-earmark-text'></i>",
+            _ => "<i class='bi bi-file-earmark'></i>"
+        };
+    }
+
     private string FormatSize(long size)
     {
         string[] suffix = { "Б", "КБ", "МБ", "ГБ", "ТБ" };

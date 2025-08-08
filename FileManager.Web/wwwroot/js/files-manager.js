@@ -223,12 +223,26 @@ class FilesManager {
                 document.querySelectorAll('.file-select').forEach(cb => {
                     cb.checked = checked;
                     const id = cb.dataset.fileId;
-                    if (checked) this.selectedFiles.add(id); else this.selectedFiles.delete(id);
+                    const row = cb.closest('.explorer-item');
+                    if (checked) {
+                        this.selectedFiles.add(id);
+                        row?.classList.add('selected');
+                    } else {
+                        this.selectedFiles.delete(id);
+                        row?.classList.remove('selected');
+                    }
                 });
                 this.updateDownloadButton();
             } else if (e.target.classList.contains('file-select')) {
                 const id = e.target.dataset.fileId;
-                if (e.target.checked) this.selectedFiles.add(id); else this.selectedFiles.delete(id);
+                const row = e.target.closest('.explorer-item');
+                if (e.target.checked) {
+                    this.selectedFiles.add(id);
+                    row?.classList.add('selected');
+                } else {
+                    this.selectedFiles.delete(id);
+                    row?.classList.remove('selected');
+                }
                 this.updateDownloadButton();
             }
         });
