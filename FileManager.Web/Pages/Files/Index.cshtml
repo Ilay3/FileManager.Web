@@ -30,6 +30,12 @@
         </div>
     }
 
+    <div class="action-bar">
+        <button type="button" id="btnUpload" class="btn btn-accent btn-small"><i class="bi bi-upload"></i> Загрузить</button>
+        <button type="button" id="btnCreateFolder" class="btn btn-accent btn-small"><i class="bi bi-folder-plus"></i> Создать папку</button>
+        <button type="button" id="btnManageAccess" class="btn btn-accent btn-small"><i class="bi bi-shield-lock"></i> Управление доступом</button>
+    </div>
+
     <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Поиск..." oninput="filesManager.loadFiles(this.value)" />
         <button type="button" class="btn btn-secondary btn-small" onclick="filesManager.toggleAdvanced()">Фильтры</button>

@@ -59,6 +59,28 @@ document.addEventListener('DOMContentLoaded', function () {
             sidebar.classList.toggle('sidebar-collapsed');
         });
     }
+
+    const uploadBtn = document.getElementById('btnUpload');
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', () => {
+            const folderId = window.filesManager ? filesManager.currentFolderId : null;
+            openUploadModal(folderId);
+        });
+    }
+    const createFolderBtn = document.getElementById('btnCreateFolder');
+    if (createFolderBtn) {
+        createFolderBtn.addEventListener('click', () => {
+            const folderId = window.filesManager ? filesManager.currentFolderId : null;
+            openCreateFolderModal(folderId);
+        });
+    }
+    const accessBtn = document.getElementById('btnManageAccess');
+    if (accessBtn) {
+        accessBtn.addEventListener('click', () => {
+            const folderId = window.filesManager ? filesManager.currentFolderId : null;
+            openAccessModal(folderId, true);
+        });
+    }
 });
 
 window.loadPage = async function (url, addToHistory = true) {
