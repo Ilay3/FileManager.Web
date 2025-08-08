@@ -34,3 +34,96 @@
     </div>
 </div>
 
+<script>
+    function openCreateFolderModal(parentId = null) {
+        if (!parentId && window.filesManager) {
+            parentId = filesManager.currentFolderId;
+        }
+
+        const modal = document.getElementById('createFolderModal');
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.remove('modal-exit');
+            modal.classList.add('modal-enter');
+        }, 10);
+
+        const input = document.getElementById('createFolderName');
+        input.value = '';
+        input.dataset.parentId = parentId || '';
+    }
+
+    function closeCreateFolderModal() {
+        const modal = document.getElementById('createFolderModal');
+        modal.classList.remove('modal-enter');
+        modal.classList.add('modal-exit');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            const input = document.getElementById('createFolderName');
+            input.value = '';
+            input.dataset.parentId = '';
+        }, 300);
+    }
+
+    async function submitCreateFolder() {
+        const input = document.getElementById('createFolderName');
+        const name = input.value.trim();
+        const parentId = input.dataset.parentId || null;
+        if (!name) return;
+        if (window.filesManager) {
+            await filesManager.createFolder(name, parentId);
+        }
+        closeCreateFolderModal();
+    }
+
+    function openRenameFolderModal(folderId, currentName) {
+        const modal = document.getElementById('renameFolderModal');
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.remove('modal-exit');
+            modal.classList.add('modal-enter');
+        }, 10);
+        modal.dataset.id = folderId;
+        modal.dataset.oldName = currentName || '';
+        const input = document.getElementById('renameFolderName');
+        input.value = currentName || '';
+    }
+
+    function closeRenameFolderModal() {
+        const modal = document.getElementById('renameFolderModal');
+        modal.classList.remove('modal-enter');
+        modal.classList.add('modal-exit');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            modal.dataset.id = '';
+            modal.dataset.oldName = '';
+            document.getElementById('renameFolderName').value = '';
+        }, 300);
+    }
+
+    async function submitRenameFolder() {
+        const modal = document.getElementById('renameFolderModal');
+        const folderId = modal.dataset.id;
+        const oldName = modal.dataset.oldName;
+        const newName = document.getElementById('renameFolderName').value.trim();
+        if (!folderId || !newName || newName === oldName) return;
+
+        try {
+            const response = await fetch(`/api/folders/${folderId}/rename`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            });
+            if (response.ok && window.filesManager) {
+                filesManager.showNotification('Папка переименована', 'success');
+                filesManager.refreshCurrentView();
+            }
+        } catch (error) {
+            if (window.filesManager) {
+                filesManager.showNotification('Ошибка при переименовании папки', 'error');
+            }
+        }
+
+        closeRenameFolderModal();
+    }
+</script>
+

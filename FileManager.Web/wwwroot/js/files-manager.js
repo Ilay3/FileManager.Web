@@ -231,6 +231,8 @@ class ModernFilesManager {
                 'upload': false,
                 'create-folder': false,
                 'manage-access': false,
+                'view-grid': false,
+                'view-list': false,
                 'preview': this.contextItem.type === 'file',
                 'edit': this.contextItem.type === 'file',
                 'rename': true,
@@ -250,6 +252,8 @@ class ModernFilesManager {
                 'upload': true,
                 'create-folder': true,
                 'manage-access': true,
+                'view-grid': true,
+                'view-list': true,
                 'preview': false,
                 'edit': false,
                 'rename': false,
@@ -280,7 +284,7 @@ class ModernFilesManager {
 
     handleContextAction(action) {
         // Действия для пустой области
-        const emptyAreaActions = ['upload', 'create-folder', 'manage-access'];
+        const emptyAreaActions = ['upload', 'create-folder', 'manage-access', 'view-grid', 'view-list'];
 
         if (emptyAreaActions.includes(action)) {
             switch (action) {
@@ -292,6 +296,12 @@ class ModernFilesManager {
                     break;
                 case 'manage-access':
                     this.openAccessModal(this.currentFolderId, true);
+                    break;
+                case 'view-grid':
+                    this.changeView('grid');
+                    break;
+                case 'view-list':
+                    this.changeView('list');
                     break;
             }
             this.hideContextMenu();
@@ -1000,9 +1010,14 @@ let filesManager;
 // Инициализация при загрузке DOM
 function initializeFilesManager() {
     filesManager = new ModernFilesManager();
+    window.filesManager = filesManager;
 }
 
 document.addEventListener('DOMContentLoaded', initializeFilesManager);
 
 // Экспортируем для обратной совместимости
-window.filesManager = filesManager;
+window.changeView = function (view) {
+    if (window.filesManager) {
+        window.filesManager.changeView(view);
+    }
+};
