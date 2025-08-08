@@ -558,6 +558,14 @@ body {
             background: var(--surface-tertiary);
         }
 
+.menu-item-danger {
+    color: var(--error);
+}
+
+    .menu-item-danger:hover {
+        background: rgba(239, 68, 68, 0.1);
+    }
+
 /* Уведомления */
 .notification-container {
     position: fixed;

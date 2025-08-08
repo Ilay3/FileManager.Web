@@ -119,6 +119,62 @@
     <!-- Контейнер для уведомлений -->
     <div id="notificationContainer" class="notification-container"></div>
 
+    <!-- Глобальное контекстное меню -->
+    <div id="contextMenu" class="context-menu">
+        <ul>
+            <li data-action="upload">
+                <i class="bi bi-upload"></i>
+                <span>Загрузить файлы</span>
+            </li>
+            <li data-action="create-folder">
+                <i class="bi bi-folder-plus"></i>
+                <span>Создать папку</span>
+            </li>
+            <li data-action="view-list">
+                <i class="bi bi-list"></i>
+                <span>Вид списком</span>
+            </li>
+            <li data-action="view-grid">
+                <i class="bi bi-grid"></i>
+                <span>Вид сеткой</span>
+            </li>
+            <li data-action="preview">
+                <i class="bi bi-eye"></i>
+                <span>Предпросмотр</span>
+            </li>
+            <li data-action="edit">
+                <i class="bi bi-pencil"></i>
+                <span>Редактировать</span>
+            </li>
+            <li data-action="download">
+                <i class="bi bi-download"></i>
+                <span>Скачать</span>
+            </li>
+            <li data-action="rename">
+                <i class="bi bi-pencil-square"></i>
+                <span>Переименовать</span>
+            </li>
+            <li data-action="access">
+                <i class="bi bi-person-lock"></i>
+                <span>Права доступа</span>
+            </li>
+            <li data-action="properties">
+                <i class="bi bi-info-circle"></i>
+                <span>Свойства</span>
+            </li>
+            <li data-action="delete" class="menu-item-danger">
+                <i class="bi bi-trash"></i>
+                <span>Удалить</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Глобальные модальные окна -->
+    @await Html.PartialAsync("~/Pages/Files/_FolderModals.cshtml")
+    @await Html.PartialAsync("~/Pages/Files/_UploadModal.cshtml")
+    @await Html.PartialAsync("~/Pages/Files/_AccessModal.cshtml")
+    @await Html.PartialAsync("~/Pages/Files/_PropertiesModal.cshtml")
+
     <!-- Скрипты -->
     <script src="~/js/files-manager.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
