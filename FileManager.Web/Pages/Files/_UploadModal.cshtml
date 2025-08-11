@@ -162,19 +162,25 @@
     async function handleFiles(files) {
         selectedFiles = files;
 
+        // Обновляем состояние кнопки сразу, чтобы разблокировать загрузку
+        updateUploadButtonState();
+
         if (files.length > 0) {
             // Показываем список файлов и комментарий
             document.getElementById('filesList').style.display = 'block';
             document.getElementById('commentGroup').style.display = 'block';
 
-            // Валидируем файлы
-            await validateFiles(files);
+            try {
+                // Валидируем файлы
+                await validateFiles(files);
 
-            // Отображаем файлы
-            displaySelectedFiles(files);
+                // Отображаем файлы
+                displaySelectedFiles(files);
+            } finally {
+                // Повторно проверяем доступность кнопки
+                updateUploadButtonState();
+            }
         }
-
-        updateUploadButtonState();
     }
 
     // Валидация файлов
