@@ -95,13 +95,17 @@
             if (response.ok) {
                 availableFolders = await response.json();
                 populateFoldersSelect();
-                if (selectedId) {
-                    document.getElementById('uploadFolderSelect').value = selectedId;
+                const select = document.getElementById('uploadFolderSelect');
+                if (selectedId && [...select.options].some(o => o.value === selectedId)) {
+                    select.value = selectedId;
+                } else if (select.options.length > 1) {
+                    select.selectedIndex = 1;
                 }
-                updateUploadButtonState();
             }
         } catch (error) {
             console.error('Error loading folders:', error);
+        } finally {
+            updateUploadButtonState();
         }
     }
 
@@ -396,6 +400,7 @@
             ${successCount > 0 ? '<button class="btn btn-primary" onclick="reloadPage()">Обновить страницу</button>' : ''}
         `;
         resultsContainer.appendChild(summary);
+        updateUploadButtonState();
     }
 
     // Отображение ошибки загрузки
@@ -418,6 +423,8 @@
         selectedFiles = [];
         document.getElementById('fileInput').value = '';
         document.getElementById('uploadComment').value = '';
+        const folderSelect = document.getElementById('uploadFolderSelect');
+        folderSelect.innerHTML = '<option value="" disabled selected>Выберите папку</option>';
         document.getElementById('filesList').style.display = 'none';
         document.getElementById('commentGroup').style.display = 'none';
         document.getElementById('uploadProgress').style.display = 'none';
