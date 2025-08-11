@@ -6,10 +6,12 @@
         <div class="modal-body">
             <div class="form-group">
                 <label>Пользователи</label>
+                <input type="text" id="userSearch" class="form-control" placeholder="Поиск пользователя">
                 <div id="usersList" class="checkbox-list"></div>
             </div>
             <div class="form-group">
                 <label>Группы</label>
+                <input type="text" id="groupSearch" class="form-control" placeholder="Поиск группы">
                 <div id="groupsList" class="checkbox-list"></div>
             </div>
         </div>
@@ -51,7 +53,9 @@
             fetch('/api/groups', { credentials: 'include' })
         ]);
         const users = usersRes.ok ? await usersRes.json() : [];
+        users.sort((a, b) => a.fullName.localeCompare(b.fullName, 'ru'));
         const groups = groupsRes.ok ? await groupsRes.json() : [];
+        groups.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 
         const usersList = document.getElementById('usersList');
         usersList.innerHTML = '';
@@ -96,6 +100,16 @@
             }
         });
     }
+
+    function filterAccessList(searchId, listId) {
+        const term = document.getElementById(searchId).value.toLowerCase();
+        document.querySelectorAll(`#${listId} .checkbox-item`).forEach(item => {
+            item.style.display = item.textContent.toLowerCase().includes(term) ? '' : 'none';
+        });
+    }
+
+    document.getElementById('userSearch').addEventListener('input', () => filterAccessList('userSearch', 'usersList'));
+    document.getElementById('groupSearch').addEventListener('input', () => filterAccessList('groupSearch', 'groupsList'));
 
     async function submitAccess() {
         const userCheckboxes = Array.from(document.querySelectorAll('.access-user'));
@@ -170,5 +184,8 @@
         }
 
         closeAccessModal();
+        if (window.showNotification) {
+            showNotification('Права доступа обновлены', 'success');
+        }
     }
 </script>

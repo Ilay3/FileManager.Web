@@ -15,7 +15,7 @@
     @if (User.Identity?.IsAuthenticated == true)
     {
         <div class="app-shell">
-            <nav id="sidebar" class="sidebar sidebar-collapsed">
+            <nav id="sidebar" class="sidebar">
                 <div class="sidebar-logo">
                     @if (!string.IsNullOrEmpty(theme.LogoUrl))
                     {
@@ -39,7 +39,6 @@
             </nav>
             <div class="content">
                 <header class="app-header">
-                    <button id="sidebarToggle" class="icon-button sidebar-toggle" type="button"><i class="bi bi-list"></i></button>
                     <div class="logo">
                         @if (!string.IsNullOrEmpty(theme.LogoUrl))
                         {

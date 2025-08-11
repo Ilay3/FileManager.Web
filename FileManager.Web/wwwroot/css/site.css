@@ -17,6 +17,16 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
+a {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: filter 0.3s;
+}
+
+a:hover {
+    filter: brightness(90%);
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -30,11 +40,15 @@ body {
 }
 
 .sidebar {
-    width: 240px;
+    width: 280px;
     background-color: var(--bg-color);
-    transition: width 0.3s ease, background-color 0.3s;
-    overflow: hidden;
+    transition: background-color 0.3s;
     border-right: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    flex-shrink: 0;
+    overflow-y: auto;
 }
 
 .sidebar-logo {
@@ -68,13 +82,6 @@ body {
     background-color: rgba(0, 0, 0, 0.05);
 }
 
-.sidebar.sidebar-collapsed {
-    width: 60px;
-}
-
-.sidebar.sidebar-collapsed .link-text {
-    display: none;
-}
 
 .content {
     flex: 1;
@@ -85,9 +92,14 @@ body {
 .app-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
+    gap: 20px;
+    padding: 15px 30px;
     border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
 }
 
 .app-header .search-input {
@@ -111,7 +123,8 @@ body {
 }
 
 .icon-button:hover {
-    color: var(--accent-color);
+    color: var(--text-color);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Ñòèëè äëÿ ñòðàíèö âõîäà */
@@ -2010,14 +2023,6 @@ body {
     justify-content: space-between;
 }
 
-.sidebar-toggle {
-    background: none;
-    border: 1px solid #ddd;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
 .content-main {
     flex: 1;
     padding: 30px;
@@ -2029,12 +2034,6 @@ body {
     gap: 15px;
 }
 
-.sidebar.sidebar-collapsed {
-    width: 0;
-    padding: 0;
-    border: none;
-    overflow: hidden;
-}
 
 .user-email {
     color: #999;
@@ -2055,9 +2054,6 @@ body {
         padding: 10px;
     }
 
-    .sidebar.sidebar-collapsed {
-        display: none;
-    }
 
     .content-main {
         padding: 20px;

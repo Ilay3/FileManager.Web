@@ -1,6 +1,54 @@
 let mainContainer;
 let isLoading = false;
 
+function initializeLayout() {
+    // Поиск в хедере
+    const searchInput = document.querySelector('.search-input');
+    if (searchInput) {
+        const params = new URLSearchParams(window.location.search);
+        searchInput.value = params.get('SearchRequest.SearchTerm') || '';
+        let searchTimeout;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            const term = this.value;
+            searchTimeout = setTimeout(() => {
+                if (window.filesManager) {
+                    filesManager.performSearch(term);
+                } else {
+                    const url = '/Files?SearchRequest.SearchTerm=' + encodeURIComponent(term);
+                    if (typeof loadPage === 'function') {
+                        loadPage(url);
+                    } else {
+                        window.location.href = url;
+                    }
+                }
+            }, 300);
+        });
+    }
+
+    const uploadBtn = document.getElementById('btnUpload');
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', () => {
+            const folderId = window.filesManager ? filesManager.currentFolderId : null;
+            openUploadModal(folderId);
+        });
+    }
+    const createFolderBtn = document.getElementById('btnCreateFolder');
+    if (createFolderBtn) {
+        createFolderBtn.addEventListener('click', () => {
+            const folderId = window.filesManager ? filesManager.currentFolderId : null;
+            openCreateFolderModal(folderId);
+        });
+    }
+    const accessBtn = document.getElementById('btnManageAccess');
+    if (accessBtn) {
+        accessBtn.addEventListener('click', () => {
+            const folderId = window.filesManager ? filesManager.currentFolderId : null;
+            openAccessModal(folderId, true);
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     mainContainer = document.getElementById('pageContainer');
     if (mainContainer) {
@@ -37,54 +85,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Поиск в реальном времени
-    const searchInput = document.querySelector('.search-input');
-    if (searchInput) {
-        let searchTimeout;
-        searchInput.addEventListener('input', function () {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                // Здесь будет логика поиска
-                console.log('Поиск:', this.value);
-            }, 300);
-        });
-    }
-
     const sidebar = document.getElementById('sidebar');
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const savedSidebar = localStorage.getItem('sidebar');
-    if (sidebar && savedSidebar === 'collapsed') {
-        sidebar.classList.add('sidebar-collapsed');
-    }
-    if (sidebar && sidebarToggle) {
-        sidebarToggle.addEventListener('click', function () {
-            sidebar.classList.toggle('sidebar-collapsed');
-            const state = sidebar.classList.contains('sidebar-collapsed') ? 'collapsed' : 'expanded';
-            localStorage.setItem('sidebar', state);
-        });
+    if (sidebar) {
+        sidebar.classList.remove('sidebar-collapsed');
     }
 
-    const uploadBtn = document.getElementById('btnUpload');
-    if (uploadBtn) {
-        uploadBtn.addEventListener('click', () => {
-            const folderId = window.filesManager ? filesManager.currentFolderId : null;
-            openUploadModal(folderId);
-        });
-    }
-    const createFolderBtn = document.getElementById('btnCreateFolder');
-    if (createFolderBtn) {
-        createFolderBtn.addEventListener('click', () => {
-            const folderId = window.filesManager ? filesManager.currentFolderId : null;
-            openCreateFolderModal(folderId);
-        });
-    }
-    const accessBtn = document.getElementById('btnManageAccess');
-    if (accessBtn) {
-        accessBtn.addEventListener('click', () => {
-            const folderId = window.filesManager ? filesManager.currentFolderId : null;
-            openAccessModal(folderId, true);
-        });
-    }
+    initializeLayout();
 });
 
 window.loadPage = async function (url, addToHistory = true) {
@@ -102,10 +108,22 @@ window.loadPage = async function (url, addToHistory = true) {
         const newContent = doc.getElementById('pageContainer');
         const current = document.getElementById('pageContainer');
         if (newContent && current) {
+            const scripts = newContent.querySelectorAll('script');
             current.innerHTML = newContent.innerHTML;
+            scripts.forEach(oldScript => {
+                const script = document.createElement('script');
+                if (oldScript.src) {
+                    script.src = oldScript.src;
+                } else {
+                    script.textContent = oldScript.textContent;
+                }
+                document.body.appendChild(script);
+                document.body.removeChild(script);
+            });
             if (typeof initializeFilesManager === 'function') {
                 initializeFilesManager();
             }
+            initializeLayout();
             if (addToHistory) {
                 history.pushState(null, '', url);
             }
@@ -127,8 +145,16 @@ document.addEventListener('click', function (e) {
     if (!href || href.startsWith('#')) return;
     if (link.getAttribute('target') === '_blank' || link.hasAttribute('download')) return;
     if (link.origin !== window.location.origin) return;
+    const url = new URL(link.href, window.location.origin);
+    const currentParams = new URLSearchParams(window.location.search);
+    currentParams.forEach((value, key) => {
+        if (key.startsWith('SearchRequest') && !url.searchParams.has(key)) {
+            url.searchParams.set(key, value);
+        }
+    });
     e.preventDefault();
-    loadPage(link.href);
+    const finalUrl = url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '');
+    loadPage(finalUrl);
 });
 
 window.addEventListener('popstate', () => {
