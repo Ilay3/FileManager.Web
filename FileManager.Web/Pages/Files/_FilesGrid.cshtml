@@ -31,6 +31,7 @@
                     </p>
                     <p class="file-card-author">@item.UploadedByName</p>
                 </div>
+                <button class="btn btn-link favorite-btn" title="Добавить в избранное" onclick="addFavorite('@item.Id','folder')"><i class="bi bi-star"></i></button>
             </div>
         }
         else
@@ -51,6 +52,7 @@
                     </p>
                     <p class="file-card-author">@item.UploadedByName</p>
                 </div>
+                <button class="btn btn-link favorite-btn" title="Добавить в избранное" onclick="addFavorite('@item.Id','file')"><i class="bi bi-star"></i></button>
             </div>
         }
     }
@@ -88,6 +90,11 @@ else
         params.set('SearchRequest.SortDirection', newDirection);
         params.set('SearchRequest.Page', '1');
         window.location.search = params.toString();
+    }
+
+    async function addFavorite(id, type) {
+        const url = type === 'file' ? `/api/favorites/files/${id}` : `/api/favorites/folders/${id}`;
+        await fetch(url, { method: 'POST' });
     }
 </script>
 
