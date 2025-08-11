@@ -94,28 +94,33 @@
             });
             if (response.ok) {
                 availableFolders = await response.json();
-                populateFoldersSelect();
+                populateFoldersSelect(availableFolders);
                 const select = document.getElementById('uploadFolderSelect');
                 if (selectedId && [...select.options].some(o => o.value === selectedId)) {
                     select.value = selectedId;
                 } else if (select.options.length > 1) {
                     select.selectedIndex = 1;
                 }
+                updateUploadButtonState();
+            } else {
+                console.error('Ошибка загрузки папок:', response.statusText || response.status);
+                populateFoldersSelect([]);
+                updateUploadButtonState();
             }
         } catch (error) {
             console.error('Error loading folders:', error);
-        } finally {
+            populateFoldersSelect([]);
             updateUploadButtonState();
         }
     }
 
     // Заполнение селекта папок
-    function populateFoldersSelect() {
+    function populateFoldersSelect(folders = availableFolders) {
         const select = document.getElementById('uploadFolderSelect');
         select.innerHTML = '<option value="" disabled>Выберите папку</option>';
 
-        function addFolderOptions(folders, level = 0) {
-            folders.forEach(folder => {
+        function addFolderOptions(items, level = 0) {
+            items.forEach(folder => {
                 const option = document.createElement('option');
                 option.value = folder.id;
                 option.textContent = '  '.repeat(level) + folder.name;
@@ -127,7 +132,7 @@
             });
         }
 
-        addFolderOptions(availableFolders);
+        addFolderOptions(folders);
     }
 
     // Обработка выбора файлов
