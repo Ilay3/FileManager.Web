@@ -97,6 +97,7 @@
                 if (selectedId) {
                     document.getElementById('uploadFolderSelect').value = selectedId;
                 }
+                updateUploadButtonState();
             }
         } catch (error) {
             console.error('Error loading folders:', error);
@@ -128,6 +129,9 @@
     document.getElementById('fileInput').addEventListener('change', function(e) {
         handleFiles(Array.from(e.target.files));
     });
+
+    // Изменение выбранной папки
+    document.getElementById('uploadFolderSelect').addEventListener('change', updateUploadButtonState);
 
     // Drag & Drop обработчики
     const dropZone = document.getElementById('dropZone');
@@ -161,7 +165,6 @@
             // Показываем список файлов и комментарий
             document.getElementById('filesList').style.display = 'block';
             document.getElementById('commentGroup').style.display = 'block';
-            document.getElementById('uploadBtn').disabled = false;
 
             // Валидируем файлы
             await validateFiles(files);
@@ -169,6 +172,8 @@
             // Отображаем файлы
             displaySelectedFiles(files);
         }
+
+        updateUploadButtonState();
     }
 
     // Валидация файлов
@@ -243,8 +248,9 @@
         if (selectedFiles.length === 0) {
             document.getElementById('filesList').style.display = 'none';
             document.getElementById('commentGroup').style.display = 'none';
-            document.getElementById('uploadBtn').disabled = true;
         }
+
+        updateUploadButtonState();
     }
 
     // Начало загрузки
@@ -384,7 +390,7 @@
     // Отображение ошибки загрузки
     function showUploadError(message) {
         document.getElementById('uploadProgress').style.display = 'none';
-        document.getElementById('uploadBtn').disabled = false;
+        updateUploadButtonState();
 
         const resultsContainer = document.getElementById('uploadResults');
         resultsContainer.style.display = 'block';
@@ -405,7 +411,15 @@
         document.getElementById('commentGroup').style.display = 'none';
         document.getElementById('uploadProgress').style.display = 'none';
         document.getElementById('uploadResults').style.display = 'none';
-        document.getElementById('uploadBtn').disabled = true;
+        updateUploadButtonState();
+    }
+
+    // Состояние кнопки загрузки
+    function updateUploadButtonState() {
+        const hasFiles = selectedFiles.length > 0;
+        const folderSelected = document.getElementById('uploadFolderSelect').value;
+        const btn = document.getElementById('uploadBtn');
+        btn.disabled = !(hasFiles && folderSelected);
     }
 
     // Форматирование размера файла
