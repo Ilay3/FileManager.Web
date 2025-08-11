@@ -62,7 +62,7 @@ class FilesManager {
 
         const ownerSearch = document.getElementById('ownerSearch');
         if (ownerSearch) {
-            fetch('/api/users')
+            fetch('/api/users', { credentials: 'include' })
                 .then(r => r.json())
                 .then(users => {
                     const list = document.getElementById('usersList');
@@ -350,18 +350,33 @@ class FilesManager {
     }
 
     performSearch(searchTerm) {
-        const params = this.buildSearchParams();
-        if (searchTerm) {
-            params['SearchRequest.SearchTerm'] = searchTerm;
-        } else {
-            delete params['SearchRequest.SearchTerm'];
+        const input = document.getElementById('searchInput');
+        if (input) {
+            input.value = searchTerm;
         }
+        const params = this.buildSearchParams();
         const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
         this.navigateTo(newUrl);
     }
 
     applyFilters() {
         const params = this.buildSearchParams();
+        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
+        this.navigateTo(newUrl);
+    }
+
+    buildSearchParams() {
+        const params = {};
+
+        if (this.currentFolderId) {
+            params['SearchRequest.FolderId'] = this.currentFolderId;
+            params.folderId = this.currentFolderId;
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput && searchInput.value) {
+            params['SearchRequest.SearchTerm'] = searchInput.value;
+        }
 
         const filterType = document.getElementById('filterType');
         if (filterType && filterType.value) {
@@ -394,33 +409,12 @@ class FilesManager {
         const ownerId = document.getElementById('ownerId');
         if (ownerId && ownerId.value) params['SearchRequest.OwnerId'] = ownerId.value;
 
-        // Update URL and reload
-        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
-        this.navigateTo(newUrl);
-    }
+        const urlParams = new URLSearchParams(window.location.search);
+        params['SearchRequest.SortBy'] = urlParams.get('SearchRequest.SortBy') || 'name';
+        params['SearchRequest.SortDirection'] = urlParams.get('SearchRequest.SortDirection') || 'asc';
+        params['SearchRequest.Page'] = 1;
 
-    buildSearchParams() {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            'SearchRequest.SearchTerm': params.get('SearchRequest.SearchTerm') || '',
-            'SearchRequest.FolderId': this.currentFolderId,
-            'SearchRequest.FileType': params.get('SearchRequest.FileType') || '',
-            'SearchRequest.OnlyMyFiles': params.get('SearchRequest.OnlyMyFiles') === 'true',
-            'SearchRequest.SortBy': params.get('SearchRequest.SortBy') || 'name',
-            'SearchRequest.SortDirection': params.get('SearchRequest.SortDirection') || 'asc',
-            'SearchRequest.DateFrom': params.get('SearchRequest.DateFrom') || '',
-            'SearchRequest.DateTo': params.get('SearchRequest.DateTo') || '',
-            'SearchRequest.UpdatedFrom': params.get('SearchRequest.UpdatedFrom') || '',
-            'SearchRequest.UpdatedTo': params.get('SearchRequest.UpdatedTo') || '',
-            'SearchRequest.Extension': params.get('SearchRequest.Extension') || '',
-            'SearchRequest.MinSizeBytes': params.get('SearchRequest.MinSizeBytes') || '',
-            'SearchRequest.MaxSizeBytes': params.get('SearchRequest.MaxSizeBytes') || '',
-            'SearchRequest.Tags': params.get('SearchRequest.Tags') || '',
-            'SearchRequest.OwnerEmail': params.get('SearchRequest.OwnerEmail') || '',
-            'SearchRequest.OwnerId': params.get('SearchRequest.OwnerId') || '',
-            'SearchRequest.Page': 1,
-            folderId: this.currentFolderId
-        };
+        return params;
     }
 
     toggleAdvanced() {

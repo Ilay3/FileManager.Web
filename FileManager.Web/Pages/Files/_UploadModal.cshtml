@@ -91,7 +91,9 @@
     // Загрузка доступных папок
     async function loadAvailableFolders(selectedId = null) {
         try {
-            const response = await fetch('/api/upload/folders');
+            const response = await fetch('/api/upload/folders', {
+                credentials: 'include'
+            });
             if (response.ok) {
                 availableFolders = await response.json();
                 populateFoldersSelect();
@@ -180,7 +182,8 @@
         try {
             const response = await fetch('/api/upload/validate', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'include'
             });
 
             if (response.ok) {
@@ -279,6 +282,7 @@
 
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/upload');
+            xhr.withCredentials = true;
 
             xhr.upload.onprogress = function (e) {
                 if (e.lengthComputable) {
