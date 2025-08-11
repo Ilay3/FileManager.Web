@@ -4,6 +4,7 @@ using FileManager.Domain.Common;
 using FileManager.Domain.Entities;
 using FileManager.Domain.Interfaces;
 using FileManager.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace FileManager.Application.Services;
 
@@ -279,7 +280,16 @@ public class FolderService : IFolderService
             YandexPath = yandexPath
         };
 
-        var created = await _folderRepository.CreateAsync(folder);
+        Folder created;
+        try
+        {
+            created = await _folderRepository.CreateAsync(folder);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("23505") == true)
+        {
+            created = await _folderRepository.GetByYandexPathAsync(yandexPath);
+            if (created == null) throw;
+        }
 
         await _accessService.GrantAccessAsync(null, created.Id, userId, null,
             AccessType.FullAccess, userId);
