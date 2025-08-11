@@ -1,3 +1,15 @@
+const originalFetch = window.fetch;
+window.fetch = (input, init = {}) => {
+    init = init || {};
+    init.credentials = init.credentials || 'include';
+    init.headers = init.headers || {};
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    if (token && !init.headers['RequestVerificationToken']) {
+        init.headers['RequestVerificationToken'] = token;
+    }
+    return originalFetch(input, init);
+};
+
 let mainContainer;
 let isLoading = false;
 
