@@ -24,76 +24,14 @@ class FilesManager {
     }
 
     bindEvents() {
-        // Search functionality
-        const searchInput = document.getElementById('searchInput');
-        const searchBtn = document.getElementById('searchBtn');
-
-        if (searchInput) {
-            let searchTimeout;
-            searchInput.addEventListener('input', () => {
-                clearTimeout(searchTimeout);
-                const term = searchInput.value;
-                searchTimeout = setTimeout(() => this.performSearch(term), 300);
-            });
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.performSearch(searchInput.value);
-                }
-            });
-        }
-
-        if (searchBtn && searchInput) {
-            searchBtn.addEventListener('click', () => {
-                this.performSearch(searchInput.value);
-            });
-        }
-
-        // Filter changes
-        const filterType = document.getElementById('filterType');
-        if (filterType) {
-            filterType.addEventListener('change', () => this.applyFilters());
-        }
-
-        const onlyMyFiles = document.getElementById('onlyMyFiles');
-        if (onlyMyFiles) {
-            onlyMyFiles.addEventListener('change', () => this.applyFilters());
-        }
-
-        const ownerSearch = document.getElementById('ownerSearch');
-        if (ownerSearch) {
-            fetch('/api/users', { credentials: 'include' })
-                .then(r => r.json())
-                .then(users => {
-                    const list = document.getElementById('usersList');
-                    if (!list) return;
-                    users.forEach(u => {
-                        const opt = document.createElement('option');
-                        opt.value = u.email;
-                        opt.dataset.id = u.id;
-                        list.appendChild(opt);
-                    });
-                });
-
-            ownerSearch.addEventListener('input', () => {
-                const list = document.getElementById('usersList');
-                const match = Array.from(list.options).find(o => o.value === ownerSearch.value);
-                const hidden = document.getElementById('ownerId');
-                if (hidden) hidden.value = match ? match.dataset.id : '';
-                this.applyFilters();
-            });
-        }
-
+      
         document.addEventListener('dblclick', (e) => {
             const item = e.target.closest('.explorer-item');
             if (!item) return;
             const id = item.dataset.id;
             const type = item.dataset.type;
             if (type === 'folder') {
-                const params = this.buildSearchParams();
-                params['SearchRequest.FolderId'] = id;
-                params.folderId = id;
-                const url = `${window.location.pathname}?${new URLSearchParams(params)}`;
+                const url = `${window.location.pathname}?folderId=${id}`;
                 this.navigateTo(url);
             } else {
                 this.previewFile(id);
@@ -273,157 +211,11 @@ class FilesManager {
     }
 
     loadInitialData() {
-        // Load based on current URL parameters
         const params = new URLSearchParams(window.location.search);
-        this.currentFolderId =
-            params.get('SearchRequest.FolderId') ||
-            params.get('folderId') ||
-            null;
-        this.restoreFiltersFromUrl(params);
-
-        const filtersBlock = document.getElementById('advancedFilters');
-        if (filtersBlock) {
-            const hasFilter = Array.from(params.keys()).some(k => k.startsWith('SearchRequest.') && k !== 'SearchRequest.SearchTerm' && params.get(k));
-            const visible = localStorage.getItem('fm_filters_visible') === 'true' || hasFilter;
-            filtersBlock.style.display = visible ? 'block' : 'none';
-        }
+        this.currentFolderId = params.get('folderId') || null;
     }
 
-    restoreFiltersFromUrl(params = new URLSearchParams(window.location.search)) {
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) searchInput.value = params.get('SearchRequest.SearchTerm') || '';
-        const filterType = document.getElementById('filterType');
-        if (filterType) filterType.value = params.get('SearchRequest.FileType') || '';
-        const onlyMyFiles = document.getElementById('onlyMyFiles');
-        if (onlyMyFiles) onlyMyFiles.checked = params.get('SearchRequest.OnlyMyFiles') === 'true';
-        const dateFrom = document.getElementById('dateFrom');
-        if (dateFrom) dateFrom.value = params.get('SearchRequest.DateFrom') || '';
-        const dateTo = document.getElementById('dateTo');
-        if (dateTo) dateTo.value = params.get('SearchRequest.DateTo') || '';
-        const updatedFrom = document.getElementById('updatedFrom');
-        if (updatedFrom) updatedFrom.value = params.get('SearchRequest.UpdatedFrom') || '';
-        const updatedTo = document.getElementById('updatedTo');
-        if (updatedTo) updatedTo.value = params.get('SearchRequest.UpdatedTo') || '';
-        const extension = document.getElementById('extension');
-        if (extension) extension.value = params.get('SearchRequest.Extension') || '';
-        const minSize = document.getElementById('minSize');
-        if (minSize) minSize.value = params.get('SearchRequest.MinSizeBytes') || '';
-        const maxSize = document.getElementById('maxSize');
-        if (maxSize) maxSize.value = params.get('SearchRequest.MaxSizeBytes') || '';
-        const tags = document.getElementById('tags');
-        if (tags) tags.value = params.get('SearchRequest.Tags') || '';
-        const ownerId = document.getElementById('ownerId');
-        if (ownerId) ownerId.value = params.get('SearchRequest.OwnerId') || '';
-        const ownerSearch = document.getElementById('ownerSearch');
-        if (ownerSearch) ownerSearch.value = params.get('SearchRequest.OwnerEmail') || '';
-    }
 
-    async loadFiles(searchTerm = '') {
-        const urlParams = new URLSearchParams(window.location.search);
-        const params = new URLSearchParams();
-
-        const folderId = urlParams.get('SearchRequest.FolderId') || urlParams.get('folderId');
-        if (folderId) params.append('FolderId', folderId);
-
-        const fileType = urlParams.get('SearchRequest.FileType');
-        if (fileType) params.append('FileType', fileType);
-
-        const onlyMy = urlParams.get('SearchRequest.OnlyMyFiles');
-        if (onlyMy === 'true') params.append('OnlyMyFiles', 'true');
-
-        if (searchTerm) params.append('SearchTerm', searchTerm);
-
-        const sortBy = urlParams.get('SearchRequest.SortBy') || 'name';
-        const sortDir = urlParams.get('SearchRequest.SortDirection') || 'asc';
-        params.append('SortBy', sortBy);
-        params.append('SortDirection', sortDir);
-
-        try {
-            const response = await fetch(`/api/files?${params.toString()}`);
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Loaded files:', data);
-            }
-        } catch (error) {
-            console.error('Error loading files:', error);
-        }
-    }
-
-    performSearch(searchTerm) {
-        const input = document.getElementById('searchInput');
-        if (input) {
-            input.value = searchTerm;
-        }
-        const params = this.buildSearchParams();
-        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
-        this.navigateTo(newUrl);
-    }
-
-    applyFilters() {
-        const params = this.buildSearchParams();
-        const newUrl = `${window.location.pathname}?${new URLSearchParams(params)}`;
-        this.navigateTo(newUrl);
-    }
-
-    buildSearchParams() {
-        const params = {};
-
-        if (this.currentFolderId) {
-            params['SearchRequest.FolderId'] = this.currentFolderId;
-            params.folderId = this.currentFolderId;
-        }
-
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput && searchInput.value) {
-            params['SearchRequest.SearchTerm'] = searchInput.value;
-        }
-
-        const filterType = document.getElementById('filterType');
-        if (filterType && filterType.value) {
-            params['SearchRequest.FileType'] = filterType.value;
-        }
-
-        const onlyMyFiles = document.getElementById('onlyMyFiles');
-        if (onlyMyFiles && onlyMyFiles.checked) {
-            params['SearchRequest.OnlyMyFiles'] = true;
-        }
-
-        const dateFrom = document.getElementById('dateFrom');
-        if (dateFrom && dateFrom.value) params['SearchRequest.DateFrom'] = dateFrom.value;
-        const dateTo = document.getElementById('dateTo');
-        if (dateTo && dateTo.value) params['SearchRequest.DateTo'] = dateTo.value;
-        const updatedFrom = document.getElementById('updatedFrom');
-        if (updatedFrom && updatedFrom.value) params['SearchRequest.UpdatedFrom'] = updatedFrom.value;
-        const updatedTo = document.getElementById('updatedTo');
-        if (updatedTo && updatedTo.value) params['SearchRequest.UpdatedTo'] = updatedTo.value;
-        const extension = document.getElementById('extension');
-        if (extension && extension.value) params['SearchRequest.Extension'] = extension.value;
-        const minSize = document.getElementById('minSize');
-        if (minSize && minSize.value) params['SearchRequest.MinSizeBytes'] = minSize.value;
-        const maxSize = document.getElementById('maxSize');
-        if (maxSize && maxSize.value) params['SearchRequest.MaxSizeBytes'] = maxSize.value;
-        const tags = document.getElementById('tags');
-        if (tags && tags.value) params['SearchRequest.Tags'] = tags.value;
-        const ownerSearch = document.getElementById('ownerSearch');
-        if (ownerSearch && ownerSearch.value) params['SearchRequest.OwnerEmail'] = ownerSearch.value;
-        const ownerId = document.getElementById('ownerId');
-        if (ownerId && ownerId.value) params['SearchRequest.OwnerId'] = ownerId.value;
-
-        const urlParams = new URLSearchParams(window.location.search);
-        params['SearchRequest.SortBy'] = urlParams.get('SearchRequest.SortBy') || 'name';
-        params['SearchRequest.SortDirection'] = urlParams.get('SearchRequest.SortDirection') || 'asc';
-        params['SearchRequest.Page'] = 1;
-
-        return params;
-    }
-
-    toggleAdvanced() {
-        const block = document.getElementById('advancedFilters');
-        if (!block) return;
-        const isHidden = block.style.display === 'none';
-        block.style.display = isHidden ? 'block' : 'none';
-        localStorage.setItem('fm_filters_visible', !isHidden);
-    }
 
     // Tree view functions
     async toggleTreeNode(nodeId) {
@@ -755,15 +547,14 @@ class FilesManager {
     // Sorting
     sortBy(field) {
         const params = new URLSearchParams(window.location.search);
-        const currentSort = params.get('SearchRequest.SortBy');
-        const currentDirection = params.get('SearchRequest.SortDirection') || 'asc';
+        const currentSort = params.get('sortBy');
+        const currentDirection = params.get('sortDirection') || 'asc';
 
-        // Toggle direction if same field
         const newDirection = (currentSort === field && currentDirection === 'asc') ? 'desc' : 'asc';
 
-        params.set('SearchRequest.SortBy', field);
-        params.set('SearchRequest.SortDirection', newDirection);
-        params.set('SearchRequest.Page', '1'); // Reset to first page
+        params.set('sortBy', field);
+        params.set('sortDirection', newDirection);
+        params.set('page', '1');
 
         window.location.search = params.toString();
     }
@@ -934,17 +725,6 @@ function sortBy(field) {
     }
 }
 
-function toggleAdvanced() {
-    if (filesManager) {
-        filesManager.toggleAdvanced();
-    }
-}
-
-function applyFilters() {
-    if (filesManager) {
-        filesManager.applyFilters();
-    }
-}
 
 function closePropertiesModal() {
     const modal = document.getElementById('propertiesModal');

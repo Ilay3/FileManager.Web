@@ -2,30 +2,6 @@ let mainContainer;
 let isLoading = false;
 
 function initializeLayout() {
-    // Поиск в хедере
-    const searchInput = document.querySelector('.search-input');
-    if (searchInput) {
-        const params = new URLSearchParams(window.location.search);
-        searchInput.value = params.get('SearchRequest.SearchTerm') || '';
-        let searchTimeout;
-        searchInput.addEventListener('input', function () {
-            clearTimeout(searchTimeout);
-            const term = this.value;
-            searchTimeout = setTimeout(() => {
-                if (window.filesManager) {
-                    filesManager.performSearch(term);
-                } else {
-                    const url = '/Files?SearchRequest.SearchTerm=' + encodeURIComponent(term);
-                    if (typeof loadPage === 'function') {
-                        loadPage(url);
-                    } else {
-                        window.location.href = url;
-                    }
-                }
-            }, 300);
-        });
-    }
-
     const uploadBtn = document.getElementById('btnUpload');
     if (uploadBtn) {
         uploadBtn.addEventListener('click', () => {
@@ -146,12 +122,6 @@ document.addEventListener('click', function (e) {
     if (link.getAttribute('target') === '_blank' || link.hasAttribute('download')) return;
     if (link.origin !== window.location.origin) return;
     const url = new URL(link.href, window.location.origin);
-    const currentParams = new URLSearchParams(window.location.search);
-    currentParams.forEach((value, key) => {
-        if (key.startsWith('SearchRequest') && !url.searchParams.has(key)) {
-            url.searchParams.set(key, value);
-        }
-    });
     e.preventDefault();
     const finalUrl = url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '');
     loadPage(finalUrl);

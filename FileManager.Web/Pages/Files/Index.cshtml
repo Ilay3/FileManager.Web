@@ -36,48 +36,7 @@
         <button type="button" id="btnManageAccess" class="btn btn-primary btn-sm"><i class="bi bi-shield-lock"></i> Управление доступом</button>
     </div>
 
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Поиск..." />
-        <button type="button" class="btn btn-secondary btn-sm" onclick="filesManager.toggleAdvanced()">Фильтры</button>
-    </div>
-
-    <div id="advancedFilters" class="mt-3" style="display:none">
-        <div class="row g-2">
-            <div class="col-md-3">
-                <label class="form-label">Тип файла</label>
-                <select id="filterType" class="form-select">
-                    <option value="">Все</option>
-                    @foreach (FileType t in Enum.GetValues(typeof(FileType)))
-                    {
-                        <option value="@t">@t</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="onlyMyFiles" />
-                    <label class="form-check-label" for="onlyMyFiles">Только мои</label>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Владелец</label>
-                <input id="ownerSearch" list="usersList" class="form-control" placeholder="email пользователя" />
-                <datalist id="usersList"></datalist>
-                <input type="hidden" id="ownerId" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">С даты</label>
-                <input type="date" id="dateFrom" class="form-control" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">По дату</label>
-                <input type="date" id="dateTo" class="form-control" />
-            </div>
-        </div>
-        <div class="mt-2">
-            <button type="button" class="btn btn-primary btn-sm" onclick="filesManager.applyFilters()">Применить</button>
-        </div>
-    </div>
+    <!-- Поиск и фильтры удалены -->
 
     <!-- Content Area -->
     <div class="content-area">
@@ -114,16 +73,16 @@
 @await Html.PartialAsync("_PropertiesModal")
 <div id="contextMenu" class="context-menu">
     <ul>
-        <li data-action="upload" title="Загрузить"><i class="bi bi-upload"></i></li>
-        <li data-action="create-folder" title="Создать папку"><i class="bi bi-folder-plus"></i></li>
-        <li data-action="manage-access" title="Управление доступом"><i class="bi bi-shield-lock"></i></li>
-        <li data-action="preview" title="Предпросмотр"><i class="bi bi-eye"></i></li>
-        <li data-action="edit" title="Редактировать"><i class="bi bi-pencil"></i></li>
-        <li data-action="rename" title="Переименовать"><i class="bi bi-pencil-square"></i></li>
-        <li data-action="download" title="Скачать"><i class="bi bi-download"></i></li>
-        <li data-action="access" title="Доступ"><i class="bi bi-person-lock"></i></li>
-        <li data-action="delete" title="Удалить"><i class="bi bi-trash"></i></li>
-        <li data-action="properties" title="Свойства"><i class="bi bi-info-circle"></i></li>
+        <li data-action="upload" title="Загрузить"><i class="bi bi-upload"></i> Загрузить</li>
+        <li data-action="create-folder" title="Создать папку"><i class="bi bi-folder-plus"></i> Создать папку</li>
+        <li data-action="manage-access" title="Управление доступом"><i class="bi bi-shield-lock"></i> Управление доступом</li>
+        <li data-action="preview" title="Предпросмотр"><i class="bi bi-eye"></i> Предпросмотр</li>
+        <li data-action="edit" title="Редактировать"><i class="bi bi-pencil"></i> Редактировать</li>
+        <li data-action="rename" title="Переименовать"><i class="bi bi-pencil-square"></i> Переименовать</li>
+        <li data-action="download" title="Скачать"><i class="bi bi-download"></i> Скачать</li>
+        <li data-action="access" title="Доступ"><i class="bi bi-person-lock"></i> Доступ</li>
+        <li data-action="delete" title="Удалить"><i class="bi bi-trash"></i> Удалить</li>
+        <li data-action="properties" title="Свойства"><i class="bi bi-info-circle"></i> Свойства</li>
     </ul>
 </div>
 
