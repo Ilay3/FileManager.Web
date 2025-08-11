@@ -1,4 +1,5 @@
 ﻿<div id="uploadModal" class="modal modal-exit" style="display: none;">
+    @Html.AntiForgeryToken()
     <div class="modal-content">
         <div class="modal-header">
             <h3>Загрузка файлов</h3>
@@ -94,13 +95,17 @@
             if (response.ok) {
                 availableFolders = await response.json();
                 populateFoldersSelect();
-                if (selectedId) {
-                    document.getElementById('uploadFolderSelect').value = selectedId;
+                const select = document.getElementById('uploadFolderSelect');
+                if (selectedId && [...select.options].some(o => o.value === selectedId)) {
+                    select.value = selectedId;
+                } else if (select.options.length > 1) {
+                    select.selectedIndex = 1;
                 }
-                updateUploadButtonState();
             }
         } catch (error) {
             console.error('Error loading folders:', error);
+        } finally {
+            updateUploadButtonState();
         }
     }
 
@@ -161,19 +166,25 @@
     async function handleFiles(files) {
         selectedFiles = files;
 
+        // Обновляем состояние кнопки сразу, чтобы разблокировать загрузку
+        updateUploadButtonState();
+
         if (files.length > 0) {
             // Показываем список файлов и комментарий
             document.getElementById('filesList').style.display = 'block';
             document.getElementById('commentGroup').style.display = 'block';
 
-            // Валидируем файлы
-            await validateFiles(files);
+            try {
+                // Валидируем файлы
+                await validateFiles(files);
 
-            // Отображаем файлы
-            displaySelectedFiles(files);
+                // Отображаем файлы
+                displaySelectedFiles(files);
+            } finally {
+                // Повторно проверяем доступность кнопки
+                updateUploadButtonState();
+            }
         }
-
-        updateUploadButtonState();
     }
 
     // Валидация файлов
@@ -286,6 +297,10 @@
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/upload');
             xhr.withCredentials = true;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            if (token) {
+                xhr.setRequestHeader('RequestVerificationToken', token);
+            }
 
             xhr.upload.onprogress = function (e) {
                 if (e.lengthComputable) {
@@ -385,6 +400,7 @@
             ${successCount > 0 ? '<button class="btn btn-primary" onclick="reloadPage()">Обновить страницу</button>' : ''}
         `;
         resultsContainer.appendChild(summary);
+        updateUploadButtonState();
     }
 
     // Отображение ошибки загрузки
@@ -407,6 +423,8 @@
         selectedFiles = [];
         document.getElementById('fileInput').value = '';
         document.getElementById('uploadComment').value = '';
+        const folderSelect = document.getElementById('uploadFolderSelect');
+        folderSelect.innerHTML = '<option value="" disabled selected>Выберите папку</option>';
         document.getElementById('filesList').style.display = 'none';
         document.getElementById('commentGroup').style.display = 'none';
         document.getElementById('uploadProgress').style.display = 'none';
