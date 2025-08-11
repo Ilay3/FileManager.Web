@@ -13,14 +13,11 @@
                 </select>
             </div>
 
-            <!-- Drag & Drop зона -->
+            <!-- Выбор файлов -->
             <div id="dropZone" class="drop-zone">
                 <div class="drop-zone-content">
-                    <p>Перетащите файлы сюда или</p>
-                    <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-                        Выберите файлы
-                    </button>
-                    <input type="file" id="fileInput" multiple style="display: none;" />
+                    <p>Перетащите файлы сюда или выберите их через форму ниже</p>
+                    <input type="file" id="fileInput" class="form-control" multiple />
                 </div>
             </div>
 
@@ -91,7 +88,9 @@
     // Загрузка доступных папок
     async function loadAvailableFolders(selectedId = null) {
         try {
-            const response = await fetch('/api/upload/folders');
+            const response = await fetch('/api/upload/folders', {
+                credentials: 'include'
+            });
             if (response.ok) {
                 availableFolders = await response.json();
                 populateFoldersSelect();
@@ -180,7 +179,8 @@
         try {
             const response = await fetch('/api/upload/validate', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'include'
             });
 
             if (response.ok) {
@@ -279,6 +279,7 @@
 
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/upload');
+            xhr.withCredentials = true;
 
             xhr.upload.onprogress = function (e) {
                 if (e.lengthComputable) {

@@ -41,15 +41,6 @@ public class FilesApiController : ControllerBase
         return Ok(file);
     }
 
-    [HttpGet("search")]
-    public async Task<ActionResult<SearchResultDto<FileDto>>> SearchFiles([FromQuery] SearchRequestDto request)
-    {
-        var userId = GetCurrentUserId();
-        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
-        var result = await _fileService.SearchFilesAsync(request, userId, isAdmin);
-        return Ok(result);
-    }
-
     [HttpGet("recent")]
     public async Task<ActionResult<List<FileDto>>> GetRecentFiles([FromQuery] int count = 10)
     {
