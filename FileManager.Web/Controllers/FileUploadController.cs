@@ -3,8 +3,11 @@ using FileManager.Application.Interfaces;
 using FileManager.Application.Services;
 using FileManager.Domain.Enums;
 using FileManager.Domain.Interfaces;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,20 +24,34 @@ public class FileUploadController : ControllerBase
     private readonly IFolderService _folderService;
     private readonly ISettingsService _settingsService;
     private readonly VirusScanService _virusScanService;
+    private readonly ILogger<FileUploadController> _logger;
+    private readonly IAntiforgery _antiforgery;
 
     public FileUploadController(
         FileUploadService fileUploadService,
         IFolderService folderService,
         ISettingsService settingsService,
-        VirusScanService virusScanService)
+        VirusScanService virusScanService,
+        ILogger<FileUploadController> logger,
+        IAntiforgery antiforgery)
     {
         _fileUploadService = fileUploadService;
         _folderService = folderService;
         _settingsService = settingsService;
         _virusScanService = virusScanService;
+        _logger = logger;
+        _antiforgery = antiforgery;
+    }
+
+    [HttpGet("token")]
+    public IActionResult GetToken()
+    {
+        var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+        return Ok(new { token = tokens.RequestToken });
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<ActionResult> UploadFiles(
         [FromForm] List<IFormFile> files,
         [FromForm] Guid folderId,
@@ -44,12 +61,16 @@ public class FileUploadController : ControllerBase
 
         if (files == null || !files.Any())
         {
-            return BadRequest(new { error = "Не выбраны файлы для загрузки" });
+            var resp = new { results = Array.Empty<object>(), error = "Не выбраны файлы для загрузки" };
+            _logger.LogWarning("UploadFiles responded 400: {Response}", resp);
+            return BadRequest(resp);
         }
 
         if (folderId == Guid.Empty)
         {
-            return BadRequest(new { error = "Не выбрана папка назначения" });
+            var resp = new { results = Array.Empty<object>(), error = "Не выбрана папка назначения" };
+            _logger.LogWarning("UploadFiles responded 400: {Response}", resp);
+            return BadRequest(resp);
         }
 
         var results = new List<object>();
@@ -120,29 +141,50 @@ public class FileUploadController : ControllerBase
             }
         }
 
-        return Ok(new { results });
+        var response = new { results };
+        _logger.LogInformation("UploadFiles responded 200: {Response}", response);
+        return Ok(response);
     }
 
     [HttpPost("validate")]
+    [ValidateAntiForgeryToken]
     public async Task<ActionResult> ValidateFiles([FromForm] List<IFormFile> files)
     {
-        var results = new List<object>();
-
-        foreach (var file in files)
+        if (files == null || !files.Any())
         {
-            var validation = await _fileUploadService.ValidateFileAsync(file);
-            results.Add(new
-            {
-                fileName = file.FileName,
-                isValid = validation.IsValid,
-                errors = validation.Errors,
-                warnings = validation.Warnings,
-                size = file.Length,
-                formattedSize = FormatFileSize(file.Length)
-            });
+            var resp = new { results = Array.Empty<object>(), error = "Не выбраны файлы для проверки" };
+            _logger.LogWarning("ValidateFiles responded 400: {Response}", resp);
+            return BadRequest(resp);
         }
 
-        return Ok(new { results });
+        try
+        {
+            var results = new List<object>();
+
+            foreach (var file in files)
+            {
+                var validation = await _fileUploadService.ValidateFileAsync(file);
+                results.Add(new
+                {
+                    fileName = file.FileName,
+                    isValid = validation.IsValid,
+                    errors = validation.Errors,
+                    warnings = validation.Warnings,
+                    size = file.Length,
+                    formattedSize = FormatFileSize(file.Length)
+                });
+            }
+
+            var response = new { results };
+            _logger.LogInformation("ValidateFiles responded 200: {Response}", response);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            var resp = new { results = Array.Empty<object>(), error = ex.Message };
+            _logger.LogError(ex, "ValidateFiles responded 500: {Response}", resp);
+            return StatusCode(500, resp);
+        }
     }
 
     [HttpGet("folders")]
