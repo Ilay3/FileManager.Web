@@ -221,7 +221,7 @@
         if (!await refreshCsrfToken()) return;
         const formData = new FormData();
         files.forEach(file => formData.append('files', file));
-        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        const token = document.querySelector('#uploadModal input[name="__RequestVerificationToken"]')?.value;
         const headers = token ? { 'RequestVerificationToken': token } : {};
 
         try {
@@ -304,7 +304,6 @@
 
     // Начало загрузки
     async function startUpload() {
-        if (!await refreshCsrfToken()) return;
         const folderId = document.getElementById('uploadFolderSelect').value;
         const comment = document.getElementById('uploadComment').value;
 
@@ -314,9 +313,14 @@
         const totalFiles = selectedFiles.length;
         const results = [];
 
-        function uploadNext(index) {
+        async function uploadNext(index) {
             if (index >= totalFiles) {
                 showUploadResults(results);
+                return;
+            }
+
+            if (!await refreshCsrfToken()) {
+                showUploadError('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.');
                 return;
             }
 
@@ -330,7 +334,7 @@
             xhr.open('POST', '/api/upload');
             xhr.responseType = 'json';
             xhr.withCredentials = true;
-            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            const token = document.querySelector('#uploadModal input[name="__RequestVerificationToken"]')?.value;
             if (token) {
                 xhr.setRequestHeader('RequestVerificationToken', token);
             }
