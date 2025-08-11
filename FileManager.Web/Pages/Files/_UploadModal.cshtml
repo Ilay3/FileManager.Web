@@ -1,4 +1,5 @@
 ﻿<div id="uploadModal" class="modal modal-exit" style="display: none;">
+    @Html.AntiForgeryToken()
     <div class="modal-content">
         <div class="modal-header">
             <h3>Загрузка файлов</h3>
@@ -286,6 +287,10 @@
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/upload');
             xhr.withCredentials = true;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            if (token) {
+                xhr.setRequestHeader('RequestVerificationToken', token);
+            }
 
             xhr.upload.onprogress = function (e) {
                 if (e.lengthComputable) {
