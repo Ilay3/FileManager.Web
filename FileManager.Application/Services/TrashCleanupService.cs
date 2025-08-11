@@ -60,7 +60,7 @@ public class TrashCleanupService : BackgroundService
         {
             try
             {
-                await yandexDiskService.DeleteFileAsync(file.YandexPath);
+                await yandexDiskService.DeleteFileAsync(file.YandexPath, true);
             }
             catch (Exception ex)
             {

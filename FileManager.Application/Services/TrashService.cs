@@ -86,7 +86,7 @@ public class TrashService : ITrashService
         if (file == null) return false;
         if (!isAdmin && file.UploadedById != userId) return false;
 
-        await _yandexDiskService.DeleteFileAsync(file.YandexPath);
+        await _yandexDiskService.DeleteFileAsync(file.YandexPath, true);
         await _filesRepository.HardDeleteAsync(fileId);
         await _auditService.LogAsync(AuditAction.FileDelete, userId, fileId: fileId, description: "Удалил файл окончательно");
         return true;

@@ -4,6 +4,7 @@ using FileManager.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using System.Net;
 
 namespace FileManager.Infrastructure.Services;
 
@@ -106,12 +107,17 @@ public class YandexDiskService : IYandexDiskService
         }
     }
 
-    public async Task DeleteFileAsync(string filePath)
+    public async Task DeleteFileAsync(string filePath, bool permanently = false)
     {
         try
         {
-            var response = await _httpClient.DeleteAsync(
-                $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(filePath)}");
+            var url = $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(filePath)}";
+            if (permanently)
+            {
+                url += "&permanently=true";
+            }
+
+            var response = await _httpClient.DeleteAsync(url);
 
             if (!response.IsSuccessStatusCode)
                 throw new($"Failed to delete file: {response.StatusCode}");
@@ -119,6 +125,22 @@ public class YandexDiskService : IYandexDiskService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to delete file {FilePath}", filePath);
+            throw;
+        }
+    }
+
+    public async Task RestoreFromTrashAsync(string filePath)
+    {
+        try
+        {
+            var url = $"{_options.ApiBaseUrl}/trash/resources/restore?path={Uri.EscapeDataString(filePath)}";
+            var response = await _httpClient.PutAsync(url, null);
+            if (!response.IsSuccessStatusCode)
+                throw new($"Failed to restore file: {response.StatusCode}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to restore file {FilePath} from trash", filePath);
             throw;
         }
     }
@@ -150,10 +172,16 @@ public class YandexDiskService : IYandexDiskService
             var response = await _httpClient.PutAsync(
                 $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(folderPath)}", null);
 
-            if (!response.IsSuccessStatusCode &&
-                response.StatusCode != System.Net.HttpStatusCode.Conflict)
+            if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode == HttpStatusCode.Conflict &&
+                    errorContent.Contains("DiskResourceAlreadyExistsError"))
+                {
+                    _logger.LogDebug("Folder already exists: {FolderPath}", folderPath);
+                    return;
+                }
+
                 throw new($"Failed to create folder: {response.StatusCode} - {errorContent}");
             }
 
@@ -170,11 +198,18 @@ public class YandexDiskService : IYandexDiskService
     {
         try
         {
-            var checkResponse = await _httpClient.GetAsync(
-                $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(folderPath)}");
-
-            if (!checkResponse.IsSuccessStatusCode)
-                await CreateFolderAsync(folderPath);
+            var segments = folderPath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var currentPath = "";
+            foreach (var segment in segments)
+            {
+                currentPath += $"/{segment}";
+                var checkResponse = await _httpClient.GetAsync(
+                    $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(currentPath)}");
+                if (!checkResponse.IsSuccessStatusCode)
+                {
+                    await CreateFolderAsync(currentPath);
+                }
+            }
         }
         catch (Exception ex)
         {
