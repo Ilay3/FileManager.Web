@@ -48,7 +48,7 @@
 
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Отмена</button>
-            <button type="button" id="uploadBtn" class="btn btn-primary" onclick="startUpload()" disabled>
+            <button type="button" id="uploadBtn" class="btn btn-primary" onclick="startUpload()">
                 Загрузить файлы
             </button>
         </div>
@@ -56,8 +56,12 @@
 </div>
 
 <script>
-    window.selectedFiles = window.selectedFiles || [];
-    window.availableFolders = window.availableFolders || [];
+
+    var selectedFiles = window.selectedFiles || [];
+    window.selectedFiles = selectedFiles;
+    var availableFolders = window.availableFolders || [];
+    window.availableFolders = availableFolders;
+
 
     // Открытие модального окна
     async function openUploadModal(folderId = null) {
@@ -271,15 +275,8 @@
 
     // Начало загрузки
     function startUpload() {
-        if (selectedFiles.length === 0) return;
-
         const folderId = document.getElementById('uploadFolderSelect').value;
         const comment = document.getElementById('uploadComment').value;
-
-        if (!folderId) {
-            alert('Пожалуйста, выберите папку для загрузки.');
-            return;
-        }
 
         document.getElementById('uploadProgress').style.display = 'block';
         document.getElementById('uploadBtn').disabled = true;
@@ -439,10 +436,8 @@
 
     // Состояние кнопки загрузки
     function updateUploadButtonState() {
-        const hasFiles = selectedFiles.length > 0;
-        const folderSelected = document.getElementById('uploadFolderSelect').value;
         const btn = document.getElementById('uploadBtn');
-        btn.disabled = !(hasFiles && folderSelected);
+        btn.disabled = false;
     }
 
     // Форматирование размера файла
