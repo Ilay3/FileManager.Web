@@ -29,8 +29,15 @@ class FilesManager {
         const searchBtn = document.getElementById('searchBtn');
 
         if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                const term = searchInput.value;
+                searchTimeout = setTimeout(() => this.performSearch(term), 300);
+            });
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
+                    e.preventDefault();
                     this.performSearch(searchInput.value);
                 }
             });
@@ -83,7 +90,11 @@ class FilesManager {
             const id = item.dataset.id;
             const type = item.dataset.type;
             if (type === 'folder') {
-                this.navigateTo(`?folderId=${id}`);
+                const params = this.buildSearchParams();
+                params['SearchRequest.FolderId'] = id;
+                params.folderId = id;
+                const url = `${window.location.pathname}?${new URLSearchParams(params)}`;
+                this.navigateTo(url);
             } else {
                 this.previewFile(id);
             }
@@ -264,8 +275,18 @@ class FilesManager {
     loadInitialData() {
         // Load based on current URL parameters
         const params = new URLSearchParams(window.location.search);
-        this.currentFolderId = params.get('folderId') || null;
+        this.currentFolderId =
+            params.get('SearchRequest.FolderId') ||
+            params.get('folderId') ||
+            null;
         this.restoreFiltersFromUrl(params);
+
+        const filtersBlock = document.getElementById('advancedFilters');
+        if (filtersBlock) {
+            const hasFilter = Array.from(params.keys()).some(k => k.startsWith('SearchRequest.') && k !== 'SearchRequest.SearchTerm' && params.get(k));
+            const visible = localStorage.getItem('fm_filters_visible') === 'true' || hasFilter;
+            filtersBlock.style.display = visible ? 'block' : 'none';
+        }
     }
 
     restoreFiltersFromUrl(params = new URLSearchParams(window.location.search)) {
@@ -301,7 +322,7 @@ class FilesManager {
         const urlParams = new URLSearchParams(window.location.search);
         const params = new URLSearchParams();
 
-        const folderId = urlParams.get('folderId');
+        const folderId = urlParams.get('SearchRequest.FolderId') || urlParams.get('folderId');
         if (folderId) params.append('FolderId', folderId);
 
         const fileType = urlParams.get('SearchRequest.FileType');
@@ -405,7 +426,9 @@ class FilesManager {
     toggleAdvanced() {
         const block = document.getElementById('advancedFilters');
         if (!block) return;
-        block.style.display = block.style.display === 'none' ? 'block' : 'none';
+        const isHidden = block.style.display === 'none';
+        block.style.display = isHidden ? 'block' : 'none';
+        localStorage.setItem('fm_filters_visible', !isHidden);
     }
 
     // Tree view functions

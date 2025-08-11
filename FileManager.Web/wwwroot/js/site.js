@@ -86,17 +86,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     const sidebar = document.getElementById('sidebar');
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const savedSidebar = localStorage.getItem('sidebar');
-    if (sidebar && savedSidebar === 'collapsed') {
-        sidebar.classList.add('sidebar-collapsed');
-    }
-    if (sidebar && sidebarToggle) {
-        sidebarToggle.addEventListener('click', function () {
-            sidebar.classList.toggle('sidebar-collapsed');
-            const state = sidebar.classList.contains('sidebar-collapsed') ? 'collapsed' : 'expanded';
-            localStorage.setItem('sidebar', state);
-        });
+    if (sidebar) {
+        sidebar.classList.remove('sidebar-collapsed');
     }
 
     initializeLayout();
@@ -154,8 +145,16 @@ document.addEventListener('click', function (e) {
     if (!href || href.startsWith('#')) return;
     if (link.getAttribute('target') === '_blank' || link.hasAttribute('download')) return;
     if (link.origin !== window.location.origin) return;
+    const url = new URL(link.href, window.location.origin);
+    const currentParams = new URLSearchParams(window.location.search);
+    currentParams.forEach((value, key) => {
+        if (key.startsWith('SearchRequest') && !url.searchParams.has(key)) {
+            url.searchParams.set(key, value);
+        }
+    });
     e.preventDefault();
-    loadPage(link.href);
+    const finalUrl = url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '');
+    loadPage(finalUrl);
 });
 
 window.addEventListener('popstate', () => {

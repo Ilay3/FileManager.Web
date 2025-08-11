@@ -40,11 +40,15 @@ a:hover {
 }
 
 .sidebar {
-    width: 240px;
+    width: 280px;
     background-color: var(--bg-color);
-    transition: width 0.3s ease, background-color 0.3s;
-    overflow: hidden;
+    transition: background-color 0.3s;
     border-right: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    flex-shrink: 0;
+    overflow-y: auto;
 }
 
 .sidebar-logo {
@@ -78,13 +82,6 @@ a:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
 
-.sidebar.sidebar-collapsed {
-    width: 60px;
-}
-
-.sidebar.sidebar-collapsed .link-text {
-    display: none;
-}
 
 .content {
     flex: 1;
@@ -2026,14 +2023,6 @@ a:hover {
     justify-content: space-between;
 }
 
-.sidebar-toggle {
-    background: none;
-    border: 1px solid #ddd;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
 .content-main {
     flex: 1;
     padding: 30px;
@@ -2045,12 +2034,6 @@ a:hover {
     gap: 15px;
 }
 
-.sidebar.sidebar-collapsed {
-    width: 0;
-    padding: 0;
-    border: none;
-    overflow: hidden;
-}
 
 .user-email {
     color: #999;
@@ -2071,9 +2054,6 @@ a:hover {
         padding: 10px;
     }
 
-    .sidebar.sidebar-collapsed {
-        display: none;
-    }
 
     .content-main {
         padding: 20px;
