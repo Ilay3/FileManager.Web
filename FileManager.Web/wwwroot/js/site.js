@@ -4,9 +4,16 @@ window.fetch = (input, init = {}) => {
     init.credentials = init.credentials || 'include';
     init.headers = init.headers || {};
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    if (token && !init.headers['RequestVerificationToken']) {
-        init.headers['RequestVerificationToken'] = token;
+    if (token) {
+        if (init.headers instanceof Headers) {
+            if (!init.headers.has('RequestVerificationToken')) {
+                init.headers.set('RequestVerificationToken', token);
+            }
+        } else if (!init.headers['RequestVerificationToken']) {
+            init.headers['RequestVerificationToken'] = token;
+        }
     }
+
     return originalFetch(input, init);
 };
 
