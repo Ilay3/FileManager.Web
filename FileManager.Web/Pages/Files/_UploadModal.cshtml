@@ -68,11 +68,17 @@
             if (response.ok) {
                 const data = await response.json();
                 const input = document.querySelector('#uploadModal input[name="__RequestVerificationToken"]');
-                if (input && data.token) input.value = data.token;
+                if (input && data.token) {
+                    input.value = data.token;
+                    return true;
+                }
             }
+            showUploadError('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.');
         } catch (err) {
             console.error('Token refresh error:', err);
+            showUploadError('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.');
         }
+        return false;
     }
 
 
@@ -212,6 +218,7 @@
 
     // Валидация файлов
     async function validateFiles(files) {
+        if (!await refreshCsrfToken()) return;
         const formData = new FormData();
         files.forEach(file => formData.append('files', file));
         const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
@@ -296,7 +303,8 @@
     }
 
     // Начало загрузки
-    function startUpload() {
+    async function startUpload() {
+        if (!await refreshCsrfToken()) return;
         const folderId = document.getElementById('uploadFolderSelect').value;
         const comment = document.getElementById('uploadComment').value;
 
