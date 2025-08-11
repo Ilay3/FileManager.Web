@@ -24,8 +24,8 @@
             <td>@(item.Type == "file" ? "Файл" : "Папка")</td>
             <td>@item.DeletedAt?.ToLocalTime().ToString("g")</td>
             <td>
-                <button class="btn btn-sm btn-success" onclick="restore('@item.Id','@item.Type')">Восстановить</button>
-                <button class="btn btn-sm btn-danger" onclick="remove('@item.Id','@item.Type')">Удалить</button>
+                <button class="btn btn-sm btn-success" onclick="restoreItem('@item.Id','@item.Type')">Восстановить</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteItem('@item.Id','@item.Type')">Удалить</button>
             </td>
         </tr>
     }
@@ -34,16 +34,25 @@
 
 @section Scripts {
 <script>
-async function restore(id,type){
-    const url = type==='file'? `/api/trash/restore/file/${id}` : `/api/trash/restore/folder/${id}`;
-    const res = await fetch(url,{method:'POST'});
-    if(res.ok) location.reload();
+async function restoreItem(id, type) {
+    const url = type === 'file' ? `/api/trash/restore/file/${id}` : `/api/trash/restore/folder/${id}`;
+    const res = await fetch(url, { method: 'POST', credentials: 'include' });
+    if (res.ok) {
+        location.reload();
+    } else {
+        alert('Не удалось восстановить объект');
+    }
 }
-async function remove(id,type){
-    if(!confirm('Удалить окончательно?')) return;
-    const url = type==='file'? `/api/trash/file/${id}` : `/api/trash/folder/${id}`;
-    const res = await fetch(url,{method:'DELETE'});
-    if(res.ok) location.reload();
+
+async function deleteItem(id, type) {
+    if (!confirm('Удалить окончательно?')) return;
+    const url = type === 'file' ? `/api/trash/file/${id}` : `/api/trash/folder/${id}`;
+    const res = await fetch(url, { method: 'DELETE', credentials: 'include' });
+    if (res.ok) {
+        location.reload();
+    } else {
+        alert('Не удалось удалить объект');
+    }
 }
 </script>
 }
