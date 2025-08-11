@@ -52,6 +52,7 @@ public class FileConfiguration : IEntityTypeConfiguration<Files>
         // Индексы
         builder.HasIndex(f => f.YandexPath)
             .IsUnique()
+            .HasFilter("\"IsDeleted\" = false")
             .HasDatabaseName("IX_Files_YandexPath");
 
         builder.HasIndex(f => f.FolderId)
