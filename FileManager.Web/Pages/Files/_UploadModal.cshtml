@@ -200,17 +200,25 @@
     async function validateFiles(files) {
         const formData = new FormData();
         files.forEach(file => formData.append('files', file));
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        const headers = token ? { 'RequestVerificationToken': token } : {};
 
         try {
             const response = await fetch('/api/upload/validate', {
                 method: 'POST',
                 body: formData,
-                credentials: 'include'
+                credentials: 'include',
+                headers
             });
 
             if (response.ok) {
-                const data = await response.json();
-                updateFileValidationResults(data.results);
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    updateFileValidationResults(data.results);
+                } else {
+                    console.error('Invalid response type:', contentType);
+                }
             }
         } catch (error) {
             console.error('Validation error:', error);
@@ -298,6 +306,7 @@
 
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/upload');
+            xhr.responseType = 'json';
             xhr.withCredentials = true;
             const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
             if (token) {
@@ -324,12 +333,21 @@
                 if (progressEl) progressEl.style.width = '100%';
 
                 if (xhr.status >= 200 && xhr.status < 300) {
-                    const response = JSON.parse(xhr.responseText);
-                    const result = response.results[0];
-                    results.push(result);
-                    if (statusText) {
-                        statusText.textContent = result.success ? 'Готово' : result.error;
-                        if (!result.success) statusText.classList.add('status-error');
+                    const response = xhr.response;
+                    if (response && response.results) {
+                        const result = response.results[0];
+                        results.push(result);
+                        if (statusText) {
+                            statusText.textContent = result.success ? 'Готово' : result.error;
+                            if (!result.success) statusText.classList.add('status-error');
+                        }
+                    } else {
+                        const error = 'Некорректный ответ сервера';
+                        results.push({ success: false, fileName: file.name, error });
+                        if (statusText) {
+                            statusText.textContent = error;
+                            statusText.classList.add('status-error');
+                        }
                     }
                 } else {
                     const error = `Ошибка ${xhr.status}`;
