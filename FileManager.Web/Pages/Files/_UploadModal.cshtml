@@ -62,9 +62,23 @@
     var availableFolders = window.availableFolders || [];
     window.availableFolders = availableFolders;
 
+    async function refreshCsrfToken() {
+        try {
+            const response = await fetch('/api/upload/token', { credentials: 'include' });
+            if (response.ok) {
+                const data = await response.json();
+                const input = document.querySelector('#uploadModal input[name="__RequestVerificationToken"]');
+                if (input && data.token) input.value = data.token;
+            }
+        } catch (err) {
+            console.error('Token refresh error:', err);
+        }
+    }
+
 
     // Открытие модального окна
     async function openUploadModal(folderId = null) {
+        await refreshCsrfToken();
         // Если папка не указана явно, используем текущую папку из менеджера
         if (!folderId && window.filesManager) {
             folderId = filesManager.currentFolderId;
@@ -211,17 +225,17 @@
                 headers
             });
 
-            if (response.ok) {
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const data = await response.json();
-                    updateFileValidationResults(data.results);
-                } else {
-                    console.error('Invalid response type:', contentType);
-                }
+
+            const contentType = response.headers.get('content-type') || '';
+            if (response.ok && contentType.includes('application/json')) {
+                const data = await response.json();
+                updateFileValidationResults(data.results);
+            } else {
+                showUploadError(`Сервер вернул не-JSON/HTML (статус ${response.status})`);
+
             }
         } catch (error) {
-            console.error('Validation error:', error);
+            showUploadError('Ошибка проверки файлов');
         }
     }
 
@@ -332,9 +346,12 @@
                 const statusText = document.getElementById(`status-text-${index}`);
                 if (progressEl) progressEl.style.width = '100%';
 
+                const isJson = xhr.getResponseHeader('content-type')?.includes('application/json');
                 if (xhr.status >= 200 && xhr.status < 300) {
                     const response = xhr.response;
-                    if (response && response.results) {
+
+                    if (isJson && response && response.results) {
+
                         const result = response.results[0];
                         results.push(result);
                         if (statusText) {
@@ -342,7 +359,9 @@
                             if (!result.success) statusText.classList.add('status-error');
                         }
                     } else {
-                        const error = 'Некорректный ответ сервера';
+
+                        const error = isJson ? 'Некорректный ответ сервера' : `Сервер вернул не-JSON/HTML (статус ${xhr.status})`;
+
                         results.push({ success: false, fileName: file.name, error });
                         if (statusText) {
                             statusText.textContent = error;
