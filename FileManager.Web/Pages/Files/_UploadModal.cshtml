@@ -56,8 +56,8 @@
 </div>
 
 <script>
-    let selectedFiles = [];
-    let availableFolders = [];
+    window.selectedFiles = window.selectedFiles || [];
+    window.availableFolders = window.availableFolders || [];
 
     // Открытие модального окна
     async function openUploadModal(folderId = null) {

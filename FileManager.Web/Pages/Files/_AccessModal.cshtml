@@ -23,8 +23,9 @@
 </div>
 
 <script>
-    let accessTarget = { id: null, isFolder: true };
-    let currentAccess = [];
+        window.accessTarget = window.accessTarget || { id: null, isFolder: true };
+    window.currentAccess = window.currentAccess || [];
+
 
     async function openAccessModal(targetId, isFolder) {
         accessTarget = { id: targetId, isFolder: isFolder };
