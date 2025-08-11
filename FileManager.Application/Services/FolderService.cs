@@ -1,5 +1,6 @@
 ﻿using FileManager.Application.DTOs;
 using FileManager.Application.Interfaces;
+using FileManager.Domain.Common;
 using FileManager.Domain.Entities;
 using FileManager.Domain.Interfaces;
 using FileManager.Domain.Enums;
@@ -261,11 +262,11 @@ public class FolderService : IFolderService
         {
             var parent = await _folderRepository.GetByIdAsync(parentId.Value)
                 ?? throw new InvalidOperationException("Родительская папка не найдена");
-            yandexPath = $"{parent.YandexPath}/{name}";
+            yandexPath = PathHelper.NormalizeYandexPath($"{parent.YandexPath}/{name}");
         }
         else
         {
-            yandexPath = $"/FileManager/{name}";
+            yandexPath = PathHelper.NormalizeYandexPath($"/FileManager/{name}");
         }
 
         await _yandexDiskService.CreateFolderAsync(yandexPath);
@@ -303,7 +304,7 @@ public class FolderService : IFolderService
 
         folder.Name = newName;
         var parentPath = folder.ParentFolder?.YandexPath ?? "/FileManager";
-        folder.YandexPath = $"{parentPath}/{newName}";
+        folder.YandexPath = PathHelper.NormalizeYandexPath($"{parentPath}/{newName}");
 
         await _folderRepository.UpdateAsync(folder);
         await _auditService.LogAsync(AuditAction.FolderRename, userId, folderId: folder.Id,
@@ -344,13 +345,13 @@ public class FolderService : IFolderService
             var parent = await _folderRepository.GetByIdAsync(newParentId.Value);
             if (parent == null) return false;
             siblings = await _folderRepository.GetSubFoldersAsync(newParentId.Value);
-            newPath = $"{parent.YandexPath}/{folder.Name}";
+            newPath = PathHelper.NormalizeYandexPath($"{parent.YandexPath}/{folder.Name}");
             folder.ParentFolderId = newParentId.Value;
         }
         else
         {
             siblings = await _folderRepository.GetRootFoldersAsync();
-            newPath = $"/FileManager/{folder.Name}";
+            newPath = PathHelper.NormalizeYandexPath($"/FileManager/{folder.Name}");
             folder.ParentFolderId = null;
         }
 

@@ -35,6 +35,7 @@ public class FolderConfiguration : IEntityTypeConfiguration<Folder>
         // Индексы
         builder.HasIndex(f => f.YandexPath)
             .IsUnique()
+            .HasFilter("\"IsDeleted\" = false")
             .HasDatabaseName("IX_Folders_YandexPath");
 
         builder.HasIndex(f => f.ParentFolderId)

@@ -1,4 +1,5 @@
-﻿using FileManager.Domain.Entities;
+﻿using FileManager.Domain.Common;
+using FileManager.Domain.Entities;
 using FileManager.Domain.Interfaces;
 using FileManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,7 @@ public class FolderRepository : IFolderRepository
 
     public async Task<Folder> CreateAsync(Folder folder)
     {
+        folder.YandexPath = PathHelper.NormalizeYandexPath(folder.YandexPath);
         _context.Folders.Add(folder);
         await _context.SaveChangesAsync();
         return folder;
@@ -49,6 +51,7 @@ public class FolderRepository : IFolderRepository
 
     public async Task<Folder> UpdateAsync(Folder folder)
     {
+        folder.YandexPath = PathHelper.NormalizeYandexPath(folder.YandexPath);
         folder.UpdatedAt = DateTime.UtcNow;
         _context.Folders.Update(folder);
         await _context.SaveChangesAsync();
@@ -101,6 +104,7 @@ public class FolderRepository : IFolderRepository
 
     public async Task<Folder?> GetByYandexPathAsync(string yandexPath)
     {
+        yandexPath = PathHelper.NormalizeYandexPath(yandexPath);
         return await _context.Folders
             .FirstOrDefaultAsync(f => f.YandexPath == yandexPath && !f.IsDeleted);
     }
