@@ -24,6 +24,7 @@ class FilesManager {
     }
 
     bindEvents() {
+      
         document.addEventListener('dblclick', (e) => {
             const item = e.target.closest('.explorer-item');
             if (!item) return;
@@ -213,6 +214,7 @@ class FilesManager {
         const params = new URLSearchParams(window.location.search);
         this.currentFolderId = params.get('folderId') || null;
     }
+
 
 
     // Tree view functions
