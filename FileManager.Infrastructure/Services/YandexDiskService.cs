@@ -169,22 +169,7 @@ public class YandexDiskService : IYandexDiskService
     {
         try
         {
-            var response = await _httpClient.PutAsync(
-                $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(folderPath)}", null);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                if (response.StatusCode == HttpStatusCode.Conflict &&
-                    errorContent.Contains("DiskResourceAlreadyExistsError"))
-                {
-                    _logger.LogDebug("Folder already exists: {FolderPath}", folderPath);
-                    return;
-                }
-
-                throw new($"Failed to create folder: {response.StatusCode} - {errorContent}");
-            }
-
+            await EnsureFolderExistsAsync(folderPath);
             _logger.LogDebug("Folder ensured: {FolderPath}", folderPath);
         }
         catch (Exception ex)
@@ -192,6 +177,27 @@ public class YandexDiskService : IYandexDiskService
             _logger.LogError(ex, "Failed to create folder {FolderPath}", folderPath);
             throw;
         }
+    }
+
+    private async Task CreateSingleFolderAsync(string folderPath)
+    {
+        var response = await _httpClient.PutAsync(
+            $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(folderPath)}", null);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            if (response.StatusCode == HttpStatusCode.Conflict &&
+                errorContent.Contains("DiskResourceAlreadyExistsError"))
+            {
+                _logger.LogDebug("Folder already exists: {FolderPath}", folderPath);
+                return;
+            }
+
+            throw new($"Failed to create folder: {response.StatusCode} - {errorContent}");
+        }
+
+        _logger.LogDebug("Folder created: {FolderPath}", folderPath);
     }
 
     private async Task EnsureFolderExistsAsync(string folderPath)
@@ -207,7 +213,7 @@ public class YandexDiskService : IYandexDiskService
                     $"{_options.ApiBaseUrl}/resources?path={Uri.EscapeDataString(currentPath)}");
                 if (!checkResponse.IsSuccessStatusCode)
                 {
-                    await CreateFolderAsync(currentPath);
+                    await CreateSingleFolderAsync(currentPath);
                 }
             }
         }
