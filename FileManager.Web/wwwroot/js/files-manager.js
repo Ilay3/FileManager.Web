@@ -425,16 +425,19 @@ class FilesManager {
 
     async removeFavorite(itemId, itemType) {
         try {
+            const el = document.querySelector(`[data-id="${itemId}"]`);
+            if (!el) {
+                return;
+            }
             const url = itemType === 'file'
                 ? `/api/favorites/files/${itemId}`
                 : `/api/favorites/folders/${itemId}`;
             const response = await fetch(url, { method: 'DELETE' });
             if (response.ok) {
                 this.showNotification('Удалено из избранного', 'success');
-                const el = document.querySelector(`[data-id="${itemId}"]`);
-                if (el) {
-                    el.remove();
-                }
+                el.remove();
+            } else if (response.status === 404) {
+                el.remove();
             } else {
                 const text = await response.text();
                 this.showNotification('Не удалось удалить из избранного: ' + text, 'error');
