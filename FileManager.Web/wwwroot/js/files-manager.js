@@ -482,7 +482,7 @@ class FilesManager {
 
         try {
             if (itemType === 'file') {
-                const res = await fetch(`/api/files/${itemId}`);
+                const res = await fetch(`/api/files/${itemId}`, { credentials: 'include' });
                 if (res.ok) {
                     const data = await res.json();
                     size = data.formattedSize;
@@ -491,7 +491,7 @@ class FilesManager {
                     updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : created;
                 }
             } else {
-                const res = await fetch(`/api/folders/${itemId}`);
+                const res = await fetch(`/api/folders/${itemId}`, { credentials: 'include' });
                 if (res.ok) {
                     const data = await res.json();
                     creator = data.createdByName;
@@ -499,9 +499,12 @@ class FilesManager {
                     updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : created;
                 }
             }
-            const accessRes = await fetch(itemType === 'file'
-                ? `/api/access/file/${itemId}`
-                : `/api/access/folder/${itemId}`);
+            const accessRes = await fetch(
+                itemType === 'file'
+                    ? `/api/access/file/${itemId}`
+                    : `/api/access/folder/${itemId}`,
+                { credentials: 'include' }
+            );
             if (accessRes.ok) {
                 accessRules = await accessRes.json();
             }

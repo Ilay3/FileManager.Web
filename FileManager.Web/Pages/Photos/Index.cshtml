@@ -33,15 +33,11 @@
         window.filesManager = filesManager;
 
         function deletePhoto(id, name) {
-            if (window.deleteFile) {
-                deleteFile(id, name);
-            }
+            filesManager.deleteFile(id, name);
         }
 
         function showProperties(id, name) {
-            if (window.filesManager) {
-                filesManager.showProperties(id, name, 'file');
-            }
+            filesManager.showProperties(id, name, 'file');
         }
     </script>
 }
