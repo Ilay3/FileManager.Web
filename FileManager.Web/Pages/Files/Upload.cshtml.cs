@@ -32,7 +32,9 @@ public class UploadModel : PageModel
 
     public List<TreeNodeDto> Folders { get; set; } = new();
 
-    public async Task OnGet()
+
+    public async Task OnGetAsync()
+
     {
         var userId = GetCurrentUserId();
         var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
