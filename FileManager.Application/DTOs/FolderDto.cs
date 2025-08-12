@@ -71,6 +71,10 @@ public class TreeNodeDto
             ".xls" or ".xlsx" => "xlsx",
             ".ppt" or ".pptx" => "pptx",
             ".txt" or ".md" => "txt",
+            ".csv" => "csv",
+            ".json" => "json",
+            ".xml" => "xml",
+            ".html" or ".htm" => "html",
             _ => "file"
         };
     }
