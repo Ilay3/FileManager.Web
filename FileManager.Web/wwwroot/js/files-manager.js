@@ -13,7 +13,6 @@ class FilesManager {
         this.bindSelectionEvents();
         this.bindContextMenu();
         this.loadInitialData();
-        this.initViewMode();
     }
 
     navigateTo(url) {
@@ -40,49 +39,6 @@ class FilesManager {
         });
     }
 
-    initViewMode() {
-        const container = document.querySelector('.view-mode-selector');
-        const saved = localStorage.getItem('filesViewMode') || 'medium';
-        this.applyViewMode(saved);
-        if (container) {
-            container.querySelectorAll('[data-view]').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const mode = el.dataset.view;
-                    this.applyViewMode(mode);
-                    localStorage.setItem('filesViewMode', mode);
-                });
-            });
-        }
-    }
-
-    applyViewMode(mode) {
-        const grid = document.querySelector('.files-grid');
-        if (!grid) return;
-        grid.classList.remove('view-large', 'view-medium', 'view-small');
-        grid.classList.add(`view-${mode}`);
-        const container = document.querySelector('.view-mode-selector');
-        if (container) {
-            container.querySelectorAll('[data-view]').forEach(el => el.classList.remove('active'));
-            const activeEl = container.querySelector(`[data-view="${mode}"]`);
-            if (activeEl) activeEl.classList.add('active');
-            const icon = container.querySelector('.dropdown-toggle i');
-            if (icon) {
-                icon.className = this.getViewIconClass(mode);
-            }
-        }
-    }
-
-    getViewIconClass(mode) {
-        switch (mode) {
-            case 'large':
-                return 'bi bi-grid-3x3-gap';
-            case 'small':
-                return 'bi bi-list';
-            default:
-                return 'bi bi-grid';
-        }
-    }
 
     bindContextMenu() {
         document.addEventListener('contextmenu', (e) => {
