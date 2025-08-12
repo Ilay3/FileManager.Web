@@ -101,17 +101,11 @@ app.UseUserActivity();
 app.MapRazorPages();
 app.MapControllers();
 
-// Перенаправление с корня
-app.MapGet("/", async context =>
+// Перенаправление с корня на Razor-страницу Index
+app.MapGet("/", context =>
 {
-    if (context.User.Identity?.IsAuthenticated == true)
-    {
-        context.Response.Redirect("/Files");
-    }
-    else
-    {
-        context.Response.Redirect("/Account/Login");
-    }
+    context.Response.Redirect("/Index");
+    return Task.CompletedTask;
 });
 
 // Инициализация базы данных
