@@ -61,6 +61,7 @@ class FilesManager {
                 menu.querySelector('[data-action="preview"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
                 menu.querySelector('[data-action="edit"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
                 menu.querySelector('[data-action="access"]').style.display = 'flex';
+                menu.querySelector('[data-action="add-favorite"]').style.display = 'flex';
                 menu.querySelector('[data-action="delete"]').style.display = 'flex';
                 menu.querySelector('[data-action="properties"]').style.display = 'flex';
             } else {
@@ -73,6 +74,7 @@ class FilesManager {
                 menu.querySelector('[data-action="preview"]').style.display = 'none';
                 menu.querySelector('[data-action="edit"]').style.display = 'none';
                 menu.querySelector('[data-action="access"]').style.display = 'none';
+                menu.querySelector('[data-action="add-favorite"]').style.display = 'none';
                 menu.querySelector('[data-action="delete"]').style.display = 'none';
                 menu.querySelector('[data-action="properties"]').style.display = 'none';
             }
@@ -140,6 +142,9 @@ class FilesManager {
                 break;
             case 'access':
                 openAccessModal(id, type === 'folder');
+                break;
+            case 'add-favorite':
+                this.addFavorite(id, type);
                 break;
             case 'delete':
                 if (type === 'file') {
@@ -368,6 +373,24 @@ class FilesManager {
         } catch (error) {
             console.error('Error downloading file:', error);
             this.showNotification('Ошибка при скачивании файла', 'error');
+        }
+    }
+
+    async addFavorite(itemId, itemType) {
+        try {
+            const url = itemType === 'file'
+                ? `/api/favorites/files/${itemId}`
+                : `/api/favorites/folders/${itemId}`;
+            const response = await fetch(url, { method: 'POST' });
+            if (response.ok) {
+                this.showNotification('Добавлено в избранное', 'success');
+            } else {
+                const text = await response.text();
+                this.showNotification('Не удалось добавить в избранное: ' + text, 'error');
+            }
+        } catch (error) {
+            console.error('Error adding favorite:', error);
+            this.showNotification('Ошибка при добавлении в избранное', 'error');
         }
     }
 
