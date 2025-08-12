@@ -68,10 +68,16 @@
     var selectedFiles = [];
     var availableFolders = @Html.Raw(foldersJson);
 
-    document.addEventListener('DOMContentLoaded', async function () {
+    async function initUploadPage() {
         await refreshCsrfToken();
         loadAvailableFolders('@Model.FolderId');
-    });
+    }
+
+    if (document.readyState !== 'loading') {
+        initUploadPage();
+    } else {
+        document.addEventListener('DOMContentLoaded', initUploadPage);
+    }
 
     async function refreshCsrfToken() {
         try {
