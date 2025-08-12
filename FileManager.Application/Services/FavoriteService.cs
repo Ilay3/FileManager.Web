@@ -69,15 +69,15 @@ public class FavoriteService : IFavoriteService
         return true;
     }
 
-    public async Task<List<FavoriteItemDto>> GetFavoritesAsync(Guid userId)
+    public async Task<List<TreeNodeDto>> GetFavoritesAsync(Guid userId)
     {
         var favorites = await _context.Favorites
             .Where(f => f.UserId == userId)
-            .Include(f => f.File)
-            .Include(f => f.Folder)
+            .Include(f => f.File).ThenInclude(f => f.UploadedBy)
+            .Include(f => f.Folder).ThenInclude(f => f.CreatedBy)
             .ToListAsync();
 
-        var result = new List<FavoriteItemDto>();
+        var result = new List<TreeNodeDto>();
         var removed = false;
 
         foreach (var fav in favorites)
@@ -92,11 +92,17 @@ public class FavoriteService : IFavoriteService
                     continue;
                 }
 
-                result.Add(new FavoriteItemDto
+                result.Add(new TreeNodeDto
                 {
                     Id = fav.FileId.Value,
                     Name = fav.File.Name,
-                    Type = "file"
+                    Type = "file",
+                    CreatedAt = fav.File.CreatedAt,
+                    UpdatedAt = fav.File.UpdatedAt,
+                    SizeBytes = fav.File.SizeBytes,
+                    Extension = fav.File.Extension,
+                    UploadedByName = fav.File.UploadedBy.FullName,
+                    IsNetworkAvailable = true
                 });
             }
             else if (fav.FolderId.HasValue)
@@ -109,11 +115,15 @@ public class FavoriteService : IFavoriteService
                     continue;
                 }
 
-                result.Add(new FavoriteItemDto
+                result.Add(new TreeNodeDto
                 {
                     Id = fav.FolderId.Value,
                     Name = fav.Folder.Name,
-                    Type = "folder"
+                    Type = "folder",
+                    CreatedAt = fav.Folder.CreatedAt,
+                    UpdatedAt = fav.Folder.UpdatedAt,
+                    UploadedByName = fav.Folder.CreatedBy.FullName,
+                    IsNetworkAvailable = true
                 });
             }
         }
@@ -124,3 +134,4 @@ public class FavoriteService : IFavoriteService
         return result;
     }
 }
+
