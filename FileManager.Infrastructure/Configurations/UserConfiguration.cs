@@ -26,9 +26,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Department)
             .HasMaxLength(100);
 
-        builder.Property(u => u.ProfileImagePath)
-            .HasMaxLength(255);
-
         // Новые поля для блокировки
         builder.Property(u => u.LockReason)
             .HasMaxLength(500);

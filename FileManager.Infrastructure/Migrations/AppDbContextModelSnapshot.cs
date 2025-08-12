@@ -625,10 +625,6 @@ namespace FileManager.Infrastructure.Migrations
                     b.Property<DateTime?>("PasswordResetTokenExpires")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("ProfileImagePath")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 

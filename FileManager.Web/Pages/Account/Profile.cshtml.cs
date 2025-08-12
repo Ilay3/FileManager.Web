@@ -25,7 +25,6 @@ public class ProfileModel : PageModel
 
     public int FilesUploaded { get; set; }
     public DateTime? LastLoginAt { get; set; }
-    public string? ImagePath { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -37,7 +36,6 @@ public class ProfileModel : PageModel
         ProfileData.Email = user.Email;
         ProfileData.FullName = user.FullName;
         ProfileData.Department = user.Department;
-        ImagePath = user.ProfileImagePath;
         FilesUploaded = (await _filesRepository.GetByUserIdAsync(userId)).Count();
         LastLoginAt = user.LastLoginAt;
         return Page();
@@ -54,7 +52,6 @@ public class ProfileModel : PageModel
         {
             FilesUploaded = (await _filesRepository.GetByUserIdAsync(userId)).Count();
             LastLoginAt = user.LastLoginAt;
-            ImagePath = user.ProfileImagePath;
             return Page();
         }
 
@@ -63,7 +60,7 @@ public class ProfileModel : PageModel
             await _userService.ChangePasswordAsync(userId, ProfileData.CurrentPassword, ProfileData.NewPassword);
         }
 
-        await _userService.UpdateProfileAsync(userId, ProfileData.Email, ProfileData.FullName, ProfileData.Department, user.ProfileImagePath);
+        await _userService.UpdateProfileAsync(userId, ProfileData.Email, ProfileData.FullName, ProfileData.Department);
         return RedirectToPage();
     }
 }

@@ -35,14 +35,7 @@
     </div>
     <div class="profile-info">
         <div class="profile-avatar">
-            @if (!string.IsNullOrEmpty(Model.ImagePath))
-            {
-                <img src="@Model.ImagePath" alt="avatar" />
-            }
-            else
-            {
-                <img src="/images/default-avatar.svg" alt="avatar" />
-            }
+            <img src="/images/default-avatar.svg" alt="avatar" />
         </div>
         <div class="profile-stats">
             <p>Загружено файлов: @Model.FilesUploaded</p>

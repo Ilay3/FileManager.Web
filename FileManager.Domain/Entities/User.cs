@@ -24,9 +24,6 @@ public class User : BaseEntity
     [StringLength(100)]
     public string? Department { get; set; }
 
-    [StringLength(255)]
-    public string? ProfileImagePath { get; set; }
-
     // Поля для блокировки аккаунта
     public bool IsLocked { get; set; } = false;
     public DateTime? LockedAt { get; set; }
