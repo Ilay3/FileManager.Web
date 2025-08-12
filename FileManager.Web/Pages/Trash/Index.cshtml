@@ -36,22 +36,32 @@
 <script>
 async function restoreItem(id, type) {
     const url = type === 'file' ? `/api/trash/restore/file/${id}` : `/api/trash/restore/folder/${id}`;
-    const res = await fetch(url, { method: 'POST', credentials: 'include' });
-    if (res.ok) {
+    try {
+        const res = await fetch(url, { method: 'POST', credentials: 'include' });
+        if (!res.ok) {
+            const message = await res.text();
+            alert(message || 'Не удалось восстановить объект');
+            return;
+        }
         location.reload();
-    } else {
-        alert('Не удалось восстановить объект');
+    } catch (err) {
+        alert(`Ошибка при восстановлении: ${err.message}`);
     }
 }
 
 async function deleteItem(id, type) {
     if (!confirm('Удалить окончательно?')) return;
     const url = type === 'file' ? `/api/trash/file/${id}` : `/api/trash/folder/${id}`;
-    const res = await fetch(url, { method: 'DELETE', credentials: 'include' });
-    if (res.ok) {
+    try {
+        const res = await fetch(url, { method: 'DELETE', credentials: 'include' });
+        if (!res.ok) {
+            const message = await res.text();
+            alert(message || 'Не удалось удалить объект');
+            return;
+        }
         location.reload();
-    } else {
-        alert('Не удалось удалить объект');
+    } catch (err) {
+        alert(`Ошибка при удалении: ${err.message}`);
     }
 }
 </script>
