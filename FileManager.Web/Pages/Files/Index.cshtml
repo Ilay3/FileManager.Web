@@ -31,7 +31,7 @@
     }
 
     <div class="action-bar">
-        <button type="button" id="btnUpload" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> Загрузить</button>
+        <a asp-page="Upload" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> Загрузить файлы</a>
         <button type="button" id="btnCreateFolder" class="btn btn-primary btn-sm"><i class="bi bi-folder-plus"></i> Создать папку</button>
         <button type="button" id="btnManageAccess" class="btn btn-primary btn-sm"><i class="bi bi-shield-lock"></i> Управление доступом</button>
     </div>
@@ -68,7 +68,6 @@
 </div>
 
 @await Html.PartialAsync("_FolderModals")
-@await Html.PartialAsync("_UploadModal")
 @await Html.PartialAsync("_AccessModal")
 @await Html.PartialAsync("_PropertiesModal")
 <div id="contextMenu" class="context-menu">

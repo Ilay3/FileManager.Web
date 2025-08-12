@@ -745,10 +745,14 @@ function initializeFilesManager() {
 document.addEventListener('DOMContentLoaded', initializeFilesManager);
 
 
-// Upload modal functions (will be loaded from _UploadModal.cshtml)
-// These are just declarations to avoid errors
-window.openUploadModal = window.openUploadModal || function (folderId) {
-    console.log('Upload modal not loaded yet');
+// Open upload page
+window.openUploadModal = function (folderId) {
+    const url = folderId ? `/Files/Upload?folderId=${folderId}` : '/Files/Upload';
+    if (typeof loadPage === 'function') {
+        loadPage(url);
+    } else {
+        window.location.href = url;
+    }
 };
 
 // Drag and drop for the main page
