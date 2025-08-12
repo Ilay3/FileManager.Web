@@ -10,9 +10,10 @@
 <div class="photo-gallery">
 @foreach (var photo in Model.Photos)
 {
-    <div class="photo-item">
+    <div class="photo-item" data-id="@photo.Id">
         <img src="/api/files/@photo.Id/content" alt="@photo.Name" />
         <div class="photo-actions">
+            <button type="button" onclick="filesManager.removeFavorite('@photo.Id','file')">⭐</button>
             <a href="/api/files/@photo.Id/content" download>Скачать</a>
             <a href="javascript:void(0)" onclick="openAccessModal('@photo.Id', false)">Доступ</a>
             <a href="javascript:void(0)" onclick="showProperties('@photo.Id','@photo.Name')">Свойства</a>
@@ -26,18 +27,23 @@
 <partial name="~/Pages/Files/_PropertiesModal.cshtml" />
 
 @section Scripts {
-<script>
-function deletePhoto(id,name){
-    if(window.deleteFile){
-        deleteFile(id,name);
-    }
-}
-function showProperties(id,name){
-    if(window.filesManager){
-        filesManager.showProperties(id,name,'file');
-    }
-}
-</script>
+    <script src="~/js/files-manager.js" asp-append-version="true"></script>
+    <script>
+        const filesManager = new FilesManager();
+        window.filesManager = filesManager;
+
+        function deletePhoto(id, name) {
+            if (window.deleteFile) {
+                deleteFile(id, name);
+            }
+        }
+
+        function showProperties(id, name) {
+            if (window.filesManager) {
+                filesManager.showProperties(id, name, 'file');
+            }
+        }
+    </script>
 }
 
 <style>
