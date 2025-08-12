@@ -101,13 +101,6 @@ app.UseUserActivity();
 app.MapRazorPages();
 app.MapControllers();
 
-// Перенаправление с корня на Razor-страницу Index
-app.MapGet("/", context =>
-{
-    context.Response.Redirect("/Index");
-    return Task.CompletedTask;
-});
-
 // Инициализация базы данных
 using (var scope = app.Services.CreateScope())
 {

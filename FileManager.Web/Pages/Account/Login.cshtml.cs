@@ -26,12 +26,6 @@ public class LoginModel : PageModel
 
     public void OnGet(string? returnUrl = null)
     {
-        if (User.Identity?.IsAuthenticated == true)
-        {
-            Response.Redirect("/Files");
-            return;
-        }
-
         LoginData.ReturnUrl = returnUrl;
     }
 
@@ -49,7 +43,7 @@ public class LoginModel : PageModel
 
             if (user == null)
             {
-                ErrorMessage = "Неверный email или пароль, либо аккаунт заблокирован";
+                ErrorMessage = "РќРµРІРµСЂРЅС‹Р№ email РёР»Рё РїР°СЂРѕР»СЊ, Р»РёР±Рѕ Р°РєРєР°СѓРЅС‚ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ";
                 return Page();
             }
 
@@ -80,7 +74,7 @@ public class LoginModel : PageModel
                 authProperties
             );
 
-            _logger.LogInformation("Пользователь {Email} успешно вошел в систему", user.Email);
+            _logger.LogInformation("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ {Email} СѓСЃРїРµС€РЅРѕ РІРѕС€РµР» РІ СЃРёСЃС‚РµРјСѓ", user.Email);
 
             // Redirect to files page or return URL
             var returnUrl = LoginData.ReturnUrl;
@@ -93,8 +87,8 @@ public class LoginModel : PageModel
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Ошибка при входе пользователя {Email}", LoginData.Email);
-            ErrorMessage = "Произошла ошибка при входе. Попробуйте еще раз.";
+            _logger.LogError(ex, "РћС€РёР±РєР° РїСЂРё РІС…РѕРґРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ {Email}", LoginData.Email);
+            ErrorMessage = "РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° РїСЂРё РІС…РѕРґРµ. РџРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰Рµ СЂР°Р·.";
             return Page();
         }
     }
