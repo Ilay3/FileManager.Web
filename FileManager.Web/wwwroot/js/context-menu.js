@@ -87,7 +87,7 @@ window.contextMenu = (function () {
                 break;
             case 'edit':
                 if (type === 'file') {
-                    filesManager.editFile(id);
+                    filesManager.editFile(id, name);
                 }
                 break;
             case 'rename':

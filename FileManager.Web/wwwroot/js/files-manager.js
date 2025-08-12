@@ -204,7 +204,7 @@ class FilesManager {
         }
     }
 
-    async editFile(fileId) {
+    async editFile(fileId, fileName) {
         try {
             const response = await fetch(`/api/files/${fileId}/edit`);
             const data = await response.json();
@@ -223,7 +223,18 @@ class FilesManager {
 
             if (data.editUrl) {
                 // Открываем в новой вкладке
-                window.open(data.editUrl, '_blank');
+                const editWindow = window.open(data.editUrl, '_blank');
+
+                // Отслеживаем закрытие вкладки и отправляем уведомление
+                const intervalId = setInterval(() => {
+                    if (editWindow.closed) {
+                        clearInterval(intervalId);
+                        const message = fileName
+                            ? `Файл "${fileName}" отредактирован`
+                            : 'Файл отредактирован';
+                        askSendNotifications(message);
+                    }
+                }, 1000);
 
                 // Показываем уведомление
                 this.showNotification('Файл открыт для редактирования в новой вкладке', 'success');
@@ -555,9 +566,9 @@ function previewFile(fileId) {
     }
 }
 
-function editFile(fileId) {
+function editFile(fileId, fileName) {
     if (filesManager) {
-        filesManager.editFile(fileId);
+        filesManager.editFile(fileId, fileName);
     }
 }
 
