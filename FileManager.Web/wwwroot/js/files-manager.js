@@ -13,6 +13,7 @@ class FilesManager {
         this.bindSelectionEvents();
         this.bindContextMenu();
         this.loadInitialData();
+        this.initViewMode();
     }
 
     navigateTo(url) {
@@ -37,6 +38,34 @@ class FilesManager {
                 this.previewFile(id);
             }
         });
+    }
+
+    initViewMode() {
+        const container = document.querySelector('.view-mode-selector');
+        const saved = localStorage.getItem('filesViewMode') || 'medium';
+        this.applyViewMode(saved);
+        if (container) {
+            container.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const mode = btn.dataset.view;
+                    this.applyViewMode(mode);
+                    localStorage.setItem('filesViewMode', mode);
+                });
+            });
+        }
+    }
+
+    applyViewMode(mode) {
+        const grid = document.querySelector('.files-grid');
+        if (!grid) return;
+        grid.classList.remove('view-large', 'view-medium', 'view-small');
+        grid.classList.add(`view-${mode}`);
+        const container = document.querySelector('.view-mode-selector');
+        if (container) {
+            container.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = container.querySelector(`[data-view="${mode}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
     }
 
     bindContextMenu() {

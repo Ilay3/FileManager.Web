@@ -84,6 +84,11 @@
         @{
             ViewData["SearchRequest"] = Model.SearchRequest;
         }
+        <div class="view-mode-selector btn-group btn-group-sm mb-3" role="group">
+            <button type="button" class="btn btn-outline-secondary" data-view="large">Крупные</button>
+            <button type="button" class="btn btn-outline-secondary" data-view="medium">Средние</button>
+            <button type="button" class="btn btn-outline-secondary" data-view="small">Мелкие</button>
+        </div>
         <div class="grid-view">
             @await Html.PartialAsync("_FilesGrid", Model.GridItems)
         </div>
