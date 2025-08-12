@@ -1,0 +1,98 @@
+<div id="notificationModal" class="modal modal-exit" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Отправка уведомлений</h3>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Пользователи</label>
+                <input type="text" id="notifyUserSearch" class="form-control" placeholder="Поиск пользователя">
+                <div id="notifyUsersList" class="checkbox-list"></div>
+            </div>
+            <div class="form-group">
+                <label for="notifyMessage">Описание изменения</label>
+                <textarea id="notifyMessage" class="form-control"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeNotificationModal()">Отмена</button>
+            <button class="btn btn-primary" onclick="submitNotification()">Отправить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function openNotificationModal(description) {
+        const modal = document.getElementById('notificationModal');
+        document.getElementById('notifyMessage').value = description || '';
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.remove('modal-exit');
+            modal.classList.add('modal-enter');
+        }, 10);
+        await loadNotificationUsers();
+    }
+    window.openNotificationModal = openNotificationModal;
+
+    function closeNotificationModal() {
+        const modal = document.getElementById('notificationModal');
+        modal.classList.remove('modal-enter');
+        modal.classList.add('modal-exit');
+        setTimeout(() => { modal.style.display = 'none'; }, 300);
+    }
+    window.closeNotificationModal = closeNotificationModal;
+
+    async function loadNotificationUsers() {
+        const res = await fetch('/api/users', { credentials: 'include' });
+        const users = res.ok ? await res.json() : [];
+        users.sort((a,b) => a.fullName.localeCompare(b.fullName, 'ru'));
+        const list = document.getElementById('notifyUsersList');
+        list.innerHTML = '';
+        users.forEach(u => {
+            const label = document.createElement('label');
+            label.className = 'checkbox-item';
+            label.innerHTML = `<input type="checkbox" value="${u.email}"> ${u.fullName}`;
+            list.appendChild(label);
+        });
+    }
+
+    async function submitNotification() {
+        const emails = Array.from(document.querySelectorAll('#notifyUsersList input[type="checkbox"]:checked')).map(cb => cb.value);
+        if (emails.length === 0) {
+            alert('Выберите получателей');
+            return;
+        }
+        const description = document.getElementById('notifyMessage').value;
+        const res = await fetch('/api/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ recipients: emails, description })
+        });
+        if (res.ok) {
+            if (window.showNotification) {
+                showNotification('Уведомления отправлены', 'success');
+            }
+        } else {
+            const text = await res.text();
+            alert('Ошибка отправки: ' + text);
+        }
+        closeNotificationModal();
+    }
+    window.submitNotification = submitNotification;
+
+    function filterNotifyUsers() {
+        const term = document.getElementById('notifyUserSearch').value.toLowerCase();
+        document.querySelectorAll('#notifyUsersList .checkbox-item').forEach(item => {
+            item.style.display = item.textContent.toLowerCase().includes(term) ? '' : 'none';
+        });
+    }
+    document.getElementById('notifyUserSearch').addEventListener('input', filterNotifyUsers);
+
+    function askSendNotifications(description) {
+        if (confirm('Отправить уведомления?')) {
+            openNotificationModal(description);
+        }
+    }
+    window.askSendNotifications = askSendNotifications;
+</script>

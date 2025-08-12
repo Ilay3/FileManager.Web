@@ -379,6 +379,7 @@ class FilesManager {
             const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' });
             if (response.ok) {
                 this.showNotification('Файл удалён', 'success');
+                askSendNotifications(`Удалён файл "${fileName}"`);
                 setTimeout(() => location.reload(), 500);
             } else {
                 const text = await response.text();
@@ -469,6 +470,7 @@ class FilesManager {
             });
             if (response.ok) {
                 this.showNotification('Папка переименована', 'success');
+                askSendNotifications(`Папка переименована в "${newName}"`);
                 setTimeout(() => location.reload(), 500);
             } else {
                 const text = await response.text();
@@ -485,6 +487,7 @@ class FilesManager {
             const response = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' });
             if (response.ok) {
                 this.showNotification('Папка удалена', 'success');
+                askSendNotifications(`Удалена папка "${folderName}"`);
                 setTimeout(() => location.reload(), 500);
             } else {
                 const text = await response.text();

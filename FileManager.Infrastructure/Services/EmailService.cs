@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Mail;
 using FileManager.Application.Interfaces;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FileManager.Infrastructure.Services;
 
@@ -75,6 +77,21 @@ public class EmailService : IEmailService
             .Replace("{Code}", code);
 
         await SendEmailAsync(email, subject, body);
+    }
+
+    public async Task SendFileChangeNotificationAsync(List<string> recipients, string description)
+    {
+        if (!_emailOptions.Enabled)
+        {
+            _logger.LogWarning("Email отправка отключена в настройках");
+            return;
+        }
+
+        var subject = "Изменение файлов";
+        foreach (var email in recipients.Distinct())
+        {
+            await SendEmailAsync(email, subject, description);
+        }
     }
 
     private async Task SendEmailAsync(string toEmail, string subject, string body)
