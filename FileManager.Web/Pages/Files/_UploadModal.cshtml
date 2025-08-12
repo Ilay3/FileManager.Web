@@ -81,6 +81,10 @@
         return false;
     }
 
+    function getUploadModalToken() {
+        return document.querySelector('#uploadModal input[name="__RequestVerificationToken"]')?.value;
+    }
+
 
     // Открытие модального окна
     async function openUploadModal(folderId = null) {
@@ -221,7 +225,7 @@
         if (!await refreshCsrfToken()) return;
         const formData = new FormData();
         files.forEach(file => formData.append('files', file));
-        const token = document.querySelector('#uploadModal input[name="__RequestVerificationToken"]')?.value;
+        const token = getUploadModalToken();
         const headers = token ? { 'RequestVerificationToken': token } : {};
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -341,7 +345,7 @@
             xhr.responseType = 'json';
             xhr.withCredentials = true;
 
-            const token = document.querySelector('#uploadModal input[name="__RequestVerificationToken"]')?.value;
+            const token = getUploadModalToken();
 
             if (token) {
                 xhr.setRequestHeader('RequestVerificationToken', token);
