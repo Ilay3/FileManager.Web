@@ -424,6 +424,7 @@ class FilesManager {
         let creator = '';
         let created = '';
         let updated = '';
+        let accessRules = [];
 
         try {
             if (itemType === 'file') {
@@ -444,6 +445,12 @@ class FilesManager {
                     updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : created;
                 }
             }
+            const accessRes = await fetch(itemType === 'file'
+                ? `/api/access/file/${itemId}`
+                : `/api/access/folder/${itemId}`);
+            if (accessRes.ok) {
+                accessRules = await accessRes.json();
+            }
         } catch (error) {
             console.error('Error loading properties:', error);
         }
@@ -453,6 +460,21 @@ class FilesManager {
         document.getElementById('propCreator').textContent = creator;
         document.getElementById('propCreated').textContent = created;
         document.getElementById('propUpdated').textContent = updated;
+
+        const accessBody = document.getElementById('propAccessBody');
+        if (accessBody) {
+            accessBody.innerHTML = '';
+            accessRules.forEach(r => {
+                const tr = document.createElement('tr');
+                const nameTd = document.createElement('td');
+                nameTd.textContent = r.userName || r.groupName || '';
+                const typeTd = document.createElement('td');
+                typeTd.textContent = (r.accessType & 2) ? 'Изменение' : 'Чтение';
+                tr.appendChild(nameTd);
+                tr.appendChild(typeTd);
+                accessBody.appendChild(tr);
+            });
+        }
 
         const modalEl = document.getElementById('propertiesModal');
         if (modalEl) {
