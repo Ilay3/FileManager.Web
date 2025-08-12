@@ -11,20 +11,14 @@ class FilesManager {
     init() {
         this.bindEvents();
         this.bindSelectionEvents();
-        this.bindContextMenu();
         this.loadInitialData();
     }
 
     navigateTo(url) {
-        if (window.loadPage) {
-            window.loadPage(url);
-        } else {
-            window.location.href = url;
-        }
+        window.location.href = url;
     }
 
     bindEvents() {
-      
         document.addEventListener('dblclick', (e) => {
             const item = e.target.closest('.explorer-item');
             if (!item) return;
@@ -37,128 +31,6 @@ class FilesManager {
                 this.previewFile(id);
             }
         });
-    }
-
-
-    bindContextMenu() {
-        document.addEventListener('contextmenu', (e) => {
-            const within = e.target.closest('.files-wrapper');
-            if (!within) return;
-            e.preventDefault();
-            const menu = document.getElementById('contextMenu');
-            if (!menu) return;
-            const item = e.target.closest('.explorer-item');
-            if (item) {
-                this.contextItem = {
-                    id: item.dataset.id,
-                    name: item.dataset.name,
-                    type: item.dataset.type
-                };
-                menu.querySelector('[data-action="upload"]').style.display = 'none';
-                menu.querySelector('[data-action="create-folder"]').style.display = 'none';
-                menu.querySelector('[data-action="manage-access"]').style.display = 'none';
-                menu.querySelector('[data-action="rename"]').style.display = this.contextItem.type === 'folder' ? 'flex' : 'none';
-                menu.querySelector('[data-action="download"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
-                menu.querySelector('[data-action="preview"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
-                menu.querySelector('[data-action="edit"]').style.display = this.contextItem.type === 'file' ? 'flex' : 'none';
-                menu.querySelector('[data-action="access"]').style.display = 'flex';
-                menu.querySelector('[data-action="add-favorite"]').style.display = 'flex';
-                menu.querySelector('[data-action="delete"]').style.display = 'flex';
-                menu.querySelector('[data-action="properties"]').style.display = 'flex';
-            } else {
-                this.contextItem = null;
-                menu.querySelector('[data-action="upload"]').style.display = 'flex';
-                menu.querySelector('[data-action="create-folder"]').style.display = 'flex';
-                menu.querySelector('[data-action="manage-access"]').style.display = 'flex';
-                menu.querySelector('[data-action="rename"]').style.display = 'none';
-                menu.querySelector('[data-action="download"]').style.display = 'none';
-                menu.querySelector('[data-action="preview"]').style.display = 'none';
-                menu.querySelector('[data-action="edit"]').style.display = 'none';
-                menu.querySelector('[data-action="access"]').style.display = 'none';
-                menu.querySelector('[data-action="add-favorite"]').style.display = 'none';
-                menu.querySelector('[data-action="delete"]').style.display = 'none';
-                menu.querySelector('[data-action="properties"]').style.display = 'none';
-            }
-            menu.style.display = 'block';
-            menu.style.left = e.pageX + 'px';
-            menu.style.top = e.pageY + 'px';
-        });
-
-        document.addEventListener('click', () => this.hideContextMenu());
-
-        const menu = document.getElementById('contextMenu');
-        if (menu) {
-            menu.addEventListener('click', (e) => {
-                const action = e.target.dataset.action || e.target.closest('li')?.dataset.action;
-                if (action) {
-                    this.handleContextAction(action);
-                }
-            });
-        }
-    }
-
-    hideContextMenu() {
-        const menu = document.getElementById('contextMenu');
-        if (menu) menu.style.display = 'none';
-    }
-
-    handleContextAction(action) {
-        if (['upload', 'create-folder', 'manage-access'].includes(action)) {
-            switch (action) {
-                case 'upload':
-                    openUploadModal(this.currentFolderId);
-                    break;
-                case 'create-folder':
-                    openCreateFolderModal(this.currentFolderId);
-                    break;
-                case 'manage-access':
-                    openAccessModal(this.currentFolderId, true);
-                    break;
-            }
-            this.hideContextMenu();
-            return;
-        }
-        if (!this.contextItem) return;
-        const { id, name, type } = this.contextItem;
-        switch (action) {
-            case 'preview':
-                if (type === 'file') {
-                    this.previewFile(id);
-                }
-                break;
-            case 'edit':
-                if (type === 'file') {
-                    this.editFile(id);
-                }
-                break;
-            case 'rename':
-                if (type === 'folder') {
-                    openRenameFolderModal(id, name);
-                }
-                break;
-            case 'download':
-                if (type === 'file') {
-                    this.downloadFile(id);
-                }
-                break;
-            case 'access':
-                openAccessModal(id, type === 'folder');
-                break;
-            case 'add-favorite':
-                this.addFavorite(id, type);
-                break;
-            case 'delete':
-                if (type === 'file') {
-                    this.deleteFile(id, name);
-                } else {
-                    deleteFolder(id, name);
-                }
-                break;
-            case 'properties':
-                this.showProperties(id, name, type);
-                break;
-        }
-        this.hideContextMenu();
     }
 
     bindSelectionEvents() {
@@ -815,28 +687,14 @@ function closePropertiesModal() {
 }
 
 // Initialize when DOM is loaded
-function initializeFilesManager() {
-    if (typeof filesManager === 'undefined') {
-        window.filesManager = new FilesManager();
-        filesManager = window.filesManager;
-    }
-}
-
-document.addEventListener('DOMContentLoaded', initializeFilesManager);
-
-
 // Open upload page
 window.openUploadModal = function (folderId) {
     const url = folderId ? `/Files/Upload?folderId=${folderId}` : '/Files/Upload';
-    if (typeof loadPage === 'function') {
-        loadPage(url);
-    } else {
-        window.location.href = url;
-    }
+    window.location.href = url;
 };
 
 // Drag and drop for the main page
-document.addEventListener('DOMContentLoaded', function () {
+function initDragAndDrop() {
     const mainContent = document.querySelector('.content-area');
     if (mainContent) {
         mainContent.addEventListener('dragover', function (e) {
@@ -867,8 +725,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-});
-
+}
 
 // Version management functions
 window.viewVersions = function (fileId) {
@@ -879,15 +736,21 @@ window.viewVersions = function (fileId) {
     }
 };
 
-// Add version button to file actions where appropriate
-document.addEventListener('DOMContentLoaded', function () {
-    // Add version history links to file context menus if they exist
+function initVersionHistoryLinks() {
     const fileItems = document.querySelectorAll('.file-card, .files-table tr');
     fileItems.forEach(item => {
         const fileId = item.getAttribute('data-file-id');
         if (fileId) {
-            // Add context menu or additional actions as needed
-            // This can be expanded based on UI requirements
+            // Placeholder for future version history integrations
         }
     });
-});
+}
+
+function initializeFilesManager() {
+    if (typeof window.filesManager === 'undefined') {
+        window.filesManager = new FilesManager();
+        filesManager = window.filesManager;
+        initDragAndDrop();
+        initVersionHistoryLinks();
+    }
+}
