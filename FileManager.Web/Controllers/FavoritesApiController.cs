@@ -19,7 +19,7 @@ public class FavoritesApiController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<FavoriteItemDto>>> GetFavorites()
+    public async Task<ActionResult<List<TreeNodeDto>>> GetFavorites()
     {
         var userId = GetCurrentUserId();
         var items = await _favoriteService.GetFavoritesAsync(userId);

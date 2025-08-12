@@ -1,5 +1,6 @@
 @page "/Favorites"
 @model FileManager.Web.Pages.Favorites.IndexModel
+@using System.Linq
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @{
     ViewData["Title"] = "Избранное";
@@ -8,34 +9,14 @@
 <div class="container mt-4">
     <h2 class="mb-4">@ViewData["Title"]</h2>
 
-    @if (Model.Favorites.Count == 0)
+    @if (Model.Favorites.Any())
     {
-        <div class="alert alert-info">У вас пока нет избранных элементов.</div>
+        ViewData["FavoriteList"] = true;
+        @await Html.PartialAsync("Files/_FilesGrid", Model.Favorites)
     }
     else
     {
-        <ul class="list-group">
-        @foreach (var item in Model.Favorites)
-        {
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    @if (item.Type == "file")
-                    {
-                        <i class="bi bi-file-earmark me-2"></i>
-                        <a href="/api/files/@item.Id/content">@item.Name</a>
-                    }
-                    else
-                    {
-                        <i class="bi bi-folder me-2"></i>
-                        <a href="/Files?folderId=@item.Id">@item.Name</a>
-                    }
-                </div>
-                <button class="btn btn-sm btn-outline-danger" title="Удалить из избранного" onclick="removeFavorite('@item.Id','@item.Type')">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </li>
-        }
-        </ul>
+        <div class="alert alert-info">У вас пока нет избранных элементов.</div>
     }
 </div>
 
@@ -43,8 +24,9 @@
 <script>
 async function removeFavorite(id, type) {
     const url = type === 'file' ? `/api/favorites/files/${id}` : `/api/favorites/folders/${id}`;
-    const response = await fetch(url, { method: 'DELETE' });
+    const response = await fetch(url, { method: 'DELETE', credentials: 'include' });
     if (response.ok) {
+        alert('Элемент удален из избранного');
         location.reload();
     } else {
         alert('Не удалось удалить из избранного');

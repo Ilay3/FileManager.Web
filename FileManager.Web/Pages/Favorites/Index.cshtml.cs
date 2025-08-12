@@ -19,7 +19,7 @@ public class IndexModel : PageModel
         _favoriteService = favoriteService;
     }
 
-    public List<FavoriteItemDto> Favorites { get; private set; } = new();
+    public List<TreeNodeDto> Favorites { get; private set; } = new();
 
     public async Task OnGetAsync()
     {
