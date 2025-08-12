@@ -131,7 +131,7 @@ public class UserService
         return await _userRepository.GetAllAsync();
     }
 
-    public async Task<bool> UpdateProfileAsync(Guid userId, string email, string fullName, string? department, string? profileImagePath)
+    public async Task<bool> UpdateProfileAsync(Guid userId, string email, string fullName, string? department)
     {
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null) return false;
@@ -142,7 +142,6 @@ public class UserService
         user.Email = email;
         user.FullName = fullName;
         user.Department = department;
-        user.ProfileImagePath = profileImagePath;
 
         await _userRepository.UpdateAsync(user);
         return true;

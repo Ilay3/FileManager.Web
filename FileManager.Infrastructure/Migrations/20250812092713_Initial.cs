@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FileManager.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class _1 : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -40,7 +40,6 @@ namespace FileManager.Infrastructure.Migrations
                     IsAdmin = table.Column<bool>(type: "boolean", nullable: false),
                     LastLoginAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Department = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    ProfileImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     IsLocked = table.Column<bool>(type: "boolean", nullable: false),
                     LockedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     LockReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
@@ -529,7 +528,8 @@ namespace FileManager.Infrastructure.Migrations
                 name: "IX_Files_YandexPath",
                 table: "files",
                 column: "YandexPath",
-                unique: true);
+                unique: true,
+                filter: "\"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_folders_CreatedById",
@@ -545,7 +545,8 @@ namespace FileManager.Infrastructure.Migrations
                 name: "IX_Folders_YandexPath",
                 table: "folders",
                 column: "YandexPath",
-                unique: true);
+                unique: true,
+                filter: "\"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Groups_Name",

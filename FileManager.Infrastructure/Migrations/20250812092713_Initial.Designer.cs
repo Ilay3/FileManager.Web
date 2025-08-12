@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FileManager.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250811071038_SoftDeleteFilteredIndexes")]
-    partial class SoftDeleteFilteredIndexes
+    [Migration("20250812092713_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -627,10 +627,6 @@ namespace FileManager.Infrastructure.Migrations
 
                     b.Property<DateTime?>("PasswordResetTokenExpires")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ProfileImagePath")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
