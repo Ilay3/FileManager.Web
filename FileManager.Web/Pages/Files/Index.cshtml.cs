@@ -40,7 +40,7 @@ public class IndexModel : PageModel
         SearchRequest.FolderId = CurrentFolderId;
         Breadcrumbs = await _folderService.GetBreadcrumbsAsync(CurrentFolderId);
 
-        FilesResult = await _fileService.GetFilesAsync(SearchRequest, userId, isAdmin);
+        FilesResult = await _fileService.SearchFilesAsync(SearchRequest, userId, isAdmin);
         var folderContents = await _folderService.GetFolderContentsAsync(CurrentFolderId, userId, SearchRequest, isAdmin);
         if (folderContents != null)
         {
