@@ -18,7 +18,6 @@ window.fetch = (input, init = {}) => {
 };
 
 let mainContainer;
-let isLoading = false;
 
 function initializeLayout() {
     const uploadBtn = document.getElementById('btnUpload');
@@ -86,79 +85,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     initializeLayout();
-});
-
-window.loadPage = async function (url, addToHistory = true) {
-    if (isLoading) return;
-    isLoading = true;
-    console.log('loadPage', url);
-    try {
-        const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        if (!response.ok) {
-            window.location.href = url;
-            return;
-        }
-        const html = await response.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const newContent = doc.getElementById('pageContainer');
-        const current = document.getElementById('pageContainer');
-        if (newContent && current) {
-            const scripts = newContent.querySelectorAll('script');
-            current.innerHTML = newContent.innerHTML;
-            scripts.forEach(oldScript => {
-                const script = document.createElement('script');
-                if (oldScript.src) {
-                    script.src = oldScript.src;
-                } else {
-                    script.textContent = oldScript.textContent;
-                }
-                document.body.appendChild(script);
-                document.body.removeChild(script);
-            });
-            if (typeof initializeFilesManager === 'function') {
-                initializeFilesManager();
-            }
-            initializeLayout();
-            if (addToHistory) {
-                history.pushState(null, '', url);
-            }
-        } else {
-            window.location.href = url;
-        }
-    } catch (err) {
-        console.error('loadPage error', err);
-        window.location.href = url;
-    } finally {
-        isLoading = false;
+    if (typeof initializeFilesManager === 'function') {
+        initializeFilesManager();
     }
-};
-
-document.addEventListener('click', function (e) {
-    const link = e.target.closest('a');
-    if (!link) return;
-    const href = link.getAttribute('href');
-    if (!href || href.startsWith('#')) return;
-    if (link.getAttribute('target') === '_blank' || link.hasAttribute('download')) return;
-    if (link.origin !== window.location.origin) return;
-    const url = new URL(link.href, window.location.origin);
-    e.preventDefault();
-    const finalUrl = url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '');
-    loadPage(finalUrl);
-});
-
-window.addEventListener('popstate', () => {
-    loadPage(window.location.href, false);
-});
-
-window.showNotification = function (message, type = 'info') {
-    const container = document.getElementById('notificationContainer');
-    if (!container) {
-        return;
+    if (window.contextMenu && typeof window.contextMenu.init === 'function' && window.filesManager) {
+        window.contextMenu.init(window.filesManager);
     }
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
-    container.appendChild(notification);
-    setTimeout(() => notification.remove(), 5000);
-};
+});
 
