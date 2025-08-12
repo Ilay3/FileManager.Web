@@ -111,18 +111,18 @@ public class FileService : IFileService
     public async Task<SearchResultDto<FileDto>> SearchFilesAsync(SearchRequestDto request, Guid userId, bool isAdmin = false)
     {
         var files = await _filesRepository.SearchAsync(
-            request.SearchTerm,
-            request.FolderId,
-            request.FileType,
-            request.Extension,
-            request.DateFrom,
-            request.DateTo,
-            request.OwnerId,
-            request.Tags,
-            request.UpdatedFrom,
-            request.UpdatedTo,
-            request.MinSizeBytes,
-            request.MaxSizeBytes);
+            searchTerm: request.SearchTerm,
+            folderId: request.FolderId,
+            fileType: request.FileType,
+            extension: request.Extension,
+            dateFrom: request.DateFrom,
+            dateTo: request.DateTo,
+            userId: request.OwnerId,
+            tags: request.Tags,
+            updatedFrom: request.UpdatedFrom,
+            updatedTo: request.UpdatedTo,
+            minSizeBytes: request.MinSizeBytes,
+            maxSizeBytes: request.MaxSizeBytes);
 
         var user = await _userRepository.GetByIdAsync(userId);
 

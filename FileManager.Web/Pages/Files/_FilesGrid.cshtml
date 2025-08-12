@@ -1,15 +1,55 @@
 @model IEnumerable<FileManager.Application.DTOs.TreeNodeDto>
 @using System.Linq
+@using FileManager.Application.DTOs
+
+@{
+    var search = ViewData["SearchRequest"] as SearchRequestDto;
+}
 
 @if (Model.Any())
 {
     <div class="sort-controls">
         <span>Сортировка:</span>
-        <a href="javascript:void(0)" onclick="sortBy('name')" class="sort-link">По имени</a>
-        <a href="javascript:void(0)" onclick="sortBy('date')" class="sort-link">По дате</a>
-        <a href="javascript:void(0)" onclick="sortBy('size')" class="sort-link">По размеру</a>
-        <a href="javascript:void(0)" onclick="sortBy('type')" class="sort-link">По типу</a>
+        <a href="javascript:void(0)" onclick="sortBy('name')" class="sort-link @(search?.SortBy == "name" ? "active" : "")">
+            По имени@(search?.SortBy == "name" ? (search?.SortDirection == "asc" ? " ↑" : " ↓") : "")</a>
+        <a href="javascript:void(0)" onclick="sortBy('date')" class="sort-link @(search?.SortBy == "date" ? "active" : "")">
+            По дате@(search?.SortBy == "date" ? (search?.SortDirection == "asc" ? " ↑" : " ↓") : "")</a>
+        <a href="javascript:void(0)" onclick="sortBy('size')" class="sort-link @(search?.SortBy == "size" ? "active" : "")">
+            По размеру@(search?.SortBy == "size" ? (search?.SortDirection == "asc" ? " ↑" : " ↓") : "")</a>
+        <a href="javascript:void(0)" onclick="sortBy('type')" class="sort-link @(search?.SortBy == "type" ? "active" : "")">
+            По типу@(search?.SortBy == "type" ? (search?.SortDirection == "asc" ? " ↑" : " ↓") : "")</a>
     </div>
+
+    @if (search != null &&
+        (!string.IsNullOrEmpty(search.SearchTerm) || search.FileType.HasValue ||
+         search.DateFrom.HasValue || search.DateTo.HasValue ||
+         search.MinSizeBytes.HasValue || search.MaxSizeBytes.HasValue))
+    {
+        <div class="current-filter mb-2">
+            <span>Фильтр:</span>
+            <span>
+                @if (!string.IsNullOrEmpty(search.SearchTerm))
+                {
+                    <text>поиск "@search.SearchTerm"; </text>
+                }
+                @if (search.FileType.HasValue)
+                {
+                    <text>тип @search.FileType; </text>
+                }
+                @if (search.DateFrom.HasValue || search.DateTo.HasValue)
+                {
+                    <text>дата @search.DateFrom?.ToString("dd.MM.yyyy") - @search.DateTo?.ToString("dd.MM.yyyy"); </text>
+                }
+                @if (search.MinSizeBytes.HasValue || search.MaxSizeBytes.HasValue)
+                {
+                    var minSize = search.MinSizeBytes.HasValue ? FormatSize(search.MinSizeBytes.Value) : "0";
+                    var maxSize = search.MaxSizeBytes.HasValue ? FormatSize(search.MaxSizeBytes.Value) : "∞";
+                    <text>размер @minSize - @maxSize; </text>
+                }
+            </span>
+            <a href="?folderId=@ViewContext.HttpContext.Request.Query["folderId"]" class="btn btn-link btn-sm">Сбросить</a>
+        </div>
+    }
 
     <div class="files-grid">
     @foreach (var item in Model)

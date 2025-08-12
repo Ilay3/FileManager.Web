@@ -36,10 +36,54 @@
         <button type="button" id="btnManageAccess" class="btn btn-primary btn-sm"><i class="bi bi-shield-lock"></i> Управление доступом</button>
     </div>
 
-    <!-- Поиск и фильтры удалены -->
+    <!-- Панель поиска и фильтров -->
+    <form method="get" class="search-panel">
+        <input type="hidden" name="folderId" value="@Model.CurrentFolderId" />
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label asp-for="SearchRequest.SearchTerm" class="form-label">Поиск</label>
+                <input asp-for="SearchRequest.SearchTerm" class="form-control" placeholder="Введите текст" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="SearchRequest.FileType" class="form-label">Тип файла</label>
+                <select asp-for="SearchRequest.FileType" class="form-select">
+                    <option value="">Все</option>
+                    @foreach (var type in Enum.GetValues(typeof(FileType)))
+                    {
+                        <option value="@type" selected="@(Model.SearchRequest.FileType == (FileType)type ? "selected" : null)">@type</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="SearchRequest.DateFrom" class="form-label">Дата с</label>
+                <input asp-for="SearchRequest.DateFrom" type="date" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="SearchRequest.DateTo" class="form-label">Дата по</label>
+                <input asp-for="SearchRequest.DateTo" type="date" class="form-control" />
+            </div>
+            <div class="col-md-1">
+                <label asp-for="SearchRequest.MinSizeBytes" class="form-label">Мин. размер</label>
+                <input asp-for="SearchRequest.MinSizeBytes" type="number" class="form-control" />
+            </div>
+            <div class="col-md-1">
+                <label asp-for="SearchRequest.MaxSizeBytes" class="form-label">Макс. размер</label>
+                <input asp-for="SearchRequest.MaxSizeBytes" type="number" class="form-control" />
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100">Найти</button>
+            </div>
+            <div class="col-md-1">
+                <a href="?folderId=@Model.CurrentFolderId" class="btn btn-secondary w-100">Сбросить</a>
+            </div>
+        </div>
+    </form>
 
     <!-- Content Area -->
     <div class="content-area">
+        @{
+            ViewData["SearchRequest"] = Model.SearchRequest;
+        }
         <div class="grid-view">
             @await Html.PartialAsync("_FilesGrid", Model.GridItems)
         </div>
