@@ -585,26 +585,6 @@ a:hover {
 }
 
 
-.view-controls {
-    display: flex;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-    .view-controls .btn {
-        border: none;
-        border-radius: 0;
-        padding: 8px 12px;
-        margin: 0;
-        background: #f8f9fa;
-    }
-
-    .view-controls .btn-active {
-        background: var(--accent-color);
-        color: white;
-    }
-
 .filter-controls {
     display: flex;
     align-items: center;
@@ -1056,26 +1036,6 @@ a:hover {
     justify-content: center;
 }
 
-
-.view-controls {
-    display: flex;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-    .view-controls .btn {
-        border: none;
-        border-radius: 0;
-        padding: 8px 12px;
-        margin: 0;
-        background: #f8f9fa;
-    }
-
-    .view-controls .btn-active {
-        background: var(--accent-color);
-        color: white;
-    }
 
 .filter-controls {
     display: flex;
@@ -2051,45 +2011,3 @@ a:hover {
     color: #fff;
 }
 
-/* View size modes */
-.files-grid.view-large {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 20px;
-}
-
-.files-grid.view-large .file-card {
-    padding: 20px;
-}
-
-.files-grid.view-large .file-icon {
-    width: 64px;
-    height: 64px;
-}
-
-.files-grid.view-medium {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 15px;
-}
-
-.files-grid.view-medium .file-card {
-    padding: 15px;
-}
-
-.files-grid.view-medium .file-icon {
-    width: 48px;
-    height: 48px;
-}
-
-.files-grid.view-small {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
-}
-
-.files-grid.view-small .file-card {
-    padding: 10px;
-}
-
-.files-grid.view-small .file-icon {
-    width: 32px;
-    height: 32px;
-}
