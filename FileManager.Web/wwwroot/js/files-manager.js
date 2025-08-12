@@ -394,6 +394,28 @@ class FilesManager {
         }
     }
 
+    async removeFavorite(itemId, itemType) {
+        try {
+            const url = itemType === 'file'
+                ? `/api/favorites/files/${itemId}`
+                : `/api/favorites/folders/${itemId}`;
+            const response = await fetch(url, { method: 'DELETE' });
+            if (response.ok) {
+                this.showNotification('Удалено из избранного', 'success');
+                const el = document.querySelector(`[data-id="${itemId}"]`);
+                if (el) {
+                    el.remove();
+                }
+            } else {
+                const text = await response.text();
+                this.showNotification('Не удалось удалить из избранного: ' + text, 'error');
+            }
+        } catch (error) {
+            console.error('Error removing favorite:', error);
+            this.showNotification('Ошибка при удалении из избранного', 'error');
+        }
+    }
+
     async deleteFile(fileId, fileName) {
         if (!confirm(`Вы уверены, что хотите удалить файл "${fileName}"?`)) {
             return;
@@ -787,7 +809,10 @@ function closePropertiesModal() {
 
 // Initialize when DOM is loaded
 function initializeFilesManager() {
-    filesManager = new FilesManager();
+    if (typeof filesManager === 'undefined') {
+        window.filesManager = new FilesManager();
+        filesManager = window.filesManager;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', initializeFilesManager);
