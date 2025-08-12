@@ -19,7 +19,7 @@
     <tbody>
     @foreach (var item in Model.Items)
     {
-        <tr>
+        <tr id="item-@item.Id">
             <td>@item.Name</td>
             <td>@(item.Type == "file" ? "Файл" : "Папка")</td>
             <td>@item.DeletedAt?.ToLocalTime().ToString("g")</td>
@@ -43,7 +43,9 @@ async function restoreItem(id, type) {
             alert(message || 'Не удалось восстановить объект');
             return;
         }
-        location.reload();
+        const row = document.getElementById(`item-${id}`);
+        if (row) row.remove();
+        alert('Объект возвращён в исходную папку');
     } catch (err) {
         alert(`Ошибка при восстановлении: ${err.message}`);
     }
@@ -59,7 +61,8 @@ async function deleteItem(id, type) {
             alert(message || 'Не удалось удалить объект');
             return;
         }
-        location.reload();
+        const row = document.getElementById(`item-${id}`);
+        if (row) row.remove();
     } catch (err) {
         alert(`Ошибка при удалении: ${err.message}`);
     }
