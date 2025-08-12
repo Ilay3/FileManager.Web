@@ -74,6 +74,39 @@ public class AccessService : IAccessService
             throw new ArgumentException("Должен быть указан либо пользователь, либо группа");
         }
 
+        Guid ownerId;
+        if (fileId.HasValue)
+        {
+            ownerId = await _context.Files
+                .Where(f => f.Id == fileId.Value)
+                .Select(f => f.UploadedById)
+                .FirstOrDefaultAsync();
+        }
+        else
+        {
+            ownerId = await _context.Folders
+                .Where(f => f.Id == folderId!.Value)
+                .Select(f => f.CreatedById)
+                .FirstOrDefaultAsync();
+        }
+
+        if (userId.HasValue && userId.Value == ownerId)
+        {
+            _logger.LogWarning("GrantAccessAsync: владелец не может быть получателем доступа");
+            return;
+        }
+
+        if (groupId.HasValue)
+        {
+            var ownerInGroup = await _context.Groups
+                .AnyAsync(g => g.Id == groupId.Value && g.Users.Any(u => u.Id == ownerId));
+            if (ownerInGroup)
+            {
+                _logger.LogWarning("GrantAccessAsync: владелец входит в группу-получатель");
+                return;
+            }
+        }
+
         var rule = new AccessRule
         {
             FileId = fileId,

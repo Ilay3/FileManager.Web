@@ -28,6 +28,7 @@
     window.accessTarget = accessTarget;
     var currentAccess = window.currentAccess || [];
     window.currentAccess = currentAccess;
+    var ownerId = null;
 
     async function openAccessModal(targetId, isFolder) {
         accessTarget = { id: targetId, isFolder: isFolder };
@@ -51,6 +52,14 @@
     }
 
     async function loadAccessLists() {
+        const ownerRes = accessTarget.isFolder
+            ? await fetch(`/api/folders/${accessTarget.id}`, { credentials: 'include' })
+            : await fetch(`/api/files/${accessTarget.id}`, { credentials: 'include' });
+        if (ownerRes.ok) {
+            const data = await ownerRes.json();
+            ownerId = accessTarget.isFolder ? data.createdById : data.uploadedById;
+        }
+
         const [usersRes, groupsRes] = await Promise.all([
             fetch('/api/users', { credentials: 'include' }),
             fetch('/api/groups', { credentials: 'include' })
@@ -63,6 +72,7 @@
         const usersList = document.getElementById('usersList');
         usersList.innerHTML = '';
         users.forEach(u => {
+            if (ownerId && u.id === ownerId) return;
             const label = document.createElement('label');
             label.className = 'checkbox-item';
             label.innerHTML = `<input type="checkbox" class="access-user" value="${u.id}"> ${u.fullName}`;
