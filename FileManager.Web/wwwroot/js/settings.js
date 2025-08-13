@@ -178,6 +178,9 @@ function initSettingsNav() {
     // Создаем навигацию, если на странице есть заголовок "Настройки"
     const titleEl = document.querySelector('h2');
     if (titleEl && (titleEl.textContent.includes('Настройки') || titleEl.textContent.includes('настройки'))) {
+        // Сохраняем родительский элемент до начала манипуляций
+        const container = titleEl.parentNode;
+
         // Создаем навигацию только если её ещё нет
         if (!document.querySelector('.settings-nav')) {
             const settingsPages = [
@@ -213,12 +216,10 @@ function initSettingsNav() {
             });
 
             // Вставляем навигацию перед заголовком
-            titleEl.parentNode.insertBefore(nav, titleEl);
+            container.insertBefore(nav, titleEl);
 
             // Оборачиваем контент в контейнер для стилизации
-            const contentElements = Array.from(titleEl.parentNode.children).filter(el =>
-                el.tagName !== 'DIV' || !el.classList.contains('settings-nav')
-            );
+            const contentElements = Array.from(container.children).filter(el => el !== nav);
 
             const contentContainer = document.createElement('div');
             contentContainer.className = 'settings-content';
@@ -229,7 +230,7 @@ function initSettingsNav() {
             });
 
             // Добавляем контейнер на страницу
-            titleEl.parentNode.appendChild(contentContainer);
+            container.appendChild(contentContainer);
 
             // Оборачиваем всё в общий контейнер
             const mainContainer = document.createElement('div');
@@ -240,7 +241,7 @@ function initSettingsNav() {
             mainContainer.appendChild(contentContainer);
 
             // Заменяем старое содержимое
-            titleEl.parentNode.parentNode.replaceChild(mainContainer, titleEl.parentNode);
+            container.parentNode.replaceChild(mainContainer, container);
         }
     }
 }
