@@ -139,7 +139,7 @@ public class FolderRepository : IFolderRepository
 
         return await _context.Folders
             .Where(f => f.ParentFolderId == null && !f.IsDeleted)
-            .Where(f => f.AccessRules.Any(r =>
+            .Where(f => f.CreatedById == userId || f.AccessRules.Any(r =>
                 r.FolderId == f.Id &&
                 (r.UserId == userId || (r.GroupId.HasValue && userGroupIds.Contains(r.GroupId.Value))) &&
                 (r.AccessType & Domain.Enums.AccessType.Read) == Domain.Enums.AccessType.Read))

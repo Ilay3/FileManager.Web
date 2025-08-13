@@ -161,6 +161,9 @@ public class AccessService : IAccessService
         if (file == null)
             return AccessType.None;
 
+        if (file.UploadedById == userId)
+            return AccessType.FullAccess;
+
         var access = await GetDirectAccessAsync(userId, userGroups, fileId, null, false);
         if (access != AccessType.None)
             return access;
@@ -185,6 +188,9 @@ public class AccessService : IAccessService
             .FirstOrDefaultAsync(f => f.Id == folderId);
         if (folder == null)
             return AccessType.None;
+
+        if (folder.CreatedById == userId)
+            return AccessType.FullAccess;
 
         var access = await GetDirectAccessAsync(userId, userGroups, null, folderId, inheritedOnly);
         if (access != AccessType.None)
