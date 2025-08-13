@@ -60,7 +60,7 @@ public class AccessService : IAccessService
     }
 
     public async Task GrantAccessAsync(Guid? fileId, Guid? folderId, Guid? userId, Guid? groupId,
-        AccessType accessType, Guid grantedById, bool inherit = true)
+        AccessType accessType, Guid grantedById, bool inherit = true, bool allowOwner = false)
     {
         if ((fileId.HasValue && folderId.HasValue) || (!fileId.HasValue && !folderId.HasValue))
         {
@@ -90,10 +90,18 @@ public class AccessService : IAccessService
                 .FirstOrDefaultAsync();
         }
 
+        var effectiveAccessType = accessType;
         if (userId.HasValue && userId.Value == ownerId)
         {
-            _logger.LogWarning("GrantAccessAsync: владелец не может быть получателем доступа");
-            return;
+            if (allowOwner)
+            {
+                effectiveAccessType = AccessType.FullAccess;
+            }
+            else
+            {
+                _logger.LogWarning("GrantAccessAsync: владелец не может быть получателем доступа");
+                return;
+            }
         }
 
         if (groupId.HasValue)
@@ -113,7 +121,7 @@ public class AccessService : IAccessService
             FolderId = folderId,
             UserId = userId,
             GroupId = groupId,
-            AccessType = accessType,
+            AccessType = effectiveAccessType,
             GrantedById = grantedById,
             InheritFromParent = inherit
         };
@@ -121,12 +129,12 @@ public class AccessService : IAccessService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Назначены права {AccessType} для {Principal} к {Target}",
-            accessType,
+            effectiveAccessType,
             userId ?? groupId,
             fileId ?? folderId);
 
         await _audit.LogAsync(AuditAction.AccessGranted, grantedById, fileId, folderId,
-            $"Granted {accessType} access", isSuccess: true);
+            $"Granted {effectiveAccessType} access", isSuccess: true);
     }
 
     public async Task<bool> RevokeAccessAsync(Guid accessRuleId, Guid revokedById)

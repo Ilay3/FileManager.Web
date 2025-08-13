@@ -97,7 +97,7 @@ public class FileUploadService
             fileEntity = await _filesRepository.CreateAsync(fileEntity);
 
             await _accessService.GrantAccessAsync(fileEntity.Id, null, userId, null,
-                AccessType.FullAccess, userId);
+                AccessType.FullAccess, userId, allowOwner: true);
 
             // Логируем действие
             await _auditService.LogAsync(

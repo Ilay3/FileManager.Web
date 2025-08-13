@@ -292,7 +292,7 @@ public class FolderService : IFolderService
         }
 
         await _accessService.GrantAccessAsync(null, created.Id, userId, null,
-            AccessType.FullAccess, userId);
+            AccessType.FullAccess, userId, allowOwner: true);
 
         await _auditService.LogAsync(AuditAction.FolderCreate, userId, folderId: created.Id,
             description: $"Создал папку {name}");
