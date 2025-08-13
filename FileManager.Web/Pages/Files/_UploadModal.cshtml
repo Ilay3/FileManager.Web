@@ -317,6 +317,7 @@
         const folderId = document.getElementById('uploadFolderSelect').value;
         const comment = document.getElementById('uploadComment').value;
 
+        showLoader();
         document.getElementById('uploadProgress').style.display = 'block';
         document.getElementById('uploadBtn').disabled = true;
 
@@ -325,14 +326,18 @@
 
         async function uploadNext(index) {
             if (index >= totalFiles) {
+                hideLoader();
                 showUploadResults(results);
                 return;
             }
 
             if (!await refreshCsrfToken()) {
+                hideLoader();
                 showUploadError('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.');
                 return;
             }
+
+            showLoader();
 
             const file = selectedFiles[index];
             const formData = new FormData();
@@ -418,6 +423,7 @@
             };
 
             xhr.ontimeout = function () {
+                hideLoader();
                 showUploadError('Время ожидания истекло, попробуйте ещё раз');
             };
 
