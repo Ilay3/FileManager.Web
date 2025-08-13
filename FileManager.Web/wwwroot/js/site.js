@@ -44,6 +44,11 @@ function initializeLayout() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    document.body.classList.add('fade-enter-active');
+    document.body.addEventListener('transitionend', () => {
+        document.body.classList.remove('fade-enter');
+        document.body.classList.remove('fade-enter-active');
+    }, { once: true });
     mainContainer = document.getElementById('pageContainer');
     if (mainContainer) {
         mainContainer.classList.add('page-enter');

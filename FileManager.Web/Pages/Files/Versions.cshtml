@@ -96,7 +96,7 @@
 </div>
 
 <!-- Modal для создания версии -->
-<div id="createVersionModal" class="modal" style="display: none;">
+<div id="createVersionModal" class="modal modal-exit" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
             <h3>Создать версию</h3>
@@ -119,7 +119,7 @@
 </div>
 
 <!-- Modal для восстановления версии -->
-<div id="restoreVersionModal" class="modal" style="display: none;">
+<div id="restoreVersionModal" class="modal modal-exit" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
             <h3>Восстановить версию</h3>
@@ -153,13 +153,23 @@
     function openRestoreModal(versionId, versionNumber) {
         selectedVersionId = versionId;
         document.getElementById('restoreVersionInfo').textContent = `Восстановить версию ${versionNumber}? Текущая версия будет сохранена в истории.`;
-        document.getElementById('restoreVersionModal').style.display = 'flex';
+        const modal = document.getElementById('restoreVersionModal');
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.remove('modal-exit');
+            modal.classList.add('modal-enter');
+        }, 10);
     }
 
     function closeRestoreVersionModal() {
-        document.getElementById('restoreVersionModal').style.display = 'none';
-        document.getElementById('restoreComment').value = '';
-        selectedVersionId = null;
+        const modal = document.getElementById('restoreVersionModal');
+        modal.classList.remove('modal-enter');
+        modal.classList.add('modal-exit');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            document.getElementById('restoreComment').value = '';
+            selectedVersionId = null;
+        }, 300);
     }
 
     async function confirmRestore() {
@@ -191,12 +201,22 @@
     }
 
     function createManualVersion() {
-        document.getElementById('createVersionModal').style.display = 'flex';
+        const modal = document.getElementById('createVersionModal');
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.remove('modal-exit');
+            modal.classList.add('modal-enter');
+        }, 10);
     }
 
     function closeCreateVersionModal() {
-        document.getElementById('createVersionModal').style.display = 'none';
-        document.getElementById('versionComment').value = '';
+        const modal = document.getElementById('createVersionModal');
+        modal.classList.remove('modal-enter');
+        modal.classList.add('modal-exit');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            document.getElementById('versionComment').value = '';
+        }, 300);
     }
 
     async function saveVersion() {
