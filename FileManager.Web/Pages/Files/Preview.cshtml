@@ -137,7 +137,7 @@
     @if (Model.PreviewType == "text")
     {
         <text>
-            fetch(`/api/files/${fileId}/content`)
+            fetchWithProgress(`/api/files/${fileId}/content`)
                 .then(response => response.text())
                 .then(text => {
                     document.getElementById('textContent').textContent = text;
@@ -151,7 +151,7 @@
 
     async function openForEdit(fileId) {
         try {
-            const response = await fetch(`/api/files/${fileId}/edit`);
+            const response = await fetchWithProgress(`/api/files/${fileId}/edit`);
             const data = await response.json();
 
             if (data.hasActiveEditors && !data.canProceed) {
@@ -181,7 +181,7 @@
 
     async function openExternalPreview(fileId) {
         try {
-            const response = await fetch(`/api/files/${fileId}/preview`);
+            const response = await fetchWithProgress(`/api/files/${fileId}/preview`);
             const data = await response.json();
 
             if (data.previewUrl && data.external) {
@@ -202,7 +202,7 @@
     async function saveTags() {
         const tags = document.getElementById('tagsInput').value;
         try {
-            await fetch(`/api/files/${fileId}/tags`, {
+            await fetchWithProgress(`/api/files/${fileId}/tags`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tags })
@@ -240,7 +240,7 @@
     // Периодическая проверка активных редакторов
     setInterval(async function() {
         try {
-            const response = await fetch(`/api/files/${fileId}/sessions`);
+            const response = await fetchWithProgress(`/api/files/${fileId}/sessions`);
             const sessions = await response.json();
 
             const currentEditors = sessions.filter(s => s.isActive).map(s => s.userName);

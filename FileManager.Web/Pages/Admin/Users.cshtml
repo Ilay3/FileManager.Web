@@ -27,7 +27,7 @@
 
 <script>
 async function loadUsers() {
-    const res = await fetch('/api/users', { credentials: 'include' });
+    const res = await fetchWithProgress('/api/users', { credentials: 'include' });
     const users = res.ok ? await res.json() : [];
     const tbody = document.querySelector('#usersTable tbody');
     tbody.innerHTML = '';
@@ -45,12 +45,12 @@ async function loadUsers() {
 
 async function deleteUser(id) {
     if (!confirm('Удалить пользователя?')) return;
-    await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+    await fetchWithProgress(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
     await loadUsers();
 }
 
 async function toggleAdmin(id, isAdmin) {
-    await fetch(`/api/users/${id}/admin`, {
+    await fetchWithProgress(`/api/users/${id}/admin`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isAdmin }),

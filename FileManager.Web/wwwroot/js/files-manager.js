@@ -72,7 +72,7 @@ class FilesManager {
 
     async downloadSelected() {
         if (this.selectedFiles.size === 0) return;
-        const response = await fetch('/api/files/download-zip', {
+        const response = await fetchWithProgress('/api/files/download-zip', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids: Array.from(this.selectedFiles) })
@@ -123,7 +123,7 @@ class FilesManager {
 
     async loadFolderContents(folderId, container) {
         try {
-            const response = await fetch(`/api/folders/${folderId}/contents`);
+            const response = await fetchWithProgress(`/api/folders/${folderId}/contents`);
             if (response.ok) {
                 const data = await response.json();
                 this.renderTreeChildren(data.children, container);
@@ -206,7 +206,7 @@ class FilesManager {
 
     async editFile(fileId, fileName) {
         try {
-            const response = await fetch(`/api/files/${fileId}/edit`);
+            const response = await fetchWithProgress(`/api/files/${fileId}/edit`);
             const data = await response.json();
 
             if (data.hasActiveEditors && !data.canProceed) {
@@ -265,7 +265,7 @@ class FilesManager {
             const url = itemType === 'file'
                 ? `/api/favorites/files/${itemId}`
                 : `/api/favorites/folders/${itemId}`;
-            const response = await fetch(url, { method: 'POST' });
+            const response = await fetchWithProgress(url, { method: 'POST' });
             if (response.ok) {
                 this.showNotification('Добавлено в избранное', 'success');
             } else {
@@ -287,7 +287,7 @@ class FilesManager {
             const url = itemType === 'file'
                 ? `/api/favorites/files/${itemId}`
                 : `/api/favorites/folders/${itemId}`;
-            const response = await fetch(url, { method: 'DELETE' });
+            const response = await fetchWithProgress(url, { method: 'DELETE' });
             if (response.ok) {
                 this.showNotification('Удалено из избранного', 'success');
                 el.remove();
@@ -308,7 +308,7 @@ class FilesManager {
             return;
         }
         try {
-            const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' });
+            const response = await fetchWithProgress(`/api/files/${fileId}`, { method: 'DELETE' });
             if (response.ok) {
                 this.showNotification('Файл удалён', 'success');
                 askSendNotifications(`Удалён файл "${fileName}"`);
@@ -337,7 +337,7 @@ class FilesManager {
 
         try {
             if (itemType === 'file') {
-                const res = await fetch(`/api/files/${itemId}`, { credentials: 'include' });
+                const res = await fetchWithProgress(`/api/files/${itemId}`, { credentials: 'include' });
                 if (res.ok) {
                     const data = await res.json();
                     size = data.formattedSize;
@@ -346,7 +346,7 @@ class FilesManager {
                     updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : created;
                 }
             } else {
-                const res = await fetch(`/api/folders/${itemId}`, { credentials: 'include' });
+                const res = await fetchWithProgress(`/api/folders/${itemId}`, { credentials: 'include' });
                 if (res.ok) {
                     const data = await res.json();
                     creator = data.createdByName;
@@ -354,7 +354,7 @@ class FilesManager {
                     updated = data.updatedAt ? new Date(data.updatedAt).toLocaleString() : created;
                 }
             }
-            const accessRes = await fetch(
+            const accessRes = await fetchWithProgress(
                 itemType === 'file'
                     ? `/api/access/file/${itemId}`
                     : `/api/access/folder/${itemId}`,
@@ -401,7 +401,7 @@ class FilesManager {
     // Folder actions
     async createFolder(name, parentId) {
         try {
-            const response = await fetch('/api/folders', {
+            const response = await fetchWithProgress('/api/folders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, parentId })
@@ -420,7 +420,7 @@ class FilesManager {
 
     async renameFolder(folderId, newName) {
         try {
-            const response = await fetch(`/api/folders/${folderId}/rename`, {
+            const response = await fetchWithProgress(`/api/folders/${folderId}/rename`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: newName })
@@ -441,7 +441,7 @@ class FilesManager {
     async deleteFolder(folderId, folderName) {
         if (!confirm(`Удалить папку "${folderName}"?`)) return;
         try {
-            const response = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' });
+            const response = await fetchWithProgress(`/api/folders/${folderId}`, { method: 'DELETE' });
             if (response.ok) {
                 this.showNotification('Папка удалена', 'success');
                 askSendNotifications(`Удалена папка "${folderName}"`);
@@ -459,7 +459,7 @@ class FilesManager {
         const newParentId = prompt('ID новой папки (оставьте пустым для корня)');
         if (newParentId === null) return;
         try {
-            const response = await fetch(`/api/folders/${folderId}/move`, {
+            const response = await fetchWithProgress(`/api/folders/${folderId}/move`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ newParentId: newParentId || null })
@@ -489,7 +489,7 @@ class FilesManager {
             accessType: access
         };
         try {
-            const response = await fetch('/api/access/grant', {
+            const response = await fetchWithProgress('/api/access/grant', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)

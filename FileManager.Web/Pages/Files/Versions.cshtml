@@ -168,7 +168,7 @@
         const comment = document.getElementById('restoreComment').value;
 
         try {
-            const response = await fetch(`/api/files/${fileId}/versions/${selectedVersionId}/restore`, {
+            const response = await fetchWithProgress(`/api/files/${fileId}/versions/${selectedVersionId}/restore`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -203,7 +203,7 @@
         const comment = document.getElementById('versionComment').value;
 
         try {
-            const response = await fetch(`/api/files/${fileId}/versions`, {
+            const response = await fetchWithProgress(`/api/files/${fileId}/versions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -251,7 +251,7 @@
     // Автоматическое обновление информации об активных редакторах
     setInterval(async function() {
         try {
-            const response = await fetch(`/api/files/${fileId}/sessions`);
+            const response = await fetchWithProgress(`/api/files/${fileId}/sessions`);
             if (response.ok) {
                 const sessions = await response.json();
                 const activeEditors = sessions.filter(s => s.isActive);
