@@ -30,11 +30,7 @@
         </div>
     }
 
-    <div class="action-bar d-flex gap-2">
-        <a asp-page="Upload" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> Загрузить файлы</a>
-        <button type="button" id="btnCreateFolder" class="btn btn-primary btn-sm"><i class="bi bi-folder-plus"></i> Создать папку</button>
-        <button type="button" id="btnManageAccess" class="btn btn-primary btn-sm"><i class="bi bi-shield-lock"></i> Управление доступом</button>
-    </div>
+    
 
     <!-- Панель поиска и фильтров -->
     <form method="get" class="search-panel">
@@ -111,19 +107,13 @@
     }
 </div>
 
-@await Html.PartialAsync("_FolderModals")
-@await Html.PartialAsync("_AccessModal")
 @await Html.PartialAsync("_PropertiesModal")
 <div id="contextMenu" class="context-menu">
     <ul>
-        <li data-action="upload" title="Загрузить"><i class="bi bi-upload"></i> Загрузить</li>
-        <li data-action="create-folder" title="Создать папку"><i class="bi bi-folder-plus"></i> Создать папку</li>
-        <li data-action="manage-access" title="Управление доступом"><i class="bi bi-shield-lock"></i> Управление доступом</li>
         <li data-action="preview" title="Предпросмотр"><i class="bi bi-eye"></i> Предпросмотр</li>
         <li data-action="edit" title="Редактировать"><i class="bi bi-pencil"></i> Редактировать</li>
         <li data-action="rename" title="Переименовать"><i class="bi bi-pencil-square"></i> Переименовать</li>
         <li data-action="download" title="Скачать"><i class="bi bi-download"></i> Скачать</li>
-        <li data-action="access" title="Доступ"><i class="bi bi-person-lock"></i> Доступ</li>
         <li data-action="add-favorite" title="Добавить в избранное"><i class="bi bi-star"></i> Добавить в избранное</li>
         <li data-action="delete" title="Удалить"><i class="bi bi-trash"></i> Удалить</li>
         <li data-action="properties" title="Свойства"><i class="bi bi-info-circle"></i> Свойства</li>

@@ -163,7 +163,6 @@ class FilesManager {
                     <button class="btn btn-tiny" onclick="openRenameFolderModal('${nodeData.id}', '${safeName}')" title="Переименовать">✏️</button>
                     <button class="btn btn-tiny" onclick="moveFolder('${nodeData.id}')" title="Переместить">📁</button>
                     <button class="btn btn-tiny" onclick="deleteFolder('${nodeData.id}', '${safeName}')" title="Удалить">🗑️</button>
-                    <button class="btn btn-tiny" onclick="shareAccess('folder','${nodeData.id}')" title="Права">🔑</button>
                 </div>
                 <span class="tree-date">${this.formatDate(nodeData.updatedAt || nodeData.createdAt)}</span>
             `;
@@ -183,7 +182,6 @@ class FilesManager {
                 <div class="tree-file-actions">
                     <button class="btn btn-tiny" onclick="filesManager.downloadFile('${nodeData.id}')" title="Скачать">⬇️</button>
                     <button class="btn btn-tiny" onclick="filesManager.deleteFile('${nodeData.id}', '${nodeData.name}')" title="Удалить">🗑️</button>
-                    <button class="btn btn-tiny" onclick="shareAccess('file','${nodeData.id}')" title="Права">🔑</button>
                 </div>
                 <span class="tree-date">${this.formatDate(nodeData.updatedAt || nodeData.createdAt)}</span>
             `;
@@ -387,25 +385,6 @@ class FilesManager {
     }
 
     // Folder actions
-    async createFolder(name, parentId) {
-        try {
-            const response = await fetchWithProgress('/api/folders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, parentId })
-            });
-            if (response.ok) {
-                this.showNotification('Папка создана', 'success');
-                setTimeout(() => location.reload(), 500);
-            } else {
-                const text = await response.text();
-                this.showNotification('Ошибка создания папки: ' + text, 'error');
-            }
-        } catch (error) {
-            console.error('Error creating folder:', error);
-        }
-    }
-
     async renameFolder(folderId, newName) {
         try {
             const response = await fetchWithProgress(`/api/folders/${folderId}/rename`, {
@@ -459,34 +438,6 @@ class FilesManager {
             }
         } catch (error) {
             console.error('Error moving folder:', error);
-        }
-    }
-
-    async shareAccess(itemType, itemId) {
-        const principalId = prompt('ID пользователя или группы');
-        if (!principalId) return;
-        const access = prompt('Права (Read,Write,Delete)', 'Read');
-        if (!access) return;
-        const body = {
-            fileId: itemType === 'file' ? itemId : null,
-            folderId: itemType === 'folder' ? itemId : null,
-            userId: principalId,
-            groupId: null,
-            accessType: access
-        };
-        try {
-            const response = await fetchWithProgress('/api/access/grant', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            if (response.ok) {
-                this.showNotification('Права назначены', 'success');
-            } else {
-                this.showNotification('Ошибка назначения прав', 'error');
-            }
-        } catch (error) {
-            console.error('Error granting access:', error);
         }
     }
 
@@ -576,42 +527,7 @@ function deleteFile(fileId, fileName) {
     }
 }
 
-let createFolderParentId = null;
 let renameFolderId = null;
-
-function openCreateFolderModal(parentId) {
-    createFolderParentId = parentId;
-    const input = document.getElementById('createFolderName');
-    if (input) input.value = '';
-    const modal = document.getElementById('createFolderModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        setTimeout(() => {
-            modal.classList.remove('modal-exit');
-            modal.classList.add('modal-enter');
-        }, 10);
-    }
-}
-
-function closeCreateFolderModal() {
-    const modal = document.getElementById('createFolderModal');
-    if (modal) {
-        modal.classList.remove('modal-enter');
-        modal.classList.add('modal-exit');
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
-    }
-}
-
-function submitCreateFolder() {
-    const input = document.getElementById('createFolderName');
-    if (!input || !filesManager) return;
-    const name = input.value.trim();
-    if (!name) return;
-    filesManager.createFolder(name, createFolderParentId);
-    closeCreateFolderModal();
-}
 
 function openRenameFolderModal(folderId, currentName) {
     renameFolderId = folderId;
@@ -659,12 +575,6 @@ function moveFolder(folderId) {
     }
 }
 
-function shareAccess(type, id) {
-    if (filesManager) {
-        filesManager.shareAccess(type, id);
-    }
-}
-
 function sortBy(field) {
     if (filesManager) {
         filesManager.sortBy(field);
@@ -680,47 +590,6 @@ function closePropertiesModal() {
         setTimeout(() => {
             modal.style.display = 'none';
         }, 300);
-    }
-}
-
-// Initialize when DOM is loaded
-// Open upload page
-window.openUploadModal = function (folderId) {
-    const url = folderId ? `/Files/Upload?folderId=${folderId}` : '/Files/Upload';
-    window.location.href = url;
-};
-
-// Drag and drop for the main page
-function initDragAndDrop() {
-    const mainContent = document.querySelector('.content-area');
-    if (mainContent) {
-        mainContent.addEventListener('dragover', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            mainContent.classList.add('drag-over');
-        });
-
-        mainContent.addEventListener('dragleave', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            mainContent.classList.remove('drag-over');
-        });
-
-        mainContent.addEventListener('drop', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            mainContent.classList.remove('drag-over');
-
-            // Open upload modal with files
-            if (typeof openUploadModal === 'function') {
-                openUploadModal();
-                setTimeout(() => {
-                    if (typeof handleFiles === 'function') {
-                        handleFiles(Array.from(e.dataTransfer.files));
-                    }
-                }, 100);
-            }
-        });
     }
 }
 
@@ -747,7 +616,6 @@ function initializeFilesManager() {
     if (typeof window.filesManager === 'undefined') {
         window.filesManager = new FilesManager();
         filesManager = window.filesManager;
-        initDragAndDrop();
         initVersionHistoryLinks();
     }
 }

@@ -108,13 +108,9 @@ else
         }
         else
         {
-            <span>В данной папке пока нет файлов. Загрузите первый файл, чтобы начать работу.</span>
+            <span>В данной папке пока нет файлов.</span>
         }
         </p>
-        @{ var currentFolder = ViewContext.HttpContext.Request.Query["folderId"].ToString(); }
-        <button class="btn btn-primary" onclick="openUploadModal('@currentFolder')">
-            <i class="bi bi-upload"></i> Загрузить файл
-        </button>
     </div>
 }
 
