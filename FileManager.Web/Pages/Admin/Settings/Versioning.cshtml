@@ -18,18 +18,219 @@
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
+<div class="settings-info-card">
+    <div class="settings-info-icon">
+        <i class="bi bi-clock-history"></i>
+    </div>
+    <div class="settings-info-content">
+        <p>Версионирование позволяет сохранять историю изменений файлов и при необходимости восстанавливать предыдущие версии.</p>
+    </div>
+</div>
+
 <form method="post">
-    <div class="mb-3 form-check">
-        <input asp-for="Enabled" class="form-check-input" type="checkbox" />
-        <label asp-for="Enabled" class="form-check-label">Включить версионирование</label>
+    <div class="settings-section">
+        <h3 class="settings-section-title">Основные параметры</h3>
+
+        <div class="settings-form-check">
+            <input asp-for="Enabled" class="form-check-input" type="checkbox" id="versioningEnabled" />
+            <label asp-for="Enabled" class="form-check-label" for="versioningEnabled">
+                Включить версионирование файлов
+            </label>
+        </div>
+        <small class="settings-help-text mb-4 d-block">
+            При каждом изменении файла будет сохраняться его предыдущая версия
+        </small>
     </div>
-    <div class="mb-3">
-        <label asp-for="MaxVersionsPerFile" class="form-label">Максимум версий на файл</label>
-        <input asp-for="MaxVersionsPerFile" class="form-control" type="number" />
+
+    <div class="settings-section">
+        <h3 class="settings-section-title">Ограничения</h3>
+
+        <div class="settings-form-row">
+            <div class="settings-form-group">
+                <label asp-for="MaxVersionsPerFile" class="form-label">Максимальное количество версий на файл</label>
+                <input asp-for="MaxVersionsPerFile" class="form-control" type="number" min="1" max="100" />
+                <span asp-validation-for="MaxVersionsPerFile" class="text-danger"></span>
+                <small class="settings-help-text">
+                    Ограничивает количество сохраняемых версий одного файла. При превышении лимита самые старые версии будут удаляться.
+                </small>
+            </div>
+
+            <div class="settings-form-group">
+                <label asp-for="RetentionDays" class="form-label">Срок хранения версий (дней)</label>
+                <input asp-for="RetentionDays" class="form-control" type="number" min="1" max="3650" />
+                <span asp-validation-for="RetentionDays" class="text-danger"></span>
+                <small class="settings-help-text">
+                    Версии файлов старше указанного срока будут автоматически удаляться
+                </small>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="RetentionDays" class="form-label">Срок хранения (дней)</label>
-        <input asp-for="RetentionDays" class="form-control" type="number" />
+
+    <div class="version-visualization">
+        <h3 class="settings-section-title">Пример хранения версий</h3>
+        <div class="version-chart">
+            <div class="version-timeline">
+                <div class="version-now">Сейчас</div>
+                <div class="version-item version-latest">
+                    <div class="version-dot"></div>
+                    <div class="version-label">Текущая версия</div>
+                </div>
+                <div class="version-item">
+                    <div class="version-dot"></div>
+                    <div class="version-label">Предыдущая версия</div>
+                </div>
+                <div class="version-item">
+                    <div class="version-dot"></div>
+                    <div class="version-label">Версия 3</div>
+                </div>
+                <div class="version-item" id="oldVersion">
+                    <div class="version-dot"></div>
+                    <div class="version-label">Старая версия</div>
+                </div>
+                <div class="version-past">Прошлое</div>
+            </div>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary">Сохранить</button>
+
+    <div class="settings-form-actions">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </div>
 </form>
+
+@section Scripts {
+    <script src="~/js/settings.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const enabledCheckbox = document.getElementById('versioningEnabled');
+            const maxVersionsInput = document.getElementById('MaxVersionsPerFile');
+            const retentionDaysInput = document.getElementById('RetentionDays');
+            const oldVersionEl = document.getElementById('oldVersion');
+
+            function updateVisualization() {
+                const isEnabled = enabledCheckbox.checked;
+                const maxVersions = parseInt(maxVersionsInput.value) || 10;
+                const retentionDays = parseInt(retentionDaysInput.value) || 365;
+
+                // Показываем или скрываем визуализацию в зависимости от состояния чекбокса
+                document.querySelector('.version-visualization').style.opacity = isEnabled ? '1' : '0.3';
+
+                // Обновляем видимость старой версии в зависимости от max версий
+                if (maxVersions <= 3) {
+                    oldVersionEl.style.opacity = '0.2';
+                    oldVersionEl.querySelector('.version-label').textContent = 'Удалена (превышен лимит)';
+                } else {
+                    oldVersionEl.style.opacity = '1';
+                    oldVersionEl.querySelector('.version-label').textContent = 'Старая версия';
+                }
+
+                // Обновляем позицию старой версии в зависимости от срока хранения
+                // Чем больше срок хранения, тем дальше в прошлое
+                const position = Math.min(80, Math.max(30, (retentionDays / 365) * 80));
+                oldVersionEl.style.left = position + '%';
+            }
+
+            // Подписываемся на изменения
+            enabledCheckbox.addEventListener('change', updateVisualization);
+            maxVersionsInput.addEventListener('input', updateVisualization);
+            retentionDaysInput.addEventListener('input', updateVisualization);
+
+            // Инициализируем визуализацию
+            updateVisualization();
+        });
+    </script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/settings.css" />
+    <style>
+        .version-visualization {
+            margin-top: 30px;
+            margin-bottom: 40px;
+            transition: opacity 0.3s ease;
+        }
+
+        .version-chart {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: var(--settings-card-bg);
+            border-radius: 8px;
+            box-shadow: var(--settings-shadow);
+        }
+
+        .version-timeline {
+            position: relative;
+            height: 100px;
+            margin: 0 20px;
+        }
+
+            .version-timeline::before {
+                content: "";
+                position: absolute;
+                top: 40px;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background-color: #ddd;
+            }
+
+        .version-now, .version-past {
+            position: absolute;
+            font-size: 12px;
+            color: var(--settings-text-secondary);
+        }
+
+        .version-now {
+            right: 0;
+            top: 15px;
+        }
+
+        .version-past {
+            left: 0;
+            top: 15px;
+        }
+
+        .version-item {
+            position: absolute;
+            top: 30px;
+            transform: translateX(-50%);
+            transition: opacity 0.3s ease, left 0.5s ease;
+        }
+
+        .version-latest {
+            right: 0;
+            transform: translateX(0);
+        }
+
+            .version-latest .version-dot {
+                background-color: #28a745;
+            }
+
+        .version-item:nth-child(3) {
+            right: 25%;
+        }
+
+        .version-item:nth-child(4) {
+            right: 50%;
+        }
+
+        #oldVersion {
+            left: 30%;
+        }
+
+        .version-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--settings-primary);
+            margin: 0 auto 8px;
+        }
+
+        .version-label {
+            font-size: 12px;
+            color: var(--settings-text-secondary);
+            text-align: center;
+            max-width: 100px;
+            margin: 0 auto;
+        }
+    </style>
+}

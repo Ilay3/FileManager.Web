@@ -10,84 +10,423 @@
     }
 }
 
-<h2>Управление группами</h2>
+<div class="admin-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Управление группами</h1>
+            <p class="text-muted small mb-0">Создание и редактирование групп пользователей</p>
+        </div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+            <i class="bi bi-people-fill me-2"></i>Создать группу
+        </button>
+    </div>
 
-<form id="groupForm" class="mb-3">
-    <input type="text" id="groupName" placeholder="Название группы" required />
-    <button type="submit" class="btn btn-primary">Создать</button>
-</form>
+    <div class="row" id="groupsContainer">
+        <!-- Группы будут загружены через JavaScript -->
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p class="mt-2 text-muted">Загрузка групп...</p>
+        </div>
+    </div>
 
-<div id="groupsContainer"></div>
+    <!-- Модальное окно создания группы -->
+    <div class="modal fade" id="createGroupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Создание группы</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="groupForm">
+                        <div class="mb-3">
+                            <label for="groupName" class="form-label">Название группы</label>
+                            <input type="text" class="form-control" id="groupName" placeholder="Введите название группы" required>
+                            <div class="form-text">Используйте понятное название, отражающее назначение группы</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="groupDescription" class="form-label">Описание</label>
+                            <textarea class="form-control" id="groupDescription" rows="3" placeholder="Описание группы"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="createGroup()">Создать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения удаления -->
+    <div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы действительно хотите удалить группу <span id="deleteGroupName" class="fw-bold"></span>?</p>
+                    <p class="text-danger">Это действие нельзя отменить. Пользователи потеряют права доступа, связанные с этой группой.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteGroupBtn">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="groupToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="groupToastMessage">
+                    Операция выполнена успешно
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-async function loadGroups() {
-    const res = await fetchWithProgress('/api/groups', { credentials: 'include' });
-    const groups = res.ok ? await res.json() : [];
-    const container = document.getElementById('groupsContainer');
-    container.innerHTML = '';
-    for (const g of groups) {
-        const detailsRes = await fetchWithProgress(`/api/groups/${g.id}`, { credentials: 'include' });
-        const details = detailsRes.ok ? await detailsRes.json() : null;
-        const div = document.createElement('div');
-        div.className = 'group-item';
-        let usersHtml = '';
-        if (details) {
-            usersHtml = '<ul>' + details.users.map(u =>
-                `<li>${u.fullName} <button onclick="removeUser('${g.id}','${u.id}')">Удалить</button></li>`
-            ).join('') + '</ul>';
-        }
-        div.innerHTML = `<h3>${g.name}</h3>` +
-            usersHtml +
-            `<select id="select-${g.id}"></select>` +
-            `<button onclick="addUser('${g.id}')">Добавить пользователя</button>` +
-            `<button onclick="deleteGroup('${g.id}')">Удалить группу</button>`;
-        container.appendChild(div);
-        if (details)
-            await loadAvailableUsers(g.id, details.users.map(u => u.id));
-    }
-}
+    let deleteGroupId = null;
+    let deleteGroupModal = null;
+    let createGroupModal = null;
+    let groupToast = null;
 
-async function loadAvailableUsers(groupId, existing) {
-    const res = await fetchWithProgress('/api/users', { credentials: 'include' });
-    const users = res.ok ? await res.json() : [];
-    const select = document.getElementById(`select-${groupId}`);
-    select.innerHTML = users
-        .filter(u => !existing.includes(u.id))
-        .map(u => `<option value="${u.id}">${u.fullName}</option>`)
-        .join('');
-}
+    document.addEventListener('DOMContentLoaded', function() {
+        deleteGroupModal = new bootstrap.Modal(document.getElementById('deleteGroupModal'));
+        createGroupModal = new bootstrap.Modal(document.getElementById('createGroupModal'));
+        groupToast = new bootstrap.Toast(document.getElementById('groupToast'));
 
-async function createGroup(e) {
-    e.preventDefault();
-    const name = document.getElementById('groupName').value;
-    await fetchWithProgress('/api/groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-        credentials: 'include'
+        document.getElementById('confirmDeleteGroupBtn').addEventListener('click', async function() {
+            if (deleteGroupId) {
+                await deleteGroup(deleteGroupId);
+                deleteGroupModal.hide();
+            }
+        });
+
+        loadGroups();
     });
-    document.getElementById('groupName').value = '';
-    await loadGroups();
-}
 
-async function addUser(groupId) {
-    const userId = document.getElementById(`select-${groupId}`).value;
-    if (!userId) return;
-    await fetchWithProgress(`/api/groups/${groupId}/users/${userId}`, { method: 'POST', credentials: 'include' });
-    await loadGroups();
-}
+    async function loadGroups() {
+        try {
+            showLoader();
+            const res = await fetch('/api/groups', { credentials: 'include' });
+            const groups = res.ok ? await res.json() : [];
 
-async function removeUser(groupId, userId) {
-    await fetchWithProgress(`/api/groups/${groupId}/users/${userId}`, { method: 'DELETE', credentials: 'include' });
-    await loadGroups();
-}
+            const container = document.getElementById('groupsContainer');
+            container.innerHTML = '';
 
-async function deleteGroup(groupId) {
-    await fetchWithProgress(`/api/groups/${groupId}`, { method: 'DELETE', credentials: 'include' });
-    await loadGroups();
-}
+            if (groups.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 text-center py-5">
+                            <div class="card-body">
+                                <i class="bi bi-people-fill text-muted display-4 mb-3"></i>
+                                <h5>Нет групп</h5>
+                                <p class="text-muted">Создайте первую группу для организации пользователей</p>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+                                    <i class="bi bi-people-fill me-2"></i>Создать группу
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                hideLoader();
+                return;
+            }
 
-document.getElementById('groupForm').addEventListener('submit', createGroup);
-loadGroups();
+            // Загружаем информацию о каждой группе
+            for (const group of groups) {
+                const detailsRes = await fetch(`/api/groups/${group.id}`, { credentials: 'include' });
+                const details = detailsRes.ok ? await detailsRes.json() : null;
+
+                const col = document.createElement('div');
+                col.className = 'col-lg-6 col-12 mb-4';
+
+                let usersHtml = '<p class="text-muted small">Нет пользователей в группе</p>';
+                let selectOptions = '<option value="">Выберите пользователя</option>';
+
+                if (details && details.users.length > 0) {
+                    usersHtml = `
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Пользователь</th>
+                                        <th class="text-end">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${details.users.map(user => `
+                                        <tr>
+                                            <td>${user.fullName}</td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                    onclick="removeUser('${group.id}','${user.id}')">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>`;
+
+                    // Загружаем доступных пользователей для добавления
+                    await loadAvailableUsers(group.id, details.users.map(u => u.id));
+                } else {
+                    // Загружаем всех пользователей, если в группе никого нет
+                    await loadAvailableUsers(group.id, []);
+                }
+
+                col.innerHTML = `
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">${group.name}</h5>
+                            <button class="btn btn-sm btn-outline-danger"
+                                onclick="showDeleteGroupModal('${group.id}', '${group.name}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-3">Пользователи в группе</h6>
+                            ${usersHtml}
+
+                            <hr class="my-3">
+
+                            <div class="d-flex">
+                                <select id="select-${group.id}" class="form-select me-2"></select>
+                                <button class="btn btn-sm btn-primary flex-shrink-0" onclick="addUser('${group.id}')">
+                                    <i class="bi bi-plus"></i> Добавить
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+
+                container.appendChild(col);
+            }
+        } catch (error) {
+            console.error('Error loading groups:', error);
+            showToast('Ошибка загрузки групп', 'danger');
+        } finally {
+            hideLoader();
+        }
+    }
+
+    async function loadAvailableUsers(groupId, existingUserIds) {
+        try {
+            const res = await fetch('/api/users', { credentials: 'include' });
+            const users = res.ok ? await res.json() : [];
+
+            const select = document.getElementById(`select-${groupId}`);
+            if (!select) return;
+
+            select.innerHTML = '<option value="">Выберите пользователя</option>';
+
+            const availableUsers = users.filter(user => !existingUserIds.includes(user.id));
+
+            if (availableUsers.length === 0) {
+                select.innerHTML += '<option value="" disabled>Нет доступных пользователей</option>';
+                return;
+            }
+
+            availableUsers.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.fullName;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading available users:', error);
+            showToast('Ошибка загрузки пользователей', 'danger');
+        }
+    }
+
+    async function createGroup() {
+        const nameInput = document.getElementById('groupName');
+        const descriptionInput = document.getElementById('groupDescription');
+
+        if (!nameInput.value.trim()) {
+            nameInput.classList.add('is-invalid');
+            return;
+        }
+
+        const name = nameInput.value.trim();
+        const description = descriptionInput.value.trim();
+
+        try {
+            showLoader();
+            const response = await fetch('/api/groups', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description }),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                showToast('Группа успешно создана', 'success');
+                nameInput.value = '';
+                descriptionInput.value = '';
+                createGroupModal.hide();
+                await loadGroups();
+            } else {
+                const errorText = await response.text();
+                showToast(`Ошибка создания группы: ${errorText}`, 'danger');
+            }
+        } catch (error) {
+            console.error('Error creating group:', error);
+            showToast('Ошибка создания группы', 'danger');
+        } finally {
+            hideLoader();
+        }
+    }
+
+    async function addUser(groupId) {
+        const select = document.getElementById(`select-${groupId}`);
+        const userId = select.value;
+
+        if (!userId) {
+            showToast('Выберите пользователя для добавления', 'danger');
+            return;
+        }
+
+        try {
+            showLoader();
+            const response = await fetch(`/api/groups/${groupId}/users/${userId}`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                showToast('Пользователь добавлен в группу', 'success');
+                await loadGroups();
+            } else {
+                const errorText = await response.text();
+                showToast(`Ошибка добавления пользователя: ${errorText}`, 'danger');
+            }
+        } catch (error) {
+            console.error('Error adding user to group:', error);
+            showToast('Ошибка добавления пользователя', 'danger');
+        } finally {
+            hideLoader();
+        }
+    }
+
+    async function removeUser(groupId, userId) {
+        try {
+            showLoader();
+            const response = await fetch(`/api/groups/${groupId}/users/${userId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                showToast('Пользователь удален из группы', 'success');
+                await loadGroups();
+            } else {
+                const errorText = await response.text();
+                showToast(`Ошибка удаления пользователя: ${errorText}`, 'danger');
+            }
+        } catch (error) {
+            console.error('Error removing user from group:', error);
+            showToast('Ошибка удаления пользователя', 'danger');
+        } finally {
+            hideLoader();
+        }
+    }
+
+    async function deleteGroup(groupId) {
+        try {
+            showLoader();
+            const response = await fetch(`/api/groups/${groupId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                showToast('Группа успешно удалена', 'success');
+                await loadGroups();
+            } else {
+                const errorText = await response.text();
+                showToast(`Ошибка удаления группы: ${errorText}`, 'danger');
+            }
+        } catch (error) {
+            console.error('Error deleting group:', error);
+            showToast('Ошибка удаления группы', 'danger');
+        } finally {
+            hideLoader();
+        }
+    }
+
+    function showDeleteGroupModal(groupId, groupName) {
+        deleteGroupId = groupId;
+        document.getElementById('deleteGroupName').textContent = groupName;
+        deleteGroupModal.show();
+    }
+
+    function showToast(message, type) {
+        const toast = document.getElementById('groupToast');
+        toast.classList.remove('bg-success', 'bg-danger');
+        toast.classList.add(type === 'success' ? 'bg-success' : 'bg-danger');
+
+        document.getElementById('groupToastMessage').textContent = message;
+        groupToast.show();
+    }
 </script>
 
+<style>
+    .admin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .card {
+        border-radius: 8px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        overflow: hidden;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+
+    .card-header {
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
+            border-top: none;
+        }
+
+        .table td, .table th {
+            padding: 8px;
+            vertical-align: middle;
+        }
+
+    .form-select {
+        border-radius: 4px;
+    }
+
+    @@media (max-width: 768px) {
+        .card-body
+
+    {
+        padding: 15px;
+    }
+
+    }
+</style>

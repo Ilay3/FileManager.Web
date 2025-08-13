@@ -12,13 +12,76 @@
 }
 
 <h2>Настройки системы</h2>
-<ul class="list-group">
-    <li class="list-group-item"><a href="/Admin/Settings/Storage">Хранилище</a></li>
-    <li class="list-group-item"><a href="/Admin/Settings/Security">Безопасность</a></li>
-    <li class="list-group-item"><a href="/Admin/Settings/Email">Электронная почта</a></li>
-    <li class="list-group-item"><a href="/Admin/Settings/Audit">Аудит</a></li>
-    <li class="list-group-item"><a href="/Admin/Settings/Uploads">Загрузки</a></li>
-    <li class="list-group-item"><a href="/Admin/Settings/Versioning">Версионирование</a></li>
-    <li class="list-group-item"><a href="/Admin/Settings/Cleanup">Очистка</a></li>
-</ul>
 
+<div class="settings-overview">
+    <div class="settings-card">
+        <div class="settings-card-icon">
+            <i class="bi bi-hdd"></i>
+        </div>
+        <h3>Хранилище</h3>
+        <p>Настройте параметры хранения файлов, установите ограничения размера и разрешенные форматы.</p>
+        <a href="/Admin/Settings/Storage" class="settings-card-link">Настроить</a>
+    </div>
+
+    <div class="settings-card">
+        <div class="settings-card-icon">
+            <i class="bi bi-shield-lock"></i>
+        </div>
+        <h3>Безопасность</h3>
+        <p>Управляйте параметрами безопасности, настройте сложность паролей и политики блокировки.</p>
+        <a href="/Admin/Settings/Security" class="settings-card-link">Настроить</a>
+    </div>
+
+    <div class="settings-card">
+        <div class="settings-card-icon">
+            <i class="bi bi-envelope"></i>
+        </div>
+        <h3>Электронная почта</h3>
+        <p>Настройте отправку уведомлений по электронной почте и шаблоны сообщений.</p>
+        <a href="/Admin/Settings/Email" class="settings-card-link">Настроить</a>
+    </div>
+
+    <div class="settings-card">
+        <div class="settings-card-icon">
+            <i class="bi bi-list-check"></i>
+        </div>
+        <h3>Аудит</h3>
+        <p>Настройте журналирование действий пользователей и системных событий.</p>
+        <a href="/Admin/Settings/Audit" class="settings-card-link">Настроить</a>
+    </div>
+
+    <div class="settings-card">
+        <div class="settings-card-icon">
+            <i class="bi bi-upload"></i>
+        </div>
+        <h3>Загрузки</h3>
+        <p>Управляйте параметрами загрузки файлов, установите ограничения и проверку на вирусы.</p>
+        <a href="/Admin/Settings/Uploads" class="settings-card-link">Настроить</a>
+    </div>
+
+    <div class="settings-card">
+        <div class="settings-card-icon">
+            <i class="bi bi-clock-history"></i>
+        </div>
+        <h3>Версионирование</h3>
+        <p>Настройте параметры хранения и управления версиями файлов.</p>
+        <a href="/Admin/Settings/Versioning" class="settings-card-link">Настроить</a>
+    </div>
+
+    <div class="settings-card">
+        <div class="settings-card-icon">
+            <i class="bi bi-trash"></i>
+        </div>
+        <h3>Очистка</h3>
+        <p>Настройте автоматическую очистку удаленных файлов и устаревших данных.</p>
+        <a href="/Admin/Settings/Cleanup" class="settings-card-link">Настроить</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/settings.js"></script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/settings.css" />
+}

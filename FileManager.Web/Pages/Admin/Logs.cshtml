@@ -12,81 +12,277 @@
     }
 }
 
-<h1>Журнал действий</h1>
+<div class="admin-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Журнал действий</h1>
+            <p class="text-muted small mb-0">Просмотр журнала операций в системе</p>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+            <i class="bi bi-funnel me-1"></i> Фильтры
+        </button>
+    </div>
 
-<form method="get" class="mb-3">
-    <div class="row g-2">
-        <div class="col-md-3">
-            <label class="form-label">С даты</label>
-            <input type="date" class="form-control" name="From" value="@Model.From?.ToString("yyyy-MM-dd")" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">По дату</label>
-            <input type="date" class="form-control" name="To" value="@Model.To?.ToString("yyyy-MM-dd")" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Пользователь</label>
-            <select class="form-select" name="UserId">
-                <option value="">Все</option>
-                @foreach (var u in Model.Users)
-                {
-                    <option value="@u.Id" selected="@(Model.UserId == u.Id ? "selected" : null)">@u.Email</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Действие</label>
-            <select class="form-select" name="Action">
-                <option value="">Все</option>
-                @foreach (var act in Enum.GetValues(typeof(AuditAction)).Cast<AuditAction>())
-                {
-                    <option value="@act" selected="@(Model.Action == act ? "selected" : null)">@Translate(act)</option>
-                }
-            </select>
+    <div class="collapse mb-4" id="filterCollapse">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">С даты</label>
+                        <input type="date" class="form-control form-control-sm" name="From" value="@Model.From?.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">По дату</label>
+                        <input type="date" class="form-control form-control-sm" name="To" value="@Model.To?.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Пользователь</label>
+                        <select class="form-select form-select-sm" name="UserId">
+                            <option value="">Все</option>
+                            @foreach (var u in Model.Users)
+                            {
+                                <option value="@u.Id" selected="@(Model.UserId == u.Id ? "selected" : null)">@u.Email</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Действие</label>
+                        <select class="form-select form-select-sm" name="Action">
+                            <option value="">Все</option>
+                            @foreach (var act in Enum.GetValues(typeof(AuditAction)).Cast<AuditAction>())
+                            {
+                                <option value="@act" selected="@(Model.Action == act ? "selected" : null)">@Translate(act)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-search me-1"></i> Применить фильтры
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-    <div class="mt-3">
-        <button type="submit" class="btn btn-primary">Фильтровать</button>
-    </div>
-</form>
 
-<table class="table table-striped table-hover">
-    <thead>
-        <tr>
-            <th>Дата</th>
-            <th>Пользователь</th>
-            <th>Действие</th>
-            <th>Объект</th>
-            <th>Описание</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var log in Model.Logs)
-        {
-            <tr>
-                <td>@log.CreatedAt.ToLocalTime()</td>
-                <td>@(log.User?.Email ?? "-")</td>
-                <td>@Translate(log.Action)</td>
-                <td>
-                    @if (log.File != null)
-                    {
-                        @("Файл: " + log.File.Name)
-                    }
-                    else if (log.Folder != null)
-                    {
-                        @("Папка: " + log.Folder.Name)
-                    }
-                    else
-                    {
-                        @("-")
-                    }
-                </td>
-                <td>@log.Description</td>
-            </tr>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="border-bottom py-3">Дата и время</th>
+                            <th class="border-bottom py-3">Пользователь</th>
+                            <th class="border-bottom py-3">Действие</th>
+                            <th class="border-bottom py-3">Объект</th>
+                            <th class="border-bottom py-3">Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Logs.Any())
+                        {
+                            @foreach (var log in Model.Logs)
+                            {
+                                <tr>
+                                    <td class="align-middle py-2">
+                                        @log.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")
+                                    </td>
+                                    <td class="align-middle py-2">
+                                        @if (log.User != null)
+                                        {
+                                            <span class="d-flex align-items-center">
+                                                <i class="bi bi-person-circle me-1 text-muted"></i>
+                                                @log.User.Email
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="align-middle py-2">
+                                        <span class="badge @GetActionBadgeClass(log.Action)">
+                                            @Translate(log.Action)
+                                        </span>
+                                    </td>
+                                    <td class="align-middle py-2">
+                                        @if (log.File != null)
+                                        {
+                                            <span class="d-flex align-items-center">
+                                                <i class="bi bi-file-earmark me-1 text-primary"></i>
+                                                <span class="text-truncate" style="max-width: 150px;" title="@log.File.Name">
+                                                    @log.File.Name
+                                                </span>
+                                            </span>
+                                        }
+                                        else if (log.Folder != null)
+                                        {
+                                            <span class="d-flex align-items-center">
+                                                <i class="bi bi-folder me-1 text-warning"></i>
+                                                <span class="text-truncate" style="max-width: 150px;" title="@log.Folder.Name">
+                                                    @log.Folder.Name
+                                                </span>
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="align-middle py-2 text-truncate" style="max-width: 300px;" title="@log.Description">
+                                        @log.Description
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="py-4">
+                                        <i class="bi bi-journal-text text-muted d-block mb-3" style="font-size: 32px;"></i>
+                                        <p class="text-muted">Записи в журнале не найдены</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Пагинация (предполагается, что модель может содержать метаданные о пагинации) -->
+    @if (Model.Logs.Count > 0)
+    {
+        <nav aria-label="Навигация по страницам" class="mt-4">
+            <ul class="pagination justify-content-center">
+                @* Здесь можно добавить пагинацию, если она будет реализована в модели *@
+            </ul>
+        </nav>
+    }
+</div>
+
+<style>
+    .admin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .card {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
         }
-    </tbody>
 
-</table>
+        .table td, .table th {
+            padding: 12px 16px;
+            vertical-align: middle;
+        }
+
+    .badge {
+        font-weight: 500;
+        padding: 5px 8px;
+        border-radius: 4px;
+    }
+
+    .badge-login {
+        background-color: #0dcaf0;
+        color: #fff;
+    }
+
+    .badge-logout {
+        background-color: #6c757d;
+        color: #fff;
+    }
+
+    .badge-upload {
+        background-color: #0d6efd;
+        color: #fff;
+    }
+
+    .badge-download {
+        background-color: #198754;
+        color: #fff;
+    }
+
+    .badge-view {
+        background-color: #0dcaf0;
+        color: #fff;
+    }
+
+    .badge-edit {
+        background-color: #fd7e14;
+        color: #fff;
+    }
+
+    .badge-delete {
+        background-color: #dc3545;
+        color: #fff;
+    }
+
+    .badge-restore {
+        background-color: #20c997;
+        color: #fff;
+    }
+
+    .badge-create {
+        background-color: #198754;
+        color: #fff;
+    }
+
+    .badge-rename {
+        background-color: #6f42c1;
+        color: #fff;
+    }
+
+    .badge-move {
+        background-color: #6610f2;
+        color: #fff;
+    }
+
+    .badge-access {
+        background-color: #6f42c1;
+        color: #fff;
+    }
+
+    .badge-error {
+        background-color: #dc3545;
+        color: #fff;
+    }
+
+    .badge-unauthorized {
+        background-color: #dc3545;
+        color: #fff;
+    }
+
+    .badge-default {
+        background-color: #6c757d;
+        color: #fff;
+    }
+
+    @@media (max-width: 768px) {
+        .table th, .table td
+
+    {
+        padding: 8px;
+    }
+
+    }
+</style>
 
 @functions {
     private string Translate(AuditAction action) => action switch
@@ -113,5 +309,29 @@
         AuditAction.UnauthorizedAccess => "Неавторизованный доступ",
         _ => action.ToString()
     };
-}
 
+    private string GetActionBadgeClass(AuditAction action) => action switch
+    {
+        AuditAction.Login => "badge-login",
+        AuditAction.Logout => "badge-logout",
+        AuditAction.FileUpload => "badge-upload",
+        AuditAction.FileDownload => "badge-download",
+        AuditAction.FileView => "badge-view",
+        AuditAction.FileEdit => "badge-edit",
+        AuditAction.FileDelete => "badge-delete",
+        AuditAction.FileRestore => "badge-restore",
+        AuditAction.FilePreview => "badge-view",
+        AuditAction.FileOpenForEdit => "badge-edit",
+        AuditAction.FolderCreate => "badge-create",
+        AuditAction.FolderDelete => "badge-delete",
+        AuditAction.FolderRename => "badge-rename",
+        AuditAction.FolderMove => "badge-move",
+        AuditAction.FolderRestore => "badge-restore",
+        AuditAction.AccessGranted => "badge-access",
+        AuditAction.AccessRevoked => "badge-access",
+        AuditAction.AccessChanged => "badge-access",
+        AuditAction.Error => "badge-error",
+        AuditAction.UnauthorizedAccess => "badge-unauthorized",
+        _ => "badge-default"
+    };
+}

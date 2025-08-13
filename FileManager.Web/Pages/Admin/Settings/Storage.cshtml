@@ -18,22 +18,63 @@
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
+<div class="settings-info-card">
+    <div class="settings-info-icon">
+        <i class="bi bi-info-circle"></i>
+    </div>
+    <div class="settings-info-content">
+        <p>Настройки хранилища определяют параметры хранения файлов в системе, включая ограничения размера файлов и квоты пользователей.</p>
+    </div>
+</div>
+
 <form method="post">
-    <div class="mb-3">
-        <label asp-for="ArchivePath" class="form-label">Путь к архиву</label>
-        <input asp-for="ArchivePath" class="form-control" />
+    <div class="settings-section">
+        <h3 class="settings-section-title">Расположение файлов</h3>
+
+        <div class="settings-form-group">
+            <label asp-for="ArchivePath" class="form-label">Путь к архиву</label>
+            <input asp-for="ArchivePath" class="form-control" />
+            <span asp-validation-for="ArchivePath" class="text-danger"></span>
+            <small class="settings-help-text">Абсолютный или относительный путь к директории для хранения архивных файлов</small>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="MaxFileSize" class="form-label">Максимальный размер файла (байт)</label>
-        <input asp-for="MaxFileSize" class="form-control" type="number" />
+
+    <div class="settings-section">
+        <h3 class="settings-section-title">Ограничения</h3>
+
+        <div class="settings-form-row">
+            <div class="settings-form-group">
+                <label asp-for="MaxFileSize" class="form-label">Максимальный размер файла (байт)</label>
+                <input asp-for="MaxFileSize" class="form-control" type="number" min="0" />
+                <span asp-validation-for="MaxFileSize" class="text-danger"></span>
+                <small class="settings-help-text">Максимально допустимый размер загружаемого файла</small>
+            </div>
+
+            <div class="settings-form-group">
+                <label asp-for="QuotaPerUser" class="form-label">Квота на пользователя (байт)</label>
+                <input asp-for="QuotaPerUser" class="form-control" type="number" min="0" />
+                <span asp-validation-for="QuotaPerUser" class="text-danger"></span>
+                <small class="settings-help-text">Максимальный объем хранилища для одного пользователя (0 - без ограничений)</small>
+            </div>
+        </div>
+
+        <div class="settings-form-group">
+            <label asp-for="AllowedExtensions" class="form-label">Разрешённые расширения</label>
+            <input asp-for="AllowedExtensions" class="form-control" placeholder="Например: .jpg, .pdf, .docx" />
+            <span asp-validation-for="AllowedExtensions" class="text-danger"></span>
+            <small class="settings-help-text">Список расширений файлов через запятую, разрешенных для загрузки в систему</small>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="AllowedExtensions" class="form-label">Разрешённые расширения (через запятую)</label>
-        <input asp-for="AllowedExtensions" class="form-control" />
+
+    <div class="settings-form-actions">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
     </div>
-    <div class="mb-3">
-        <label asp-for="QuotaPerUser" class="form-label">Квота на пользователя (байт)</label>
-        <input asp-for="QuotaPerUser" class="form-control" type="number" />
-    </div>
-    <button type="submit" class="btn btn-primary">Сохранить</button>
 </form>
+
+@section Scripts {
+    <script src="~/js/settings.js"></script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/settings.css" />
+}

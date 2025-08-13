@@ -18,23 +18,172 @@
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
-<div class="card mt-3">
-    <div class="card-body">
-        <form method="post">
-            <div class="mb-3 form-check form-switch">
-                <input asp-for="EnableAntivirus" class="form-check-input" type="checkbox" />
-                <label asp-for="EnableAntivirus" class="form-check-label">Включить антивирус</label>
-            </div>
-            <div class="mb-3">
-                <label asp-for="UserQuotaMb" class="form-label">Квота на пользователя (МБ)</label>
-                <input asp-for="UserQuotaMb" class="form-control" type="number" />
-            </div>
-            <div class="mb-3">
-                <label asp-for="BlockedExtensions" class="form-label">Запрещенные расширения (через запятую)</label>
-                <input asp-for="BlockedExtensions" class="form-control" />
-            </div>
-            <button type="submit" class="btn btn-primary">Сохранить</button>
-        </form>
+<div class="settings-info-card">
+    <div class="settings-info-icon">
+        <i class="bi bi-upload"></i>
+    </div>
+    <div class="settings-info-content">
+        <p>Настройки загрузок определяют параметры проверки файлов при загрузке, ограничения размера и типы файлов, которые нельзя загружать в систему.</p>
     </div>
 </div>
 
+<form method="post">
+    <div class="settings-section">
+        <h3 class="settings-section-title">Безопасность загрузок</h3>
+
+        <div class="settings-form-check">
+            <input asp-for="EnableAntivirus" class="form-check-input" type="checkbox" id="enableAntivirus" />
+            <label asp-for="EnableAntivirus" class="form-check-label" for="enableAntivirus">
+                Включить антивирусную проверку
+            </label>
+        </div>
+        <small class="settings-help-text mb-4 d-block">
+            Проверка загружаемых файлов на наличие вирусов и вредоносного кода
+        </small>
+
+        <div class="settings-form-group">
+            <label asp-for="BlockedExtensions" class="form-label">Запрещенные расширения</label>
+            <input asp-for="BlockedExtensions" class="form-control" placeholder="Например: .exe, .bat, .js" />
+            <span asp-validation-for="BlockedExtensions" class="text-danger"></span>
+            <small class="settings-help-text">Список расширений файлов через запятую, которые нельзя загружать в систему</small>
+        </div>
+    </div>
+
+    <div class="settings-section">
+        <h3 class="settings-section-title">Квоты и ограничения</h3>
+
+        <div class="settings-form-group">
+            <label asp-for="UserQuotaMb" class="form-label">Квота на пользователя (МБ)</label>
+            <input asp-for="UserQuotaMb" class="form-control" type="number" min="0" />
+            <span asp-validation-for="UserQuotaMb" class="text-danger"></span>
+            <small class="settings-help-text">
+                Максимальный объем данных, который может загрузить один пользователь (0 - без ограничений)
+            </small>
+        </div>
+
+        <div class="quota-indicator">
+            <div class="quota-slider-container">
+                <input type="range" id="quotaSlider" min="0" max="102400" step="1024" value="@Model.UserQuotaMb" oninput="updateQuotaInput(this.value)" />
+                <div class="quota-labels">
+                    <span>Нет лимита</span>
+                    <span>1 ГБ</span>
+                    <span>10 ГБ</span>
+                    <span>100 ГБ</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-form-actions">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/settings.js"></script>
+    <script>
+        function updateQuotaInput(value) {
+            document.getElementById('UserQuotaMb').value = value;
+
+            // Обновляем отображаемое значение
+            const formattedValue = formatSize(value * 1024 * 1024);
+            const helpText = document.querySelector('.settings-form-group .settings-help-text');
+            helpText.innerHTML = `Максимальный объем данных, который может загрузить один пользователь (текущее значение: <strong>${formattedValue}</strong>, 0 - без ограничений)`;
+        }
+
+        function formatSize(bytes) {
+            if (bytes === 0) return "Без ограничений";
+            const units = ['Б', 'КБ', 'МБ', 'ГБ', 'ТБ'];
+            let unitIndex = 0;
+            let size = bytes;
+
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex++;
+            }
+
+            return `${size.toFixed(1)} ${units[unitIndex]}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputElement = document.getElementById('UserQuotaMb');
+            const sliderElement = document.getElementById('quotaSlider');
+
+            // Синхронизируем слайдер и поле ввода
+            sliderElement.value = inputElement.value;
+
+            inputElement.addEventListener('input', function() {
+                sliderElement.value = this.value;
+                updateQuotaInput(this.value);
+            });
+
+            // Инициализируем отображение значения
+            updateQuotaInput(inputElement.value);
+        });
+    </script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/settings.css" />
+    <style>
+        .quota-indicator {
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+
+        .quota-slider-container {
+            width: 100%;
+            padding: 0 10px;
+        }
+
+        .quota-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--settings-text-secondary);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ddd;
+            outline: none;
+            border-radius: 3px;
+            margin: 10px 0;
+        }
+
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: var(--settings-primary);
+                cursor: pointer;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: var(--settings-primary);
+                cursor: pointer;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+                border: none;
+            }
+
+            input[type="range"]::-webkit-slider-runnable-track {
+                height: 6px;
+                border-radius: 3px;
+            }
+
+            input[type="range"]::-moz-range-track {
+                height: 6px;
+                border-radius: 3px;
+            }
+    </style>
+}

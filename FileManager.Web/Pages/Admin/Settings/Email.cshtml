@@ -22,43 +22,113 @@
     <div class="alert alert-danger">@TempData["Error"]</div>
 }
 
+<div class="settings-info-card">
+    <div class="settings-info-icon">
+        <i class="bi bi-envelope"></i>
+    </div>
+    <div class="settings-info-content">
+        <p>Настройте параметры почтового сервера для отправки уведомлений пользователям и шаблоны сообщений.</p>
+    </div>
+</div>
+
 <form method="post">
-    <div class="mb-3">
-        <label asp-for="SmtpServer" class="form-label"></label>
-        <input asp-for="SmtpServer" class="form-control" />
+    <div class="settings-section">
+        <h3 class="settings-section-title">Настройки SMTP-сервера</h3>
+
+        <div class="settings-form-row">
+            <div class="settings-form-group">
+                <label asp-for="SmtpServer" class="form-label">SMTP-сервер</label>
+                <input asp-for="SmtpServer" class="form-control" placeholder="smtp.example.com" />
+                <span asp-validation-for="SmtpServer" class="text-danger"></span>
+                <small class="settings-help-text">Адрес почтового сервера для отправки сообщений</small>
+            </div>
+
+            <div class="settings-form-group">
+                <label asp-for="SmtpPort" class="form-label">Порт</label>
+                <input asp-for="SmtpPort" class="form-control" type="number" placeholder="587" />
+                <span asp-validation-for="SmtpPort" class="text-danger"></span>
+                <small class="settings-help-text">Стандартные порты: 25, 465 (SSL), 587 (TLS)</small>
+            </div>
+        </div>
+
+        <div class="settings-form-row">
+            <div class="settings-form-check">
+                <input asp-for="EnableSsl" class="form-check-input" type="checkbox" id="enableSsl" />
+                <label asp-for="EnableSsl" class="form-check-label" for="enableSsl">
+                    Использовать SSL/TLS
+                </label>
+            </div>
+
+            <div class="settings-form-check">
+                <input asp-for="Enabled" class="form-check-input" type="checkbox" id="emailEnabled" />
+                <label asp-for="Enabled" class="form-check-label" for="emailEnabled">
+                    Включить отправку писем
+                </label>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="SmtpPort" class="form-label"></label>
-        <input asp-for="SmtpPort" class="form-control" type="number" />
+
+    <div class="settings-section">
+        <h3 class="settings-section-title">Шаблоны сообщений</h3>
+
+        <div class="settings-form-group">
+            <label asp-for="PasswordResetTemplate" class="form-label">Шаблон сброса пароля</label>
+            <textarea asp-for="PasswordResetTemplate" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="PasswordResetTemplate" class="text-danger"></span>
+            <small class="settings-help-text">
+                Доступные переменные: {UserName}, {ResetLink}, {ExpirationHours}
+            </small>
+        </div>
+
+        <div class="settings-form-group">
+            <label asp-for="AccountLockedTemplate" class="form-label">Шаблон блокировки учетной записи</label>
+            <textarea asp-for="AccountLockedTemplate" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="AccountLockedTemplate" class="text-danger"></span>
+            <small class="settings-help-text">
+                Доступные переменные: {UserName}, {LockoutEnd}, {LockoutMinutes}
+            </small>
+        </div>
+
+        <div class="settings-form-group">
+            <label asp-for="WelcomeTemplate" class="form-label">Шаблон приветствия</label>
+            <textarea asp-for="WelcomeTemplate" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="WelcomeTemplate" class="text-danger"></span>
+            <small class="settings-help-text">
+                Доступные переменные: {UserName}, {LoginLink}
+            </small>
+        </div>
+
+        <div class="settings-form-group">
+            <label asp-for="EmailConfirmationTemplate" class="form-label">Шаблон подтверждения почты</label>
+            <textarea asp-for="EmailConfirmationTemplate" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="EmailConfirmationTemplate" class="text-danger"></span>
+            <small class="settings-help-text">
+                Доступные переменные: {UserName}, {ConfirmationLink}, {ExpirationHours}
+            </small>
+        </div>
     </div>
-    <div class="mb-3 form-check">
-        <input asp-for="EnableSsl" class="form-check-input" type="checkbox" />
-        <label asp-for="EnableSsl" class="form-check-label"></label>
+
+    <div class="settings-section">
+        <h3 class="settings-section-title">Тестирование</h3>
+
+        <div class="settings-form-group">
+            <label asp-for="TestEmail" class="form-label">Тестовый адрес электронной почты</label>
+            <input asp-for="TestEmail" class="form-control" placeholder="test@example.com" />
+            <span asp-validation-for="TestEmail" class="text-danger"></span>
+            <small class="settings-help-text">Адрес для отправки тестового сообщения</small>
+        </div>
     </div>
-    <div class="mb-3 form-check">
-        <input asp-for="Enabled" class="form-check-input" type="checkbox" />
-        <label asp-for="Enabled" class="form-check-label"></label>
+
+    <div class="settings-form-actions">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <button type="submit" class="btn btn-secondary" asp-page-handler="Test">Отправить тест</button>
     </div>
-    <div class="mb-3">
-        <label asp-for="PasswordResetTemplate" class="form-label"></label>
-        <textarea asp-for="PasswordResetTemplate" class="form-control" rows="3"></textarea>
-    </div>
-    <div class="mb-3">
-        <label asp-for="AccountLockedTemplate" class="form-label"></label>
-        <textarea asp-for="AccountLockedTemplate" class="form-control" rows="3"></textarea>
-    </div>
-    <div class="mb-3">
-        <label asp-for="WelcomeTemplate" class="form-label"></label>
-        <textarea asp-for="WelcomeTemplate" class="form-control" rows="3"></textarea>
-    </div>
-    <div class="mb-3">
-        <label asp-for="EmailConfirmationTemplate" class="form-label"></label>
-        <textarea asp-for="EmailConfirmationTemplate" class="form-control" rows="3"></textarea>
-    </div>
-    <div class="mb-3">
-        <label asp-for="TestEmail" class="form-label">Тестовая эл. почта</label>
-        <input asp-for="TestEmail" class="form-control" />
-    </div>
-    <button type="submit" class="btn btn-primary">Сохранить</button>
-    <button type="submit" class="btn btn-secondary" asp-page-handler="Test">Отправить тест</button>
 </form>
+
+@section Scripts {
+    <script src="~/js/settings.js"></script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/settings.css" />
+}

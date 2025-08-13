@@ -18,30 +18,78 @@
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
+<div class="settings-info-card">
+    <div class="settings-info-icon">
+        <i class="bi bi-shield-lock"></i>
+    </div>
+    <div class="settings-info-content">
+        <p>Настройки безопасности определяют требования к паролям, правила блокировки учетных записей и параметры сессий пользователей.</p>
+    </div>
+</div>
+
 <form method="post">
-    <div class="mb-3 form-check">
-        <input asp-for="RequireTwoFactor" class="form-check-input" type="checkbox" />
-        <label asp-for="RequireTwoFactor" class="form-check-label">Требовать двухфакторную аутентификацию</label>
+    <div class="settings-section">
+        <h3 class="settings-section-title">Аутентификация</h3>
+
+        <div class="settings-form-check">
+            <input asp-for="RequireTwoFactor" class="form-check-input" type="checkbox" id="requireTwoFactor" />
+            <label asp-for="RequireTwoFactor" class="form-check-label" for="requireTwoFactor">
+                Требовать двухфакторную аутентификацию
+            </label>
+        </div>
+        <small class="settings-help-text mb-4 d-block">Пользователи должны будут настроить и использовать двухфакторную аутентификацию при входе в систему</small>
+
+        <div class="settings-form-group">
+            <label asp-for="PasswordComplexity" class="form-label">Сложность пароля</label>
+            <select asp-for="PasswordComplexity" class="form-select">
+                <option value="Low">Низкая</option>
+                <option value="Medium">Средняя</option>
+                <option value="High">Высокая</option>
+            </select>
+            <small class="settings-help-text">
+                <strong>Низкая</strong>: минимум 6 символов<br>
+                <strong>Средняя</strong>: минимум 8 символов, цифры и буквы<br>
+                <strong>Высокая</strong>: минимум 10 символов, цифры, буквы разного регистра и спецсимволы
+            </small>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="PasswordComplexity" class="form-label">Сложность пароля</label>
-        <select asp-for="PasswordComplexity" class="form-select">
-            <option value="Low">Низкая</option>
-            <option value="Medium">Средняя</option>
-            <option value="High">Высокая</option>
-        </select>
+
+    <div class="settings-section">
+        <h3 class="settings-section-title">Блокировка и таймауты</h3>
+
+        <div class="settings-form-row">
+            <div class="settings-form-group">
+                <label asp-for="MaxLoginAttempts" class="form-label">Максимальное число попыток входа</label>
+                <input asp-for="MaxLoginAttempts" class="form-control" type="number" min="1" max="10" />
+                <span asp-validation-for="MaxLoginAttempts" class="text-danger"></span>
+                <small class="settings-help-text">Количество неудачных попыток входа до блокировки учетной записи</small>
+            </div>
+
+            <div class="settings-form-group">
+                <label asp-for="LockoutMinutes" class="form-label">Блокировка (минут)</label>
+                <input asp-for="LockoutMinutes" class="form-control" type="number" min="5" max="1440" />
+                <span asp-validation-for="LockoutMinutes" class="text-danger"></span>
+                <small class="settings-help-text">Продолжительность блокировки учетной записи после превышения числа попыток входа</small>
+            </div>
+        </div>
+
+        <div class="settings-form-group">
+            <label asp-for="SessionTimeoutMinutes" class="form-label">Таймаут сессии (минут)</label>
+            <input asp-for="SessionTimeoutMinutes" class="form-control" type="number" min="5" max="1440" />
+            <span asp-validation-for="SessionTimeoutMinutes" class="text-danger"></span>
+            <small class="settings-help-text">Время бездействия, после которого сессия пользователя будет завершена автоматически</small>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="MaxLoginAttempts" class="form-label">Максимальное число попыток входа</label>
-        <input asp-for="MaxLoginAttempts" class="form-control" type="number" />
+
+    <div class="settings-form-actions">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
     </div>
-    <div class="mb-3">
-        <label asp-for="LockoutMinutes" class="form-label">Блокировка (минут)</label>
-        <input asp-for="LockoutMinutes" class="form-control" type="number" />
-    </div>
-    <div class="mb-3">
-        <label asp-for="SessionTimeoutMinutes" class="form-label">Таймаут сессии (минут)</label>
-        <input asp-for="SessionTimeoutMinutes" class="form-control" type="number" />
-    </div>
-    <button type="submit" class="btn btn-primary">Сохранить</button>
 </form>
+
+@section Scripts {
+    <script src="~/js/settings.js"></script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/settings.css" />
+}

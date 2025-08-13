@@ -7,62 +7,87 @@
         new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 }
 
-<form id="uploadForm" method="post" enctype="multipart/form-data">
-    @Html.AntiForgeryToken()
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Загрузка файлов</h3>
-        </div>
-
-        <div class="modal-body">
-            <!-- Выбор папки -->
-            <div class="form-group">
-                <label for="uploadFolderSelect">Папка назначения:</label>
-                <select id="uploadFolderSelect" class="form-select">
-                    <option value="" disabled selected>Выберите папку</option>
-                </select>
-            </div>
-
-            <!-- Выбор файлов -->
-            <div id="dropZone" class="drop-zone">
-                <div class="drop-zone-content">
-                    <p>Перетащите файлы сюда или выберите их через форму ниже</p>
-                    <input type="file" id="fileInput" class="form-control" multiple />
+<div class="upload-container">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <a href="/Files" class="btn btn-outline-secondary btn-sm me-3">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <h5 class="mb-0">Загрузка файлов</h5>
+                </div>
+                <div>
+                    <span class="badge bg-primary">@(Model.FolderId != Guid.Empty ? "Папка выбрана" : "Выберите папку")</span>
                 </div>
             </div>
-
-            <!-- Список выбранных файлов -->
-            <div id="filesList" class="files-list" style="display: none;">
-                <h4>Выбранные файлы:</h4>
-                <div id="filesContainer"></div>
-            </div>
-
-            <!-- Комментарий -->
-            <div class="form-group" id="commentGroup" style="display: none;">
-                <label for="uploadComment">Комментарий к загрузке:</label>
-                <textarea id="uploadComment" class="form-textarea" placeholder="Опишите что изменено или почему загружается..."></textarea>
-            </div>
-
-            <!-- Прогресс загрузки -->
-            <div id="uploadProgress" class="upload-progress" style="display: none;">
-                <div class="progress-bar">
-                    <div id="progressFill" class="progress-fill"></div>
-                </div>
-                <div id="progressText" class="progress-text">0%</div>
-            </div>
-
-            <!-- Результаты загрузки -->
-            <div id="uploadResults" class="upload-results" style="display: none;"></div>
         </div>
 
-        <div class="modal-footer">
-            <a asp-page="Index" class="btn btn-secondary">Отмена</a>
-            <button type="button" id="uploadBtn" class="btn btn-primary" onclick="startUpload()">
-                Загрузить файлы
-            </button>
+        <div class="card-body">
+            <form id="uploadForm" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <!-- Выбор папки -->
+                <div class="mb-4">
+                    <label for="uploadFolderSelect" class="form-label">Папка назначения:</label>
+                    <select id="uploadFolderSelect" name="FolderId" class="form-select">
+                        <option value="" disabled selected>Выберите папку</option>
+                    </select>
+                </div>
+
+                <!-- Зона перетаскивания файлов -->
+                <div id="dropZone" class="drop-zone mb-4">
+                    <div class="drop-zone-content">
+                        <div class="drop-icon mb-3">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                        </div>
+                        <p>Перетащите файлы сюда или выберите через кнопку ниже</p>
+                        <label class="btn btn-primary mt-2">
+                            Выбрать файлы
+                            <input type="file" id="fileInput" name="Files" class="d-none" multiple />
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Список выбранных файлов -->
+                <div id="filesList" class="files-list mb-4" style="display: none;">
+                    <h6 class="mb-3">Выбранные файлы:</h6>
+                    <div id="filesContainer" class="files-container"></div>
+                </div>
+
+                <!-- Комментарий -->
+                <div class="mb-4" id="commentGroup" style="display: none;">
+                    <label for="uploadComment" class="form-label">Комментарий к загрузке:</label>
+                    <textarea id="uploadComment" name="Comment" class="form-control"
+                              placeholder="Опишите что изменено или почему загружается..."></textarea>
+                </div>
+
+                <!-- Прогресс загрузки -->
+                <div id="uploadProgress" class="upload-progress mb-4" style="display: none;">
+                    <label class="form-label d-flex justify-content-between">
+                        <span>Прогресс загрузки</span>
+                        <span id="progressText">0%</span>
+                    </label>
+                    <div class="progress">
+                        <div id="progressFill" class="progress-bar progress-bar-striped progress-bar-animated"
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Результаты загрузки -->
+                <div id="uploadResults" class="upload-results mb-4" style="display: none;"></div>
+
+                <!-- Кнопки действий -->
+                <div class="d-flex justify-content-between">
+                    <a href="/Files" class="btn btn-outline-secondary">Отмена</a>
+                    <button type="button" id="uploadBtn" class="btn btn-primary" onclick="startUpload()">
+                        <i class="bi bi-upload me-1"></i> Загрузить файлы
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-</form>
+</div>
 
 <script>
     var selectedFiles = [];
@@ -90,10 +115,10 @@
                     return true;
                 }
             }
-            showUploadError('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.');
+            showNotification('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.', 'error');
         } catch (err) {
             console.error('Token refresh error:', err);
-            showUploadError('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.');
+            showNotification('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.', 'error');
         }
         return false;
     }
@@ -186,32 +211,28 @@
         files.forEach(file => formData.append('files', file));
         const token = getUploadModalToken();
         const headers = token ? { 'RequestVerificationToken': token } : {};
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
+        showLoader();
         try {
-            const response = await fetchWithProgress('/api/upload/validate', {
+            const response = await fetch('/api/upload/validate', {
                 method: 'POST',
                 body: formData,
                 credentials: 'include',
-                headers,
-                signal: controller.signal
+                headers
             });
-            clearTimeout(timeoutId);
 
             const contentType = response.headers.get('content-type') || '';
             if (response.ok && contentType.includes('application/json')) {
                 const data = await response.json();
                 updateFileValidationResults(data.results);
             } else {
-                showUploadError(`Сервер вернул не-JSON/HTML (статус ${response.status})`);
+                showNotification(`Ошибка валидации файлов (статус ${response.status})`, 'error');
             }
         } catch (error) {
-            if (error.name === 'AbortError') {
-                showUploadError('Время ожидания истекло, попробуйте ещё раз');
-            } else {
-                showUploadError('Ошибка проверки файлов');
-            }
+            showNotification('Ошибка проверки файлов', 'error');
+            console.error('Validation error:', error);
+        } finally {
+            hideLoader();
         }
     }
 
@@ -221,36 +242,62 @@
 
         files.forEach((file, index) => {
             const fileItem = document.createElement('div');
-            fileItem.className = 'file-item';
+            fileItem.className = 'file-item card mb-2';
             fileItem.innerHTML = `
-                <div class="file-info">
-                    <span class="file-name">${file.name}</span>
-                    <span class="file-size">${formatFileSize(file.size)}</span>
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="file-info d-flex align-items-center">
+                            <div class="file-icon me-2">
+                                <i class="${getFileIcon(file.name)}"></i>
+                            </div>
+                            <div>
+                                <div class="file-name text-truncate">${file.name}</div>
+                                <div class="file-size text-muted small">${formatFileSize(file.size)}</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2" id="status-${index}">
+                        <div class="progress">
+                            <div class="progress-bar" id="progress-${index}" style="width: 0%"></div>
+                        </div>
+                        <div class="status-text small mt-1 text-center" id="status-text-${index}">Готов к загрузке</div>
+                    </div>
                 </div>
-                <div class="file-status" id="status-${index}">
-                    <div class="progress-bar"><div class="progress-fill" id="progress-${index}"></div></div>
-                    <span class="status-text" id="status-text-${index}">Готов к загрузке</span>
-                </div>
-                <button type="button" class="btn btn-danger btn-sm" onclick="removeFile(${index})">
-                    Удалить
-                </button>
             `;
             container.appendChild(fileItem);
         });
+    }
+
+    function getFileIcon(fileName) {
+        const ext = fileName.split('.').pop().toLowerCase();
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(ext)) return 'bi bi-file-earmark-image';
+        if (['doc', 'docx', 'odt', 'rtf'].includes(ext)) return 'bi bi-file-earmark-word';
+        if (['xls', 'xlsx', 'ods'].includes(ext)) return 'bi bi-file-earmark-spreadsheet';
+        if (['ppt', 'pptx', 'odp'].includes(ext)) return 'bi bi-file-earmark-slides';
+        if (ext === 'pdf') return 'bi bi-file-earmark-pdf';
+        if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'bi bi-file-earmark-zip';
+        if (['txt', 'md'].includes(ext)) return 'bi bi-file-earmark-text';
+        return 'bi bi-file-earmark';
     }
 
     function updateFileValidationResults(results) {
         results.forEach((result, index) => {
             const statusText = document.getElementById(`status-text-${index}`);
             if (statusText) {
-                statusText.className = 'status-text';
+                statusText.className = 'status-text small mt-1 text-center';
                 if (!result.isValid) {
                     statusText.textContent = `Ошибка: ${result.errors.join(', ')}`;
-                    statusText.classList.add('status-error');
-                    statusText.closest('.file-item')?.classList.add('file-invalid');
+                    statusText.classList.add('text-danger');
+                    statusText.closest('.file-item')?.classList.add('border-danger');
                 } else if (result.warnings.length > 0) {
                     statusText.textContent = `Предупреждение: ${result.warnings.join(', ')}`;
-                    statusText.classList.add('status-warning');
+                    statusText.classList.add('text-warning');
+                } else {
+                    statusText.textContent = `Готов к загрузке`;
+                    statusText.classList.add('text-muted');
                 }
             }
         });
@@ -272,7 +319,16 @@
         const folderId = document.getElementById('uploadFolderSelect').value;
         const comment = document.getElementById('uploadComment').value;
 
-        showLoader();
+        if (!folderId) {
+            showNotification('Выберите папку назначения', 'error');
+            return;
+        }
+
+        if (selectedFiles.length === 0) {
+            showNotification('Выберите файлы для загрузки', 'error');
+            return;
+        }
+
         document.getElementById('uploadProgress').style.display = 'block';
         document.getElementById('uploadBtn').disabled = true;
 
@@ -281,18 +337,15 @@
 
         async function uploadNext(index) {
             if (index >= totalFiles) {
-                hideLoader();
                 showUploadResults(results);
                 return;
             }
 
             if (!await refreshCsrfToken()) {
                 hideLoader();
-                showUploadError('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.');
+                showNotification('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.', 'error');
                 return;
             }
-
-            showLoader();
 
             const file = selectedFiles[index];
             const formData = new FormData();
@@ -317,7 +370,11 @@
                     const progressEl = document.getElementById(`progress-${index}`);
                     const statusText = document.getElementById(`status-text-${index}`);
                     if (progressEl) progressEl.style.width = percent + '%';
-                    if (statusText) statusText.textContent = percent + '%';
+                    if (statusText) {
+                        statusText.textContent = percent + '%';
+                        statusText.classList.remove('text-muted', 'text-danger', 'text-warning');
+                        statusText.classList.add('text-primary');
+                    }
 
                     const overall = Math.round(((index + e.loaded / e.total) / totalFiles) * 100);
                     document.getElementById('progressFill').style.width = overall + '%';
@@ -335,21 +392,25 @@
                     const response = xhr.response;
 
                     if (isJson && response && response.results) {
-
                         const result = response.results[0];
                         results.push(result);
                         if (statusText) {
                             statusText.textContent = result.success ? 'Готово' : result.error;
-                            if (!result.success) statusText.classList.add('status-error');
+                            statusText.classList.remove('text-muted', 'text-primary', 'text-warning');
+                            statusText.classList.add(result.success ? 'text-success' : 'text-danger');
+
+                            if (progressEl && result.success) {
+                                progressEl.classList.remove('progress-bar-striped', 'progress-bar-animated');
+                                progressEl.classList.add('bg-success');
+                            }
                         }
                     } else {
-
                         const error = isJson ? 'Некорректный ответ сервера' : `Сервер вернул не-JSON/HTML (статус ${xhr.status})`;
-
                         results.push({ success: false, fileName: file.name, error });
                         if (statusText) {
                             statusText.textContent = error;
-                            statusText.classList.add('status-error');
+                            statusText.classList.remove('text-muted', 'text-primary', 'text-warning');
+                            statusText.classList.add('text-danger');
                         }
                     }
                 } else {
@@ -357,7 +418,8 @@
                     results.push({ success: false, fileName: file.name, error });
                     if (statusText) {
                         statusText.textContent = error;
-                        statusText.classList.add('status-error');
+                        statusText.classList.remove('text-muted', 'text-primary', 'text-warning');
+                        statusText.classList.add('text-danger');
                     }
                 }
 
@@ -372,14 +434,15 @@
                 results.push({ success: false, fileName: file.name, error });
                 if (statusText) {
                     statusText.textContent = error;
-                    statusText.classList.add('status-error');
+                    statusText.classList.remove('text-muted', 'text-primary', 'text-warning');
+                    statusText.classList.add('text-danger');
                 }
                 uploadNext(index + 1);
             };
 
             xhr.ontimeout = function () {
                 hideLoader();
-                showUploadError('Время ожидания истекло, попробуйте ещё раз');
+                showNotification('Время ожидания истекло, попробуйте ещё раз', 'error');
             };
 
             xhr.send(formData);
@@ -389,30 +452,30 @@
     }
 
     function showUploadResults(results) {
-        document.getElementById('uploadProgress').style.display = 'none';
+        document.getElementById('uploadBtn').disabled = false;
 
         const resultsContainer = document.getElementById('uploadResults');
         resultsContainer.style.display = 'block';
-        resultsContainer.innerHTML = '<h4>Результаты загрузки:</h4>';
+        resultsContainer.innerHTML = '<h6 class="mb-3">Результаты загрузки:</h6>';
 
         let successCount = 0;
         let errorCount = 0;
 
         results.forEach(result => {
             const resultItem = document.createElement('div');
-            resultItem.className = `result-item ${result.success ? 'success' : 'error'}`;
+            resultItem.className = `alert ${result.success ? 'alert-success' : 'alert-danger'} d-flex align-items-center mb-2`;
 
             if (result.success) {
                 successCount++;
                 resultItem.innerHTML = `
-                    <span class="result-icon">✅</span>
-                    <span class="result-text">${result.fileName} - загружен успешно</span>
+                    <i class="bi bi-check-circle me-2"></i>
+                    <div>${result.fileName} - загружен успешно</div>
                 `;
             } else {
                 errorCount++;
                 resultItem.innerHTML = `
-                    <span class="result-icon">❌</span>
-                    <span class="result-text">${result.fileName} - ${result.error}</span>
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    <div>${result.fileName} - ${result.error}</div>
                 `;
             }
 
@@ -420,45 +483,18 @@
         });
 
         const summary = document.createElement('div');
-        summary.className = 'upload-summary';
+        summary.className = 'mt-3 d-flex align-items-center justify-content-between';
         summary.innerHTML = `
-            <p><strong>Итого:</strong> ${successCount} успешно, ${errorCount} с ошибками</p>
+            <div><strong>Итого:</strong> ${successCount} успешно, ${errorCount} с ошибками</div>
+            ${successCount > 0 ? '<button class="btn btn-success btn-sm" onclick="reloadPage()">Перейти к файлам</button>' : ''}
         `;
         resultsContainer.appendChild(summary);
-
-        reloadPage();
-    }
-
-    function showUploadError(message) {
-        document.getElementById('uploadProgress').style.display = 'none';
-        updateUploadButtonState();
-
-        const resultsContainer = document.getElementById('uploadResults');
-        resultsContainer.style.display = 'block';
-        resultsContainer.innerHTML = `
-            <div class="result-item error">
-                <span class="result-icon">❌</span>
-                <span class="result-text">${message}</span>
-            </div>
-        `;
-    }
-
-    function resetUploadForm() {
-        selectedFiles = [];
-        document.getElementById('fileInput').value = '';
-        document.getElementById('uploadComment').value = '';
-        const folderSelect = document.getElementById('uploadFolderSelect');
-        folderSelect.innerHTML = '<option value="" disabled selected>Выберите папку</option>';
-        document.getElementById('filesList').style.display = 'none';
-        document.getElementById('commentGroup').style.display = 'none';
-        document.getElementById('uploadProgress').style.display = 'none';
-        document.getElementById('uploadResults').style.display = 'none';
-        updateUploadButtonState();
     }
 
     function updateUploadButtonState() {
         const btn = document.getElementById('uploadBtn');
-        btn.disabled = false;
+        const folderId = document.getElementById('uploadFolderSelect')?.value;
+        btn.disabled = !folderId || selectedFiles.length === 0;
     }
 
     function formatFileSize(bytes) {
@@ -472,3 +508,62 @@
         window.location.href = '/Files';
     }
 </script>
+
+<style>
+    .upload-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 16px;
+    }
+
+    .drop-zone {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        padding: 40px 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+        .drop-zone.drag-over {
+            border-color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+
+    .drop-icon {
+        font-size: 48px;
+        color: #adb5bd;
+    }
+
+    .files-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .file-name {
+        font-weight: 500;
+        max-width: 250px;
+    }
+
+    .file-icon {
+        font-size: 24px;
+        color: #6c757d;
+    }
+
+    .status-text {
+        font-size: 12px;
+    }
+
+    @@media (max-width: 576px) {
+        .drop-zone
+
+    {
+        padding: 20px 10px;
+    }
+
+    .file-name {
+        max-width: 150px;
+    }
+
+    }
+</style>

@@ -1,13 +1,36 @@
 ﻿@page "/Files"
 @model FileManager.Web.Pages.Files.IndexModel
 @using FileManager.Domain.Enums
+@using Microsoft.AspNetCore.Http.Extensions
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @{
-    ViewData["Title"] = "Документы";
+    ViewData["Title"] = "Мои файлы";
+}
+
+@functions {
+    public string RemoveUrlParam(string paramName)
+    {
+        var url = new System.UriBuilder(Request.GetDisplayUrl());
+        var query = System.Web.HttpUtility.ParseQueryString(url.Query);
+        query.Remove(paramName);
+        url.Query = query.ToString();
+        return url.Uri.PathAndQuery;
+    }
+
+    public string RemoveUrlParams(string[] paramNames)
+    {
+        var url = new System.UriBuilder(Request.GetDisplayUrl());
+        var query = System.Web.HttpUtility.ParseQueryString(url.Query);
+        foreach (var param in paramNames)
+        {
+            query.Remove(param);
+        }
+        url.Query = query.ToString();
+        return url.Uri.PathAndQuery;
+    }
 }
 
 <div class="files-wrapper">
-
     <!-- Breadcrumbs -->
     @if (Model.Breadcrumbs.Any())
     {
@@ -18,11 +41,11 @@
                 <span class="breadcrumb-item">
                     @if (i == Model.Breadcrumbs.Count - 1)
                     {
-                        <span><i class="@breadcrumb.Icon"></i> @breadcrumb.Name</span>
+                        <span><i class="bi bi-folder-fill text-primary me-1"></i> @breadcrumb.Name</span>
                     }
                     else
                     {
-                        <a href="?folderId=@breadcrumb.Id"><i class="@breadcrumb.Icon"></i> @breadcrumb.Name</a>
+                        <a href="?folderId=@breadcrumb.Id"><i class="bi bi-folder text-primary me-1"></i> @breadcrumb.Name</a>
                         <span class="breadcrumb-separator">/</span>
                     }
                 </span>
@@ -30,92 +53,226 @@
         </div>
     }
 
-    <div class="action-bar d-flex gap-2">
-        <a asp-page="Upload" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> Загрузить файлы</a>
-        <button type="button" id="btnCreateFolder" class="btn btn-primary btn-sm"><i class="bi bi-folder-plus"></i> Создать папку</button>
-        <button type="button" id="btnManageAccess" class="btn btn-primary btn-sm"><i class="bi bi-shield-lock"></i> Управление доступом</button>
+    <div class="action-bar d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex gap-2">
+            <a asp-page="Upload" class="btn btn-primary btn-sm shadow-sm"><i class="bi bi-upload me-1"></i> Загрузить файлы</a>
+            <button type="button" id="btnCreateFolder" class="btn btn-outline-primary btn-sm"><i class="bi bi-folder-plus me-1"></i> Создать папку</button>
+        </div>
     </div>
 
-    <!-- Панель поиска и фильтров -->
-    <form method="get" class="search-panel">
-        <input type="hidden" name="folderId" value="@Model.CurrentFolderId" />
-        <div class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label asp-for="SearchRequest.SearchTerm" class="form-label">Поиск</label>
-                <input asp-for="SearchRequest.SearchTerm" class="form-control" placeholder="Введите текст" />
+    <!-- Компактная панель поиска и фильтров с возможностью разворачивания -->
+    <div class="search-panel mb-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="search-box position-relative">
+                <input type="text" id="quickSearch" class="form-control form-control-sm ps-4" placeholder="Быстрый поиск...">
+                <i class="bi bi-search position-absolute start-2 top-50 translate-middle-y text-muted"></i>
             </div>
-            <div class="col-md-2">
-                <label asp-for="SearchRequest.FileType" class="form-label">Тип файла</label>
-                <select asp-for="SearchRequest.FileType" class="form-select">
-                    <option value="">Все</option>
-                    @foreach (var type in Enum.GetValues(typeof(FileType)))
-                    {
-                        <option value="@type" selected="@(Model.SearchRequest.FileType == (FileType)type ? "selected" : null)">@type</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label asp-for="SearchRequest.DateFrom" class="form-label">Дата с</label>
-                <input asp-for="SearchRequest.DateFrom" type="date" class="form-control" />
-            </div>
-            <div class="col-md-2">
-                <label asp-for="SearchRequest.DateTo" class="form-label">Дата по</label>
-                <input asp-for="SearchRequest.DateTo" type="date" class="form-control" />
-            </div>
-            <div class="col-md-1">
-                <label asp-for="SearchRequest.MinSizeBytes" class="form-label">Мин. размер</label>
-                <input asp-for="SearchRequest.MinSizeBytes" type="number" class="form-control" />
-            </div>
-            <div class="col-md-1">
-                <label asp-for="SearchRequest.MaxSizeBytes" class="form-label">Макс. размер</label>
-                <input asp-for="SearchRequest.MaxSizeBytes" type="number" class="form-control" />
-            </div>
-            <div class="col-md-1">
-                <button type="submit" class="btn btn-primary w-100">Найти</button>
-            </div>
-            <div class="col-md-1">
-                <a href="?folderId=@Model.CurrentFolderId" class="btn btn-secondary w-100">Сбросить</a>
-            </div>
+            <button class="btn btn-sm btn-outline-secondary ms-2" id="toggleAdvancedSearch">
+                <i class="bi bi-sliders"></i> Фильтры
+            </button>
         </div>
-    </form>
 
-    <!-- Content Area -->
+        <form method="get" id="advancedSearchForm" class="mt-3" style="display: none;">
+            <input type="hidden" name="folderId" value="@Model.CurrentFolderId" />
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label asp-for="SearchRequest.SearchTerm" class="form-label small">Поиск</label>
+                    <input asp-for="SearchRequest.SearchTerm" class="form-control form-control-sm" placeholder="Введите текст" />
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="SearchRequest.FileType" class="form-label small">Тип файла</label>
+                    <select asp-for="SearchRequest.FileType" class="form-select form-select-sm">
+                        <option value="">Все</option>
+                        @foreach (var type in Enum.GetValues(typeof(FileType)))
+                        {
+                            <option value="@type" selected="@(Model.SearchRequest.FileType == (FileType)type ? "selected" : null)">@type</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="SearchRequest.DateFrom" class="form-label small">Дата с</label>
+                    <input asp-for="SearchRequest.DateFrom" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="SearchRequest.DateTo" class="form-label small">Дата по</label>
+                    <input asp-for="SearchRequest.DateTo" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Найти</button>
+                    <a href="?folderId=@Model.CurrentFolderId" class="btn btn-outline-secondary btn-sm flex-grow-1">Сбросить</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Content Area с фильтрами -->
     <div class="content-area">
         @{
             ViewData["SearchRequest"] = Model.SearchRequest;
         }
+
+        @if (!string.IsNullOrEmpty(Model.SearchRequest.SearchTerm) ||
+        Model.SearchRequest.FileType.HasValue ||
+        Model.SearchRequest.DateFrom.HasValue ||
+        Model.SearchRequest.DateTo.HasValue ||
+        Model.SearchRequest.MinSizeBytes.HasValue ||
+        Model.SearchRequest.MaxSizeBytes.HasValue)
+        {
+            <div class="filter-badges mb-3 d-flex flex-wrap gap-2 align-items-center">
+                <span class="text-muted small">Активные фильтры:</span>
+
+                @if (!string.IsNullOrEmpty(Model.SearchRequest.SearchTerm))
+                {
+                    <span class="badge bg-light text-dark border">
+                        Поиск: "@Model.SearchRequest.SearchTerm"
+                        <a href="@RemoveUrlParam("SearchRequest.SearchTerm")" class="ms-1 text-decoration-none">×</a>
+                    </span>
+                }
+
+                @if (Model.SearchRequest.FileType.HasValue)
+                {
+                    <span class="badge bg-light text-dark border">
+                        Тип: @Model.SearchRequest.FileType
+                        <a href="@RemoveUrlParam("SearchRequest.FileType")" class="ms-1 text-decoration-none">×</a>
+                    </span>
+                }
+
+                @if (Model.SearchRequest.DateFrom.HasValue || Model.SearchRequest.DateTo.HasValue)
+                {
+                    <span class="badge bg-light text-dark border">
+                        Дата: @(Model.SearchRequest.DateFrom?.ToString("dd.MM.yyyy") ?? "") - @(Model.SearchRequest.DateTo?.ToString("dd.MM.yyyy") ?? "")
+                        <a href="@RemoveUrlParams(new[] {"SearchRequest.DateFrom", "SearchRequest.DateTo"})" class="ms-1 text-decoration-none">×</a>
+                    </span>
+                }
+
+                @if (Model.SearchRequest.MinSizeBytes.HasValue || Model.SearchRequest.MaxSizeBytes.HasValue)
+                {
+                    <span class="badge bg-light text-dark border">
+                        Размер: @(Model.SearchRequest.MinSizeBytes?.ToString() ?? "0") - @(Model.SearchRequest.MaxSizeBytes?.ToString() ?? "∞")
+                        <a href="@RemoveUrlParams(new[] {"SearchRequest.MinSizeBytes", "SearchRequest.MaxSizeBytes"})" class="ms-1 text-decoration-none">×</a>
+                    </span>
+                }
+
+                <a href="?folderId=@Model.CurrentFolderId" class="btn btn-sm btn-outline-secondary ms-auto">Сбросить все</a>
+            </div>
+        }
+
+        <div class="sort-controls mb-3">
+            <div class="d-flex align-items-center">
+                <span class="text-muted small me-2">Сортировка:</span>
+                <a href="javascript:void(0)" onclick="sortBy('name')" class="sort-link @(Model.SearchRequest.SortBy == "name" ? "active" : "")">
+                    По имени@(Model.SearchRequest.SortBy == "name" ? (Model.SearchRequest.SortDirection == "asc" ? " ↑" : " ↓") : "")
+                </a>
+                <a href="javascript:void(0)" onclick="sortBy('date')" class="sort-link @(Model.SearchRequest.SortBy == "date" ? "active" : "")">
+                    По дате@(Model.SearchRequest.SortBy == "date" ? (Model.SearchRequest.SortDirection == "asc" ? " ↑" : " ↓") : "")
+                </a>
+                <a href="javascript:void(0)" onclick="sortBy('size')" class="sort-link @(Model.SearchRequest.SortBy == "size" ? "active" : "")">
+                    По размеру@(Model.SearchRequest.SortBy == "size" ? (Model.SearchRequest.SortDirection == "asc" ? " ↑" : " ↓") : "")
+                </a>
+                <a href="javascript:void(0)" onclick="sortBy('type')" class="sort-link @(Model.SearchRequest.SortBy == "type" ? "active" : "")">
+                    По типу@(Model.SearchRequest.SortBy == "type" ? (Model.SearchRequest.SortDirection == "asc" ? " ↑" : " ↓") : "")
+                </a>
+            </div>
+        </div>
+
         <div class="grid-view">
             @await Html.PartialAsync("_FilesGrid", Model.GridItems)
         </div>
     </div>
 
-    <!-- Pagination -->
+    <!-- Pagination с современным дизайном -->
     @if (Model.FilesResult.TotalPages > 1)
     {
-        <div class="pagination">
-            @if (Model.FilesResult.HasPreviousPage)
-            {
-                <a href="?page=@(Model.FilesResult.CurrentPage - 1)&folderId=@Model.CurrentFolderId" class="btn btn-secondary btn-sm">← Предыдущая</a>
-            }
+        <div class="pagination d-flex justify-content-between align-items-center mt-4">
+            <div>
+                <span class="text-muted small">
+                    Показано @((Model.FilesResult.CurrentPage - 1) * Model.FilesResult.PageSize + 1) -
+                    @(Math.Min(Model.FilesResult.CurrentPage * Model.FilesResult.PageSize, Model.FilesResult.TotalCount))
+                    из @Model.FilesResult.TotalCount
+                </span>
+            </div>
 
-            <span class="pagination-info">
-                Страница @Model.FilesResult.CurrentPage из @Model.FilesResult.TotalPages
-                (всего: @Model.FilesResult.TotalCount)
-            </span>
+            <div class="btn-group">
+                @if (Model.FilesResult.HasPreviousPage)
+                {
+                    <a href="?page=@(Model.FilesResult.CurrentPage - 1)&folderId=@Model.CurrentFolderId" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                }
 
-            @if (Model.FilesResult.HasNextPage)
-            {
-                <a href="?page=@(Model.FilesResult.CurrentPage + 1)&folderId=@Model.CurrentFolderId" class="btn btn-secondary btn-sm">Следующая →</a>
-            }
+                @{
+                    var startPage = Math.Max(1, Model.FilesResult.CurrentPage - 2);
+                    var endPage = Math.Min(Model.FilesResult.TotalPages, startPage + 4);
+                    startPage = Math.Max(1, endPage - 4);
+                }
+
+                @if (startPage > 1)
+                {
+                    <a href="?page=1&folderId=@Model.CurrentFolderId" class="btn btn-sm btn-outline-secondary">1</a>
+                    @if (startPage > 2)
+                    {
+                        <span class="btn btn-sm btn-outline-secondary disabled">...</span>
+                    }
+                }
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <a href="?page=@i&folderId=@Model.CurrentFolderId"
+                       class="btn btn-sm @(i == Model.FilesResult.CurrentPage ? "btn-primary" : "btn-outline-secondary")">
+                        @i
+                    </a>
+                }
+
+                @if (endPage < Model.FilesResult.TotalPages)
+                {
+                    @if (endPage < Model.FilesResult.TotalPages - 1)
+                    {
+                        <span class="btn btn-sm btn-outline-secondary disabled">...</span>
+                    }
+                    <a href="?page=@Model.FilesResult.TotalPages&folderId=@Model.CurrentFolderId" class="btn btn-sm btn-outline-secondary">
+                        @Model.FilesResult.TotalPages
+                    </a>
+                }
+
+                @if (Model.FilesResult.HasNextPage)
+                {
+                    <a href="?page=@(Model.FilesResult.CurrentPage + 1)&folderId=@Model.CurrentFolderId" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                }
+            </div>
         </div>
     }
+
+    <!-- Панель выбранных файлов (появляется при выборе) -->
+    <div id="selectedFilesPanel" class="selected-files-panel">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span id="selectedCount" class="me-2">0 выбрано</span>
+                <button id="clearSelection" class="btn btn-sm btn-link text-decoration-none p-0">Отменить</button>
+            </div>
+            <div class="d-flex gap-2">
+                <button id="downloadSelected" class="btn btn-sm btn-primary" disabled>
+                    <i class="bi bi-download me-1"></i> Скачать
+                </button>
+                <button id="deleteSelected" class="btn btn-sm btn-danger" disabled>
+                    <i class="bi bi-trash me-1"></i> Удалить
+                </button>
+                <button id="accessSelected" class="btn btn-sm btn-outline-secondary" disabled>
+                    <i class="bi bi-shield-lock me-1"></i> Доступ
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 @await Html.PartialAsync("_FolderModals")
 @await Html.PartialAsync("_AccessModal")
 @await Html.PartialAsync("_PropertiesModal")
-<div id="contextMenu" class="context-menu">
-    <ul>
+@await Html.PartialAsync("_UploadModal")
+
+<div id="contextMenu" class="context-menu shadow-sm">
+    <ul class="list-unstyled m-0 p-0">
         <li data-action="upload" title="Загрузить"><i class="bi bi-upload"></i> Загрузить</li>
         <li data-action="create-folder" title="Создать папку"><i class="bi bi-folder-plus"></i> Создать папку</li>
         <li data-action="manage-access" title="Управление доступом"><i class="bi bi-shield-lock"></i> Управление доступом</li>
@@ -124,9 +281,478 @@
         <li data-action="rename" title="Переименовать"><i class="bi bi-pencil-square"></i> Переименовать</li>
         <li data-action="download" title="Скачать"><i class="bi bi-download"></i> Скачать</li>
         <li data-action="access" title="Доступ"><i class="bi bi-person-lock"></i> Доступ</li>
-        <li data-action="add-favorite" title="Добавить в избранное"><i class="bi bi-star"></i> Добавить в избранное</li>
+        <li data-action="add-favorite" title="Добавить в избранное"><i class="bi bi-star"></i> В избранное</li>
         <li data-action="delete" title="Удалить"><i class="bi bi-trash"></i> Удалить</li>
         <li data-action="properties" title="Свойства"><i class="bi bi-info-circle"></i> Свойства</li>
     </ul>
 </div>
 
+<style>
+    /* Общие стили файлового менеджера */
+    .files-wrapper {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        padding: 20px;
+        position: relative;
+    }
+
+    /* Хлебные крошки */
+    .breadcrumbs {
+        padding: 8px 0;
+        margin-bottom: 16px;
+        font-size: 14px;
+        color: #6c757d;
+    }
+
+    .breadcrumb-item a {
+        color: #6c757d;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+        .breadcrumb-item a:hover {
+            color: #0d6efd;
+        }
+
+    .breadcrumb-separator {
+        margin: 0 8px;
+        color: #adb5bd;
+    }
+
+    /* Панель действий */
+    .action-bar {
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    /* Сортировка */
+    .sort-controls {
+        font-size: 14px;
+        color: #6c757d;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .sort-link {
+        color: #6c757d;
+        text-decoration: none;
+        padding: 4px 8px;
+        margin-right: 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+        .sort-link:hover, .sort-link.active {
+            color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.1);
+        }
+
+    /* Контейнер файлов и папок */
+    .grid-view {
+        min-height: 300px;
+    }
+
+    /* Панель выбранных файлов */
+    .selected-files-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 12px 24px;
+        border-top: 1px solid #dee2e6;
+        box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+        z-index: 100;
+        transform: translateY(100%);
+        transition: transform 0.3s ease-out;
+    }
+
+        .selected-files-panel.active {
+            transform: translateY(0);
+        }
+
+    /* Контекстное меню */
+    .context-menu {
+        position: fixed;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        min-width: 180px;
+        z-index: 1000;
+        display: none;
+    }
+
+        .context-menu li {
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+            .context-menu li i {
+                margin-right: 8px;
+                font-size: 14px;
+            }
+
+            .context-menu li:hover {
+                background: #f8f9fa;
+                color: #0d6efd;
+            }
+
+    /* Анимации */
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+
+    }
+
+    @@keyframes slideUp {
+        from
+
+    {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .slide-up {
+        animation: slideUp 0.3s ease-out;
+    }
+
+    /* Уведомления */
+    .notification {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        padding: 12px 16px;
+        border-radius: 4px;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        min-width: 300px;
+        max-width: 450px;
+        animation: slideUp 0.3s, fadeOut 0.3s 4s forwards;
+    }
+
+        .notification.success {
+            border-left: 4px solid #28a745;
+        }
+
+        .notification.error {
+            border-left: 4px solid #dc3545;
+        }
+
+        .notification.info {
+            border-left: 4px solid #17a2b8;
+        }
+
+    .notification-content {
+        margin-left: 12px;
+    }
+
+    .notification-title {
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .notification-message {
+        margin-bottom: 0;
+        color: #6c757d;
+    }
+
+    @@keyframes fadeOut {
+        from
+
+    {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+
+    }
+
+    /* Улучшения для фильтров */
+    .filter-badges .badge {
+        font-weight: normal;
+        padding: 6px 10px;
+    }
+
+    /* Дополнительные стили для панели поиска */
+    .search-box {
+        max-width: 300px;
+    }
+
+    #advancedSearchForm {
+        display: none;
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 16px;
+        margin-top: 12px;
+        animation: slideUp 0.3s ease-out;
+    }
+
+    /* Медиа-запросы для адаптивности */
+    @@media (max-width: 768px) {
+        .action-bar
+
+    {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .action-bar > div {
+        margin-bottom: 8px;
+        width: 100%;
+    }
+
+    .search-box {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .view-options {
+        margin-left: 0;
+        margin-top: 8px;
+    }
+
+    .sort-controls {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 12px;
+    }
+
+    .sort-link {
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .pagination {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    }
+</style>
+
+<script>
+    // Инициализация панели выбранных файлов
+    document.addEventListener('DOMContentLoaded', function() {
+        const quickSearch = document.getElementById('quickSearch');
+        const toggleAdvancedSearch = document.getElementById('toggleAdvancedSearch');
+        const advancedSearchForm = document.getElementById('advancedSearchForm');
+        const selectedFilesPanel = document.getElementById('selectedFilesPanel');
+        const selectedCountElem = document.getElementById('selectedCount');
+        const clearSelectionBtn = document.getElementById('clearSelection');
+        const downloadSelectedBtn = document.getElementById('downloadSelected');
+        const deleteSelectedBtn = document.getElementById('deleteSelected');
+        const accessSelectedBtn = document.getElementById('accessSelected');
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+
+        // Быстрый поиск (простой фильтр по файлам на странице)
+        if (quickSearch) {
+            quickSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const items = document.querySelectorAll('.explorer-item');
+
+                items.forEach(item => {
+                    const name = item.getAttribute('data-name').toLowerCase();
+                    if (name.includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Переключение расширенного поиска
+        if (toggleAdvancedSearch && advancedSearchForm) {
+            toggleAdvancedSearch.addEventListener('click', function() {
+                const isVisible = advancedSearchForm.style.display === 'block';
+                advancedSearchForm.style.display = isVisible ? 'none' : 'block';
+                this.innerHTML = isVisible ?
+                    '<i class="bi bi-sliders"></i> Фильтры' :
+                    '<i class="bi bi-x-lg"></i> Скрыть фильтры';
+            });
+        }
+
+        // Отслеживание выбора файлов
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('file-checkbox')) {
+                updateSelectedFilesPanel();
+            }
+        });
+
+        // Очистка выбора
+        if (clearSelectionBtn) {
+            clearSelectionBtn.addEventListener('click', function() {
+                document.querySelectorAll('.file-checkbox:checked').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updateSelectedFilesPanel();
+            });
+        }
+
+        // Скачивание выбранных файлов
+        if (downloadSelectedBtn) {
+            downloadSelectedBtn.addEventListener('click', function() {
+                const selectedFiles = getSelectedFileIds();
+                if (selectedFiles.length > 0) {
+                    // Вызов функции скачивания из файла files-manager.js
+                    downloadSelected();
+                }
+            });
+        }
+
+        // Удаление выбранных файлов
+        if (deleteSelectedBtn) {
+            deleteSelectedBtn.addEventListener('click', function() {
+                const selectedFiles = getSelectedFileIds();
+                if (selectedFiles.length > 0 && confirm(`Удалить выбранные файлы (${selectedFiles.length})?`)) {
+                    // Здесь будет логика удаления
+                    showNotification('Файлы успешно удалены', 'success');
+                    updateSelectedFilesPanel();
+                }
+            });
+        }
+
+        // Переключение вида отображения (сетка/список)
+        if (gridViewBtn && listViewBtn) {
+            gridViewBtn.addEventListener('click', function() {
+                document.querySelector('.grid-view').classList.remove('list-mode');
+                document.querySelector('.grid-view').classList.add('grid-mode');
+                gridViewBtn.classList.add('active');
+                listViewBtn.classList.remove('active');
+                localStorage.setItem('filesViewMode', 'grid');
+            });
+
+            listViewBtn.addEventListener('click', function() {
+                document.querySelector('.grid-view').classList.remove('grid-mode');
+                document.querySelector('.grid-view').classList.add('list-mode');
+                listViewBtn.classList.add('active');
+                gridViewBtn.classList.remove('active');
+                localStorage.setItem('filesViewMode', 'list');
+            });
+
+            // Восстановление последнего выбранного режима
+            const savedViewMode = localStorage.getItem('filesViewMode');
+            if (savedViewMode === 'list') {
+                listViewBtn.click();
+            } else {
+                gridViewBtn.click();
+            }
+        }
+
+        // Обновление панели выбранных файлов
+        function updateSelectedFilesPanel() {
+            const selectedCheckboxes = document.querySelectorAll('.file-checkbox:checked');
+            const count = selectedCheckboxes.length;
+
+            if (count > 0) {
+                selectedCountElem.textContent = `${count} выбрано`;
+                selectedFilesPanel.classList.add('active');
+                downloadSelectedBtn.disabled = false;
+                deleteSelectedBtn.disabled = false;
+                accessSelectedBtn.disabled = false;
+            } else {
+                selectedFilesPanel.classList.remove('active');
+                downloadSelectedBtn.disabled = true;
+                deleteSelectedBtn.disabled = true;
+                accessSelectedBtn.disabled = true;
+            }
+        }
+
+        // Получение ID выбранных файлов
+        function getSelectedFileIds() {
+            return Array.from(document.querySelectorAll('.file-checkbox:checked')).map(checkbox => {
+                return checkbox.getAttribute('data-id');
+            });
+        }
+
+        // Добавление обработчиков двойного клика для элементов
+        document.querySelectorAll('.explorer-item[data-type="folder"]').forEach(folder => {
+            folder.addEventListener('dblclick', function() {
+                const folderId = this.getAttribute('data-id');
+                window.location.href = `?folderId=${folderId}`;
+            });
+        });
+
+        document.querySelectorAll('.explorer-item[data-type="file"]').forEach(file => {
+            file.addEventListener('dblclick', function() {
+                const fileId = this.getAttribute('data-id');
+                window.location.href = `/Files/Preview/${fileId}`;
+            });
+        });
+
+        // Система уведомлений
+        window.showNotification = function(message, type = 'info') {
+            const notificationContainer = document.createElement('div');
+            notificationContainer.className = `notification ${type}`;
+
+            let iconClass = 'bi-info-circle';
+            let title = 'Информация';
+
+            if (type === 'success') {
+                iconClass = 'bi-check-circle';
+                title = 'Успешно';
+            } else if (type === 'error') {
+                iconClass = 'bi-exclamation-circle';
+                title = 'Ошибка';
+            }
+
+            notificationContainer.innerHTML = `
+                <div class="notification-icon">
+                    <i class="bi ${iconClass}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <p class="notification-message">${message}</p>
+                </div>
+            `;
+
+            document.body.appendChild(notificationContainer);
+
+            setTimeout(() => {
+                notificationContainer.remove();
+            }, 4500);
+        };
+    });
+
+    // Функция для обновления URL без параметров поиска
+    function RemoveSearchParam(param) {
+        const url = new URL(window.location.href);
+
+        if (Array.isArray(param)) {
+            param.forEach(p => url.searchParams.delete(p));
+        } else {
+            url.searchParams.delete(param);
+        }
+
+        return url.toString();
+    }
+</script>

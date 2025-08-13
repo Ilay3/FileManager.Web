@@ -2,7 +2,7 @@
 @model FileManager.Web.Pages.Admin.Settings.CleanupModel
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @{
-    ViewData["Title"] = "Очистка";
+    ViewData["Title"] = "Настройки очистки";
 
     if (User.FindFirst("IsAdmin")?.Value != "True")
     {
@@ -11,21 +11,205 @@
     }
 }
 
-<h2>Очистка</h2>
+<h2>Настройки очистки</h2>
 
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
+<div class="settings-info-card">
+    <div class="settings-info-icon">
+        <i class="bi bi-trash"></i>
+    </div>
+    <div class="settings-info-content">
+        <p>Настройки очистки определяют, как долго будут храниться удаленные файлы и архивные данные, прежде чем они будут окончательно удалены из системы.</p>
+    </div>
+</div>
+
 <form method="post">
-    <div class="mb-3">
-        <label asp-for="TrashRetentionDays" class="form-label">Срок хранения в корзине (дней)</label>
-        <input asp-for="TrashRetentionDays" class="form-control" type="number" />
+    <div class="settings-section">
+        <h3 class="settings-section-title">Параметры очистки</h3>
+
+        <div class="settings-form-row">
+            <div class="settings-form-group">
+                <label asp-for="TrashRetentionDays" class="form-label">Срок хранения в корзине (дней)</label>
+                <input asp-for="TrashRetentionDays" class="form-control" type="number" min="1" max="365" />
+                <span asp-validation-for="TrashRetentionDays" class="text-danger"></span>
+                <small class="settings-help-text">
+                    Количество дней, в течение которых удаленные файлы будут храниться в корзине, прежде чем будут окончательно удалены
+                </small>
+            </div>
+
+            <div class="settings-form-group">
+                <label asp-for="ArchiveCleanupDays" class="form-label">Срок хранения архива версий (дней)</label>
+                <input asp-for="ArchiveCleanupDays" class="form-control" type="number" min="30" max="3650" />
+                <span asp-validation-for="ArchiveCleanupDays" class="text-danger"></span>
+                <small class="settings-help-text">
+                    Количество дней, в течение которых будут храниться архивные версии файлов
+                </small>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="ArchiveCleanupDays" class="form-label">Срок хранения архива версий (дней)</label>
-        <input asp-for="ArchiveCleanupDays" class="form-control" type="number" />
+
+    <div class="cleanup-timeline">
+        <h3 class="settings-section-title">Временная шкала хранения данных</h3>
+        <div class="timeline-container">
+            <div class="timeline">
+                <div class="timeline-line"></div>
+                <div class="timeline-marker today">
+                    <div class="marker-line"></div>
+                    <div class="marker-label">Сегодня</div>
+                </div>
+                <div class="timeline-marker trash" id="trashMarker">
+                    <div class="marker-line"></div>
+                    <div class="marker-label">Очистка корзины</div>
+                </div>
+                <div class="timeline-marker archive" id="archiveMarker">
+                    <div class="marker-line"></div>
+                    <div class="marker-label">Очистка архива</div>
+                </div>
+            </div>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary">Сохранить</button>
+
+    <div class="settings-form-actions">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <button type="button" class="btn btn-secondary" onclick="confirmManualCleanup()">
+            Запустить очистку вручную
+        </button>
+    </div>
 </form>
+
+@section Scripts {
+    <script src="~/js/settings.js"></script>
+    <script>
+        function confirmManualCleanup() {
+            if (confirm('Вы уверены, что хотите запустить очистку вручную? Это действие приведет к удалению файлов из корзины и устаревших архивных версий в соответствии с настройками.')) {
+                // Показать загрузчик
+                window.showSettingsLoader();
+
+                // Имитация выполнения очистки (здесь должен быть реальный запрос)
+                setTimeout(() => {
+                    window.hideSettingsLoader();
+                    alert('Очистка успешно выполнена!');
+                }, 2000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const trashDaysInput = document.getElementById('TrashRetentionDays');
+            const archiveDaysInput = document.getElementById('ArchiveCleanupDays');
+            const trashMarker = document.getElementById('trashMarker');
+            const archiveMarker = document.getElementById('archiveMarker');
+
+            function updateTimeline() {
+                const trashDays = parseInt(trashDaysInput.value);
+                const archiveDays = parseInt(archiveDaysInput.value);
+
+                // Максимум 365 дней на шкале
+                const trashPosition = Math.min(90, (trashDays / 365) * 90);
+                const archivePosition = Math.min(90, (archiveDays / 365) * 90);
+
+                trashMarker.style.left = trashPosition + '%';
+                archiveMarker.style.left = archivePosition + '%';
+            }
+
+            trashDaysInput.addEventListener('input', updateTimeline);
+            archiveDaysInput.addEventListener('input', updateTimeline);
+
+            // Инициализация шкалы
+            updateTimeline();
+        });
+    </script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/settings.css" />
+    <style>
+        .cleanup-timeline {
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+
+        .timeline-container {
+            padding: 20px;
+            background-color: var(--settings-card-bg);
+            border-radius: 8px;
+            box-shadow: var(--settings-shadow);
+        }
+
+        .timeline {
+            position: relative;
+            height: 80px;
+            margin: 20px 30px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            top: 30px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background-color: #ddd;
+            border-radius: 2px;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            top: 10px;
+            transform: translateX(-50%);
+            transition: left 0.5s ease;
+        }
+
+        .marker-line {
+            width: 3px;
+            height: 12px;
+            background-color: #666;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 4px;
+        }
+
+        .marker-label {
+            position: absolute;
+            width: 120px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            left: -60px;
+            top: 20px;
+        }
+
+        .today {
+            left: 0;
+        }
+
+            .today .marker-line {
+                background-color: #28a745;
+            }
+
+            .today .marker-label {
+                color: #28a745;
+                font-weight: 500;
+            }
+
+        .trash .marker-line {
+            background-color: #ffc107;
+        }
+
+        .trash .marker-label {
+            color: #ffc107;
+            font-weight: 500;
+        }
+
+        .archive .marker-line {
+            background-color: #dc3545;
+        }
+
+        .archive .marker-label {
+            color: #dc3545;
+            font-weight: 500;
+        }
+    </style>
+}

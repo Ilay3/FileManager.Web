@@ -11,57 +11,299 @@
     }
 }
 
-<h2>Создание пользователя</h2>
+<div class="admin-container">
+    <div class="d-flex align-items-center mb-4">
+        <a href="/Admin/Users" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 mb-0">Создание пользователя</h1>
+            <p class="text-muted small mb-0">Добавление нового пользователя в систему</p>
+        </div>
+    </div>
 
-<form id="createUserForm" class="mb-3">
-    <div class="form-group">
-        <label for="email">Эл. почта</label>
-        <input type="email" id="email" class="form-control" required />
+    <div class="row">
+        <div class="col-lg-8 col-md-10">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form id="createUserForm" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" id="email" class="form-control" required />
+                                <div class="invalid-feedback">Введите корректный email</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fullName" class="form-label">ФИО <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" id="fullName" class="form-control" required />
+                                <div class="invalid-feedback">Введите ФИО пользователя</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Пароль <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                <input type="password" id="password" class="form-control" required />
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <div class="invalid-feedback">Введите пароль</div>
+                            </div>
+                            <div class="password-strength mt-2 d-none" id="passwordStrength">
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar" id="passwordStrengthBar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <small class="text-muted" id="passwordStrengthText">Слабый пароль</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="department" class="form-label">Отдел</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-building"></i></span>
+                                <input type="text" id="department" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" id="isAdmin" class="form-check-input" />
+                                <label class="form-check-label" for="isAdmin">Администратор</label>
+                            </div>
+                            <small class="text-muted">Администраторы имеют полный доступ к системе и настройкам</small>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/Admin/Users" class="btn btn-outline-secondary">Отмена</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-person-plus me-2"></i>Создать пользователя
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="alert alert-success d-flex align-items-center mt-3 fade" role="alert" id="successAlert">
+                <i class="bi bi-check-circle-fill me-2 flex-shrink-0"></i>
+                <div>
+                    Пользователь успешно создан
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-10 mt-4 mt-lg-0">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h5 class="card-title">Информация</h5>
+                    <p class="card-text">При создании пользователя:</p>
+                    <ul class="ps-3">
+                        <li>Email используется для входа в систему</li>
+                        <li>Пароль должен содержать минимум 8 символов</li>
+                        <li>Рекомендуется использовать сложные пароли</li>
+                        <li>Отдел используется для группировки пользователей</li>
+                    </ul>
+                    <hr>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-shield-lock text-warning me-2"></i>
+                        <small>Права администратора позволяют управлять всей системой</small>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="form-group">
-        <label for="fullName">ФИО</label>
-        <input type="text" id="fullName" class="form-control" required />
-    </div>
-    <div class="form-group">
-        <label for="password">Пароль</label>
-        <input type="password" id="password" class="form-control" required />
-    </div>
-    <div class="form-group">
-        <label for="department">Отдел</label>
-        <input type="text" id="department" class="form-control" />
-    </div>
-    <div class="form-group form-check">
-        <input type="checkbox" id="isAdmin" class="form-check-input" />
-        <label class="form-check-label" for="isAdmin">Администратор</label>
-    </div>
-    <button type="submit" class="btn btn-primary">Создать</button>
-</form>
-<div id="result" class="text-success"></div>
+</div>
 
 <script>
-const form = document.getElementById('createUserForm');
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
-        email: document.getElementById('email').value,
-        fullName: document.getElementById('fullName').value,
-        password: document.getElementById('password').value,
-        department: document.getElementById('department').value || null,
-        isAdmin: document.getElementById('isAdmin').checked
-    };
-    const res = await fetchWithProgress('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        credentials: 'include'
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('createUserForm');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const passwordStrength = document.getElementById('passwordStrength');
+        const passwordStrengthBar = document.getElementById('passwordStrengthBar');
+        const passwordStrengthText = document.getElementById('passwordStrengthText');
+        const successAlert = document.getElementById('successAlert');
+
+        // Показать/скрыть пароль
+        togglePasswordBtn.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            togglePasswordBtn.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+        });
+
+        // Проверка силы пароля
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            let feedback = '';
+
+            if (password.length > 0) {
+                passwordStrength.classList.remove('d-none');
+
+                // Проверка длины
+                if (password.length >= 8) strength += 25;
+
+                // Проверка наличия букв верхнего и нижнего регистра
+                if (password.match(/[a-z]+/) && password.match(/[A-Z]+/)) strength += 25;
+
+                // Проверка наличия цифр
+                if (password.match(/[0-9]+/)) strength += 25;
+
+                // Проверка наличия спецсимволов
+                if (password.match(/[^a-zA-Z0-9]+/)) strength += 25;
+
+                // Установка цвета индикатора
+                let barColor = '';
+                if (strength <= 25) {
+                    barColor = '#dc3545'; // Красный (слабый)
+                    feedback = 'Слабый пароль';
+                } else if (strength <= 50) {
+                    barColor = '#ffc107'; // Желтый (средний)
+                    feedback = 'Средний пароль';
+                } else if (strength <= 75) {
+                    barColor = '#0dcaf0'; // Голубой (хороший)
+                    feedback = 'Хороший пароль';
+                } else {
+                    barColor = '#198754'; // Зеленый (сильный)
+                    feedback = 'Сильный пароль';
+                }
+
+                passwordStrengthBar.style.width = strength + '%';
+                passwordStrengthBar.style.backgroundColor = barColor;
+                passwordStrengthText.textContent = feedback;
+            } else {
+                passwordStrength.classList.add('d-none');
+            }
+        });
+
+        // Отправка формы
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Проверка валидации формы
+            if (!form.checkValidity()) {
+                e.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+
+            const payload = {
+                email: document.getElementById('email').value,
+                fullName: document.getElementById('fullName').value,
+                password: document.getElementById('password').value,
+                department: document.getElementById('department').value || null,
+                isAdmin: document.getElementById('isAdmin').checked
+            };
+
+            try {
+                showLoader();
+                const res = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    credentials: 'include'
+                });
+
+                if (res.ok) {
+                    form.reset();
+                    form.classList.remove('was-validated');
+                    passwordStrength.classList.add('d-none');
+
+                    // Показываем уведомление об успехе
+                    successAlert.classList.add('show');
+                    setTimeout(() => {
+                        successAlert.classList.remove('show');
+                    }, 5000);
+                } else {
+                    const errorText = await res.text();
+                    showNotification('Ошибка: ' + errorText, 'error');
+                }
+            } catch (error) {
+                console.error('Error creating user:', error);
+                showNotification('Ошибка при создании пользователя', 'error');
+            } finally {
+                hideLoader();
+            }
+        });
     });
-    if (res.ok) {
-        form.reset();
-        document.getElementById('result').textContent = 'Пользователь создан';
-    } else {
-        const text = await res.text();
-        alert('Ошибка: ' + text);
+
+    // Функция для отображения уведомлений
+    function showNotification(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} d-flex align-items-center alert-dismissible fade show position-fixed`;
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            <i class="bi bi-${type === 'error' ? 'exclamation-circle' : 'check-circle'}-fill me-2"></i>
+            <div>${message}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+
+        document.body.appendChild(alertDiv);
+
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
     }
-});
 </script>
 
+<style>
+    .admin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .card {
+        border-radius: 8px;
+        transition: box-shadow 0.3s;
+    }
+
+        .card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+        }
+
+    .form-check-input {
+        cursor: pointer;
+    }
+
+    .form-switch .form-check-input {
+        width: 36px;
+        height: 20px;
+    }
+
+        .form-switch .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+    .input-group-text {
+        background-color: #f8f9fa;
+    }
+
+    .alert {
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .alert-success {
+        background-color: #d1e7dd;
+        border-color: #a3cfbb;
+        color: #0f5132;
+    }
+
+    @@media (max-width: 768px) {
+        .card-body
+
+    {
+        padding: 20px;
+    }
+
+    }
+</style>

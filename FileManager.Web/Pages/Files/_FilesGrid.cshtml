@@ -8,126 +8,526 @@
 
 @if (Model.Any())
 {
-    <div class="sort-controls">
-        <span>Сортировка:</span>
-        <a href="javascript:void(0)" onclick="sortBy('name')" class="sort-link @(search?.SortBy == "name" ? "active" : "")">
-            По имени@(search?.SortBy == "name" ? (search?.SortDirection == "asc" ? " ↑" : " ↓") : "")</a>
-        <a href="javascript:void(0)" onclick="sortBy('date')" class="sort-link @(search?.SortBy == "date" ? "active" : "")">
-            По дате@(search?.SortBy == "date" ? (search?.SortDirection == "asc" ? " ↑" : " ↓") : "")</a>
-        <a href="javascript:void(0)" onclick="sortBy('size')" class="sort-link @(search?.SortBy == "size" ? "active" : "")">
-            По размеру@(search?.SortBy == "size" ? (search?.SortDirection == "asc" ? " ↑" : " ↓") : "")</a>
-        <a href="javascript:void(0)" onclick="sortBy('type')" class="sort-link @(search?.SortBy == "type" ? "active" : "")">
-            По типу@(search?.SortBy == "type" ? (search?.SortDirection == "asc" ? " ↑" : " ↓") : "")</a>
-    </div>
-
-    @if (search != null &&
-        (!string.IsNullOrEmpty(search.SearchTerm) || search.FileType.HasValue ||
-         search.DateFrom.HasValue || search.DateTo.HasValue ||
-         search.MinSizeBytes.HasValue || search.MaxSizeBytes.HasValue))
-    {
-        <div class="current-filter mb-2">
-            <span>Фильтр:</span>
-            <span>
-                @if (!string.IsNullOrEmpty(search.SearchTerm))
-                {
-                    <text>поиск "@search.SearchTerm"; </text>
-                }
-                @if (search.FileType.HasValue)
-                {
-                    <text>тип @search.FileType; </text>
-                }
-                @if (search.DateFrom.HasValue || search.DateTo.HasValue)
-                {
-                    <text>дата @search.DateFrom?.ToString("dd.MM.yyyy") - @search.DateTo?.ToString("dd.MM.yyyy"); </text>
-                }
-                @if (search.MinSizeBytes.HasValue || search.MaxSizeBytes.HasValue)
-                {
-                    var minSize = search.MinSizeBytes.HasValue ? FormatSize(search.MinSizeBytes.Value) : "0";
-                    var maxSize = search.MaxSizeBytes.HasValue ? FormatSize(search.MaxSizeBytes.Value) : "∞";
-                    <text>размер @minSize - @maxSize; </text>
-                }
-            </span>
-            <a href="?folderId=@ViewContext.HttpContext.Request.Query["folderId"]" class="btn btn-link btn-sm">Сбросить</a>
-        </div>
-    }
-
-    <div class="files-grid">
-    @foreach (var item in Model)
-    {
-        if (item.Type == "folder")
+    <div class="files-grid grid-mode">
+        @foreach (var item in Model)
         {
-            <div class="file-card explorer-item" data-type="folder" data-id="@item.Id" data-name="@item.Name">
-                <div class="file-card-icon">
-                    <img src="~/images/file-icons/@(item.IconName).svg" class="file-icon" alt="" />
-                    @if (item.IsNetworkAvailable)
+            var iconPath = $"/images/file-icons/{item.IconName}.svg";
+            var itemClasses = item.Type == "folder" ?
+            "explorer-item folder-item" :
+            "explorer-item file-item";
+
+            <div class="@itemClasses" data-type="@item.Type" data-id="@item.Id" data-name="@item.Name">
+                <!-- Сетка -->
+                <div class="grid-content fade-in">
+                    @if (item.Type != "folder")
                     {
-                        <i class="bi bi-cloud-check network-icon"></i>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" class="file-checkbox" data-id="@item.Id">
+                            <span class="checkmark"></span>
+                        </div>
                     }
+
+                    <div class="icon-container">
+                        <img src="@iconPath" class="item-icon" alt="">
+                        @if (item.IsNetworkAvailable)
+                        {
+                            <i class="bi bi-cloud-check network-status" title="Доступно в сети"></i>
+                        }
+                    </div>
+
+                    <div class="item-details">
+                        <h4 class="item-name" title="@item.Name">@item.Name</h4>
+
+                        @if (item.Type == "folder")
+                        {
+                            <div class="item-meta">
+                                <span class="item-count">@item.ItemsCount элементов</span>
+                                <span class="item-date">@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy"))</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="item-meta">
+                                <span class="item-size">@FormatSize(item.SizeBytes ?? 0)</span>
+                                <span class="item-date">@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy"))</span>
+                            </div>
+                            <div class="item-owner">
+                                <span class="item-user">@item.UploadedByName</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="item-actions">
+                        @if (item.Type == "folder")
+                        {
+                            <button class="action-btn" onclick="openFolder('@item.Id')" title="Открыть папку">
+                                <i class="bi bi-folder2-open"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="action-btn" onclick="previewFile('@item.Id')" title="Просмотр">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="action-btn" onclick="downloadFile('@item.Id')" title="Скачать">
+                                <i class="bi bi-download"></i>
+                            </button>
+                        }
+                        
+
+                    </div>
                 </div>
-                <div class="file-card-content">
-                    <h4 class="file-card-title" title="@item.Name">@item.Name</h4>
-                    <p class="file-card-info">
-                        <span class="file-date">@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy"))</span>
-                    </p>
-                    <p class="file-card-author">@item.UploadedByName</p>
+
+                <!-- Список -->
+                <div class="list-content fade-in">
+                    <div class="d-flex align-items-center w-100">
+                        @if (item.Type != "folder")
+                        {
+                            <div class="checkbox-wrapper me-2">
+                                <input type="checkbox" class="file-checkbox" data-id="@item.Id">
+                                <span class="checkmark"></span>
+                            </div>
+                        }
+
+                        <div class="item-icon-small me-2">
+                            <img src="@iconPath" alt="" class="icon-sm">
+                        </div>
+
+                        <div class="item-name-container">
+                            <span class="item-name-text" title="@item.Name">@item.Name</span>
+                        </div>
+
+                        <div class="item-type ms-auto me-3 d-none d-md-block">
+                            @if (item.Type == "folder")
+                            {
+                                <span>Папка</span>
+                            }
+                            else
+                            {
+                                <span>@item.Extension</span>
+                            }
+                        </div>
+
+                        <div class="item-size-sm me-3 d-none d-md-block">
+                            @if (item.Type != "folder")
+                            {
+                                <span>@FormatSize(item.SizeBytes ?? 0)</span>
+                            }
+                            else
+                            {
+                                <span>@item.ItemsCount элем.</span>
+                            }
+                        </div>
+
+                        <div class="item-date-sm me-3 d-none d-sm-block">
+                            <span>@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy"))</span>
+                        </div>
+
+                        <div class="item-actions-list">
+                            @if (item.Type == "folder")
+                            {
+                                <button class="action-btn-sm" onclick="openFolder('@item.Id')" title="Открыть папку">
+                                    <i class="bi bi-folder2-open"></i>
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="action-btn-sm" onclick="previewFile('@item.Id')" title="Просмотр">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="action-btn-sm" onclick="downloadFile('@item.Id')" title="Скачать">
+                                    <i class="bi bi-download"></i>
+                                </button>
+                            }
+                          
+                        </div>
+                    </div>
                 </div>
             </div>
         }
-        else
-        {
-            <div class="file-card explorer-item" data-type="file" data-id="@item.Id" data-name="@item.Name">
-                <div class="file-card-icon">
-                    <img src="~/images/file-icons/@(item.IconName).svg" class="file-icon" alt="" />
-                    @if (item.IsNetworkAvailable)
-                    {
-                        <i class="bi bi-cloud-check network-icon"></i>
-                    }
-                </div>
-                <div class="file-card-content">
-                    <h4 class="file-card-title" title="@item.Name">@item.Name</h4>
-                    <p class="file-card-info">
-                        <span class="file-size">@FormatSize(item.SizeBytes ?? 0)</span>
-                        <span class="file-date">@((item.UpdatedAt ?? item.CreatedAt).ToString("dd.MM.yyyy"))</span>
-                    </p>
-                    <p class="file-card-author">@item.UploadedByName</p>
-                </div>
-            </div>
-        }
-    }
     </div>
 }
 else
 {
-    <div class="empty-state">
-        <div style="font-size: 64px; margin-bottom: 20px;"><i class="bi bi-file-earmark"></i></div>
+    <div class="empty-state fade-in">
+        <div class="empty-icon">
+            <i class="bi bi-folder-x"></i>
+        </div>
         <h3>Файлы не найдены</h3>
-        <p style="color: #999; margin-bottom: 30px;">
-        @if (!string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["SearchRequest.SearchTerm"]))
-        {
-            <span>По вашему запросу ничего не найдено. Попробуйте изменить критерии поиска.</span>
-        }
-        else
-        {
-            <span>В данной папке пока нет файлов. Загрузите первый файл, чтобы начать работу.</span>
-        }
+        <p>
+            @if (!string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["SearchRequest.SearchTerm"]))
+            {
+                <span>По вашему запросу ничего не найдено. Попробуйте изменить критерии поиска.</span>
+            }
+            else
+            {
+                <span>В данной папке пока нет файлов. Загрузите первый файл, чтобы начать работу.</span>
+            }
         </p>
-        @{ var currentFolder = ViewContext.HttpContext.Request.Query["folderId"].ToString(); }
+        @{
+            var currentFolder = ViewContext.HttpContext.Request.Query["folderId"].ToString();
+        }
         <button class="btn btn-primary" onclick="openUploadModal('@currentFolder')">
-            <i class="bi bi-upload"></i> Загрузить файл
+            <i class="bi bi-upload me-2"></i> Загрузить файл
         </button>
     </div>
 }
 
+<style>
+    /* Стили для сетки файлов */
+    .files-grid {
+        display: grid;
+        gap: 16px;
+        transition: all 0.3s ease;
+    }
+
+        /* Режим сетки */
+        .files-grid.grid-mode {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        }
+
+            .files-grid.grid-mode .list-content {
+                display: none;
+            }
+
+        /* Режим списка */
+        .files-grid.list-mode {
+            grid-template-columns: 1fr;
+        }
+
+            .files-grid.list-mode .grid-content {
+                display: none;
+            }
+
+            .files-grid.list-mode .list-content {
+                display: flex;
+            }
+
+    /* Стили элементов */
+    .explorer-item {
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.2s ease;
+        background-color: #fff;
+        position: relative;
+    }
+
+    /* Стили для режима сетки */
+    .grid-content {
+        padding: 16px;
+        text-align: center;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+    }
+
+    .folder-item .grid-content {
+        border-color: #e1f0ff;
+        background-color: #f8fbff;
+    }
+
+    .explorer-item:hover .grid-content {
+        border-color: #0d6efd;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+
+    .icon-container {
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        position: relative;
+    }
+
+    .item-icon {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+    }
+
+    .network-status {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        font-size: 14px;
+        color: #0d6efd;
+    }
+
+    .item-details {
+        width: 100%;
+        flex-grow: 1;
+        margin-bottom: 12px;
+    }
+
+    .item-name {
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #212529;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+        height: 2.8em;
+    }
+
+    .item-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 4px;
+    }
+
+    .item-owner {
+        font-size: 12px;
+        color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .item-actions {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .explorer-item:hover .item-actions {
+        opacity: 1;
+    }
+
+    .action-btn {
+        background: none;
+        border: none;
+        padding: 6px;
+        border-radius: 4px;
+        color: #6c757d;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .action-btn:hover {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+
+    /* Стили для режима списка */
+    .list-content {
+        padding: 12px 16px;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+    }
+
+    .folder-item .list-content {
+        border-color: #e1f0ff;
+        background-color: #f8fbff;
+    }
+
+    .explorer-item:hover .list-content {
+        border-color: #0d6efd;
+        background-color: #f8fbff;
+    }
+
+    .item-icon-small {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .icon-sm {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+    }
+
+    .item-name-container {
+        flex-grow: 1;
+        overflow: hidden;
+    }
+
+    .item-name-text {
+        font-size: 14px;
+        font-weight: 500;
+        color: #212529;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .item-type, .item-size-sm, .item-date-sm {
+        font-size: 13px;
+        color: #6c757d;
+        white-space: nowrap;
+    }
+
+    .item-actions-list {
+        display: flex;
+        gap: 4px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .explorer-item:hover .item-actions-list {
+        opacity: 1;
+    }
+
+    .action-btn-sm {
+        background: none;
+        border: none;
+        padding: 4px;
+        border-radius: 4px;
+        color: #6c757d;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .action-btn-sm:hover {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+
+    /* Чекбоксы */
+    .checkbox-wrapper {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 2;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .files-grid.list-mode .checkbox-wrapper {
+        position: relative;
+        top: auto;
+        right: auto;
+        opacity: 1;
+    }
+
+    .explorer-item:hover .checkbox-wrapper {
+        opacity: 1;
+    }
+
+    .file-checkbox {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #dee2e6;
+        border-radius: 4px;
+        outline: none;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+
+        .file-checkbox:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+            .file-checkbox:checked::after {
+                content: '';
+                position: absolute;
+                top: 2px;
+                left: 5px;
+                width: 5px;
+                height: 10px;
+                border: solid white;
+                border-width: 0 2px 2px 0;
+                transform: rotate(45deg);
+            }
+
+    /* Пустое состояние */
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        background-color: #fff;
+        border-radius: 8px;
+        border: 1px dashed #dee2e6;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        color: #dee2e6;
+        margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 24px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Анимации */
+    .fade-in {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+
+    }
+
+    /* Медиа-запросы */
+    @@media (max-width: 576px) {
+        .files-grid.grid-mode
+
+    {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    }
+</style>
+
 <script>
-    function sortBy(field) {
-        const params = new URLSearchParams(window.location.search);
-        const currentSort = params.get('SearchRequest.SortBy');
-        const currentDirection = params.get('SearchRequest.SortDirection') || 'asc';
-        const newDirection = (currentSort === field && currentDirection === 'asc') ? 'desc' : 'asc';
-        params.set('SearchRequest.SortBy', field);
-        params.set('SearchRequest.SortDirection', newDirection);
-        params.set('SearchRequest.Page', '1');
-        window.location.search = params.toString();
+    function openFolder(folderId) {
+        window.location.href = `?folderId=${folderId}`;
+    }
+
+    function previewFile(fileId) {
+        window.location.href = `/Files/Preview/${fileId}`;
+    }
+
+    function downloadFile(fileId) {
+        window.location.href = `/api/files/${fileId}/content`;
+    }
+
+    function openUploadModal(folderId) {
+        // Этот код будет работать, если модальное окно загрузки уже загружено и имеет соответствующую функцию
+        if (typeof window.openUploadModal === 'function') {
+            window.openUploadModal(folderId);
+        } else {
+            window.location.href = `/Files/Upload?folderId=${folderId}`;
+        }
     }
 </script>
 
