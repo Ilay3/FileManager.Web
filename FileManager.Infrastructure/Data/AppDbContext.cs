@@ -18,7 +18,6 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<FileVersion> FileVersions => Set<FileVersion>();
     public DbSet<AccessRule> AccessRules => Set<AccessRule>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
-    public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<FileEditSession> FileEditSessions => Set<FileEditSession>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
 
