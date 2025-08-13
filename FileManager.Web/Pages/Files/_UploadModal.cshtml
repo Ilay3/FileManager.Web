@@ -64,7 +64,7 @@
 
     async function refreshCsrfToken() {
         try {
-            const response = await fetch('/api/upload/token', { credentials: 'include' });
+            const response = await fetchWithProgress('/api/upload/token', { credentials: 'include' });
             if (response.ok) {
                 const data = await response.json();
                 const input = document.querySelector('#uploadModal input[name="__RequestVerificationToken"]');
@@ -117,7 +117,7 @@
     // Загрузка доступных папок
     async function loadAvailableFolders(selectedId = null) {
         try {
-            const response = await fetch('/api/upload/folders', {
+            const response = await fetchWithProgress('/api/upload/folders', {
                 credentials: 'include'
             });
             if (response.ok) {
@@ -231,7 +231,7 @@
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         try {
-            const response = await fetch('/api/upload/validate', {
+            const response = await fetchWithProgress('/api/upload/validate', {
                 method: 'POST',
                 body: formData,
                 credentials: 'include',

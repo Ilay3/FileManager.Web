@@ -81,7 +81,7 @@
 
     async function refreshCsrfToken() {
         try {
-            const response = await fetch('/api/upload/token', { credentials: 'include' });
+            const response = await fetchWithProgress('/api/upload/token', { credentials: 'include' });
             if (response.ok) {
                 const data = await response.json();
                 const input = document.querySelector('input[name="__RequestVerificationToken"]');
@@ -190,7 +190,7 @@
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         try {
-            const response = await fetch('/api/upload/validate', {
+            const response = await fetchWithProgress('/api/upload/validate', {
                 method: 'POST',
                 body: formData,
                 credentials: 'include',

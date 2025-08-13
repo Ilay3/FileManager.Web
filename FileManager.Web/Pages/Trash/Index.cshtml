@@ -37,7 +37,7 @@
 async function restoreItem(id, type) {
     const url = type === 'file' ? `/api/trash/restore/file/${id}` : `/api/trash/restore/folder/${id}`;
     try {
-        const res = await fetch(url, { method: 'POST', credentials: 'include' });
+        const res = await fetchWithProgress(url, { method: 'POST', credentials: 'include' });
         if (!res.ok) {
             const message = await res.text();
             alert(message || 'Не удалось восстановить объект');
@@ -55,7 +55,7 @@ async function deleteItem(id, type) {
     if (!confirm('Удалить окончательно?')) return;
     const url = type === 'file' ? `/api/trash/file/${id}` : `/api/trash/folder/${id}`;
     try {
-        const res = await fetch(url, { method: 'DELETE', credentials: 'include' });
+        const res = await fetchWithProgress(url, { method: 'DELETE', credentials: 'include' });
         if (!res.ok) {
             const message = await res.text();
             alert(message || 'Не удалось удалить объект');

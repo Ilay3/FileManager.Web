@@ -21,12 +21,12 @@
 
 <script>
 async function loadGroups() {
-    const res = await fetch('/api/groups', { credentials: 'include' });
+    const res = await fetchWithProgress('/api/groups', { credentials: 'include' });
     const groups = res.ok ? await res.json() : [];
     const container = document.getElementById('groupsContainer');
     container.innerHTML = '';
     for (const g of groups) {
-        const detailsRes = await fetch(`/api/groups/${g.id}`, { credentials: 'include' });
+        const detailsRes = await fetchWithProgress(`/api/groups/${g.id}`, { credentials: 'include' });
         const details = detailsRes.ok ? await detailsRes.json() : null;
         const div = document.createElement('div');
         div.className = 'group-item';
@@ -48,7 +48,7 @@ async function loadGroups() {
 }
 
 async function loadAvailableUsers(groupId, existing) {
-    const res = await fetch('/api/users', { credentials: 'include' });
+    const res = await fetchWithProgress('/api/users', { credentials: 'include' });
     const users = res.ok ? await res.json() : [];
     const select = document.getElementById(`select-${groupId}`);
     select.innerHTML = users
@@ -60,7 +60,7 @@ async function loadAvailableUsers(groupId, existing) {
 async function createGroup(e) {
     e.preventDefault();
     const name = document.getElementById('groupName').value;
-    await fetch('/api/groups', {
+    await fetchWithProgress('/api/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
@@ -73,17 +73,17 @@ async function createGroup(e) {
 async function addUser(groupId) {
     const userId = document.getElementById(`select-${groupId}`).value;
     if (!userId) return;
-    await fetch(`/api/groups/${groupId}/users/${userId}`, { method: 'POST', credentials: 'include' });
+    await fetchWithProgress(`/api/groups/${groupId}/users/${userId}`, { method: 'POST', credentials: 'include' });
     await loadGroups();
 }
 
 async function removeUser(groupId, userId) {
-    await fetch(`/api/groups/${groupId}/users/${userId}`, { method: 'DELETE', credentials: 'include' });
+    await fetchWithProgress(`/api/groups/${groupId}/users/${userId}`, { method: 'DELETE', credentials: 'include' });
     await loadGroups();
 }
 
 async function deleteGroup(groupId) {
-    await fetch(`/api/groups/${groupId}`, { method: 'DELETE', credentials: 'include' });
+    await fetchWithProgress(`/api/groups/${groupId}`, { method: 'DELETE', credentials: 'include' });
     await loadGroups();
 }
 

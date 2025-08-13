@@ -43,7 +43,7 @@
     window.closeNotificationModal = closeNotificationModal;
 
     async function loadNotificationUsers() {
-        const res = await fetch('/api/users', { credentials: 'include' });
+        const res = await fetchWithProgress('/api/users', { credentials: 'include' });
         const users = res.ok ? await res.json() : [];
         users.sort((a,b) => a.fullName.localeCompare(b.fullName, 'ru'));
         const list = document.getElementById('notifyUsersList');
@@ -63,7 +63,7 @@
             return;
         }
         const description = document.getElementById('notifyMessage').value;
-        const res = await fetch('/api/notifications', {
+        const res = await fetchWithProgress('/api/notifications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',

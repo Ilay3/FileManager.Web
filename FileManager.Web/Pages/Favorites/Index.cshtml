@@ -24,7 +24,7 @@
 <script>
 async function removeFavorite(id, type) {
     const url = type === 'file' ? `/api/favorites/files/${id}` : `/api/favorites/folders/${id}`;
-    const response = await fetch(url, { method: 'DELETE', credentials: 'include' });
+    const response = await fetchWithProgress(url, { method: 'DELETE', credentials: 'include' });
     if (response.ok) {
         alert('Элемент удален из избранного');
         location.reload();
