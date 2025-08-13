@@ -12,7 +12,7 @@ namespace FileManager.Application.Interfaces
         Task SendAccountLockedEmailAsync(string email, string userName, string reason);
         Task SendWelcomeEmailAsync(string email, string userName, string temporaryPassword);
         Task SendEmailConfirmationAsync(string email, string userName, string code);
-        Task SendFileChangeNotificationAsync(List<string> recipients, string description);
+        Task<List<string>> SendFileChangeNotificationAsync(List<string> recipients, string description);
     }
 
 }
