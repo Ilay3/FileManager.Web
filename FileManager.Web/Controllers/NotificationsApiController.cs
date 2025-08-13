@@ -1,6 +1,8 @@
 using FileManager.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 
 namespace FileManager.Web.Controllers;
@@ -11,17 +13,31 @@ namespace FileManager.Web.Controllers;
 public class NotificationsApiController : ControllerBase
 {
     private readonly IEmailService _emailService;
+    private readonly ILogger<NotificationsApiController> _logger;
 
-    public NotificationsApiController(IEmailService emailService)
+    public NotificationsApiController(IEmailService emailService, ILogger<NotificationsApiController> logger)
     {
         _emailService = emailService;
+        _logger = logger;
     }
 
     [HttpPost]
     public async Task<IActionResult> Send([FromBody] NotificationRequest request)
     {
-        await _emailService.SendFileChangeNotificationAsync(request.Recipients, request.Description);
-        return Ok();
+        try
+        {
+            var failedRecipients = await _emailService.SendFileChangeNotificationAsync(request.Recipients, request.Description);
+            if (failedRecipients.Count > 0)
+            {
+                _logger.LogWarning("Не удалось отправить уведомления на адреса: {Emails}", string.Join(", ", failedRecipients));
+            }
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ошибка при отправке уведомлений");
+            return StatusCode(500, "Не удалось отправить уведомления");
+        }
     }
 
     public class NotificationRequest

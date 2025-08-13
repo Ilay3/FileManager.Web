@@ -79,19 +79,30 @@ public class EmailService : IEmailService
         await SendEmailAsync(email, subject, body);
     }
 
-    public async Task SendFileChangeNotificationAsync(List<string> recipients, string description)
+    public async Task<List<string>> SendFileChangeNotificationAsync(List<string> recipients, string description)
     {
+        var failedRecipients = new List<string>();
+
         if (!_emailOptions.Enabled)
         {
             _logger.LogWarning("Email отправка отключена в настройках");
-            return;
+            return failedRecipients;
         }
 
         var subject = "Изменение файлов";
         foreach (var email in recipients.Distinct())
         {
-            await SendEmailAsync(email, subject, description);
+            try
+            {
+                await SendEmailAsync(email, subject, description);
+            }
+            catch
+            {
+                failedRecipients.Add(email);
+            }
         }
+
+        return failedRecipients;
     }
 
     private async Task SendEmailAsync(string toEmail, string subject, string body)
