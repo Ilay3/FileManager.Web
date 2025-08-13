@@ -1,6 +1,7 @@
 using FileManager.Application.DTOs;
 using FileManager.Application.Interfaces;
 using FileManager.Application.Services;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,9 +22,13 @@ public class UsersApiController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<UserDto>>> GetAll()
+    public async Task<ActionResult<List<UserDto>>> GetAll([FromQuery] Guid? ownerId)
     {
         var users = await _userDtoService.GetAllUsersAsync();
+        if (ownerId.HasValue)
+        {
+            users = users.Where(u => u.Id != ownerId.Value).ToList();
+        }
         return Ok(users);
     }
 
