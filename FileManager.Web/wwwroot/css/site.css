@@ -1745,6 +1745,16 @@ a:hover {
 
 .nav-link { color: var(--text-color); }
 
+/* Анимация появления страницы */
+.fade-enter {
+    opacity: 0;
+}
+
+.fade-enter-active {
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
 /* Модальные окна */
 .modal {
     display: none;
