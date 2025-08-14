@@ -49,7 +49,7 @@ class FilesManager {
                         row?.classList.remove('selected');
                     }
                 });
-                this.updateDownloadButton();
+                this.updateSelectionButtons();
             } else if (e.target.classList.contains('file-select')) {
                 const id = e.target.dataset.fileId;
                 const row = e.target.closest('.explorer-item');
@@ -60,14 +60,16 @@ class FilesManager {
                     this.selectedFiles.delete(id);
                     row?.classList.remove('selected');
                 }
-                this.updateDownloadButton();
+                this.updateSelectionButtons();
             }
         });
     }
 
-    updateDownloadButton() {
-        const btn = document.getElementById('downloadSelected');
-        if (btn) btn.disabled = this.selectedFiles.size === 0;
+    updateSelectionButtons() {
+        const downloadBtn = document.getElementById('downloadSelected');
+        if (downloadBtn) downloadBtn.disabled = this.selectedFiles.size === 0;
+        const deleteBtn = document.getElementById('deleteSelected');
+        if (deleteBtn) deleteBtn.disabled = this.selectedFiles.size === 0;
     }
 
     async downloadSelected() {
@@ -85,6 +87,22 @@ class FilesManager {
             a.download = 'files.zip';
             a.click();
             window.URL.revokeObjectURL(url);
+        }
+    }
+
+    async deleteSelected() {
+        if (this.selectedFiles.size === 0) return;
+        const response = await fetchWithProgress('/api/files/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: Array.from(this.selectedFiles) })
+        });
+        if (response.ok) {
+            this.showNotification('Файлы удалены', 'success');
+            setTimeout(() => location.reload(), 500);
+        } else {
+            const text = await response.text();
+            this.showNotification('Ошибка удаления файлов: ' + text, 'error');
         }
     }
 
@@ -567,6 +585,12 @@ function downloadFile(fileId) {
 function downloadSelected() {
     if (filesManager) {
         filesManager.downloadSelected();
+    }
+}
+
+function deleteSelected() {
+    if (filesManager) {
+        filesManager.deleteSelected();
     }
 }
 

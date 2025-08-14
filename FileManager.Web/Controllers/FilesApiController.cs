@@ -84,6 +84,18 @@ public class FilesApiController : ControllerBase
         return File(stream, "application/zip", "files.zip");
     }
 
+    [HttpPost("delete")]
+    public async Task<IActionResult> DeleteFiles([FromBody] IdsRequest request)
+    {
+        var userId = GetCurrentUserId();
+        var isAdmin = User.FindFirst("IsAdmin")?.Value == "True";
+        foreach (var id in request.Ids)
+        {
+            await _fileService.DeleteFileAsync(id, userId, isAdmin);
+        }
+        return NoContent();
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteFile(Guid id)
     {

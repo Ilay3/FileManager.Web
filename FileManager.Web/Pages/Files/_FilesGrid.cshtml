@@ -22,7 +22,7 @@
                     @if (item.Type != "folder")
                     {
                         <div class="checkbox-wrapper">
-                            <input type="checkbox" class="file-checkbox" data-id="@item.Id">
+                            <input type="checkbox" class="file-select" data-file-id="@item.Id">
                             <span class="checkmark"></span>
                         </div>
                     }
@@ -84,7 +84,7 @@
                         @if (item.Type != "folder")
                         {
                             <div class="checkbox-wrapper me-2">
-                                <input type="checkbox" class="file-checkbox" data-id="@item.Id">
+                                <input type="checkbox" class="file-select" data-file-id="@item.Id">
                                 <span class="checkmark"></span>
                             </div>
                         }
