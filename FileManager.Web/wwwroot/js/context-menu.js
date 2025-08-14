@@ -39,11 +39,27 @@ window.contextMenu = (function () {
                 menu.querySelector('[data-action="properties"]').style.display = 'none';
             }
             menu.style.display = 'block';
-            menu.style.left = e.pageX + 'px';
-            menu.style.top = e.pageY + 'px';
+            let left = e.pageX;
+            let top = e.pageY;
+
+            const menuWidth = menu.offsetWidth;
+            const menuHeight = menu.offsetHeight;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            if (left + menuWidth > viewportWidth) {
+                left = viewportWidth - menuWidth;
+            }
+            if (top + menuHeight > viewportHeight) {
+                top = viewportHeight - menuHeight;
+            }
+
+            menu.style.left = Math.max(0, left) + 'px';
+            menu.style.top = Math.max(0, top) + 'px';
         });
 
         document.addEventListener('click', hideContextMenu);
+        window.addEventListener('resize', hideContextMenu);
 
         const menu = document.getElementById('contextMenu');
         if (menu) {
