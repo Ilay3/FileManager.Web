@@ -603,7 +603,7 @@
 
         // Отслеживание выбора файлов
         document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('file-checkbox')) {
+            if (e.target.classList.contains('file-select')) {
                 updateSelectedFilesPanel();
             }
         });
@@ -611,7 +611,7 @@
         // Очистка выбора
         if (clearSelectionBtn) {
             clearSelectionBtn.addEventListener('click', function() {
-                document.querySelectorAll('.file-checkbox:checked').forEach(checkbox => {
+                document.querySelectorAll('.file-select:checked').forEach(checkbox => {
                     checkbox.checked = false;
                 });
                 updateSelectedFilesPanel();
@@ -634,9 +634,7 @@
             deleteSelectedBtn.addEventListener('click', function() {
                 const selectedFiles = getSelectedFileIds();
                 if (selectedFiles.length > 0 && confirm(`Удалить выбранные файлы (${selectedFiles.length})?`)) {
-                    // Здесь будет логика удаления
-                    showNotification('Файлы успешно удалены', 'success');
-                    updateSelectedFilesPanel();
+                    deleteSelected();
                 }
             });
         }
@@ -670,7 +668,7 @@
 
         // Обновление панели выбранных файлов
         function updateSelectedFilesPanel() {
-            const selectedCheckboxes = document.querySelectorAll('.file-checkbox:checked');
+            const selectedCheckboxes = document.querySelectorAll('.file-select:checked');
             const count = selectedCheckboxes.length;
 
             if (count > 0) {
@@ -689,8 +687,8 @@
 
         // Получение ID выбранных файлов
         function getSelectedFileIds() {
-            return Array.from(document.querySelectorAll('.file-checkbox:checked')).map(checkbox => {
-                return checkbox.getAttribute('data-id');
+            return Array.from(document.querySelectorAll('.file-select:checked')).map(checkbox => {
+                return checkbox.getAttribute('data-file-id');
             });
         }
 
