@@ -24,7 +24,7 @@
         </div>
 
         <div class="card-body">
-            <form id="uploadForm" method="post" enctype="multipart/form-data">
+            <form id="uploadForm" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
 
                 <!-- Выбор папки -->
@@ -97,6 +97,8 @@
     async function initUploadPage() {
         await refreshCsrfToken();
         loadAvailableFolders('@Model.FolderId');
+        const uploadForm = document.getElementById('uploadForm');
+        uploadForm.addEventListener('submit', e => e.preventDefault());
     }
 
     if (document.readyState !== 'loading') {
@@ -317,6 +319,8 @@
     }
 
     async function startUpload() {
+        if (isUploading) return;
+
         const folderId = document.getElementById('uploadFolderSelect').value;
         const comment = document.getElementById('uploadComment').value;
 
@@ -330,8 +334,8 @@
             return;
         }
 
-        document.getElementById('uploadProgress').style.display = 'block';
         isUploading = true;
+        document.getElementById('uploadProgress').style.display = 'block';
         updateUploadButtonState();
         document.getElementById('uploadBtn').disabled = true;
 
@@ -340,7 +344,6 @@
 
         async function uploadNext(index) {
             if (index >= totalFiles) {
-                isUploading = false;
                 showUploadResults(results);
                 return;
             }
@@ -460,6 +463,7 @@
     }
 
     function showUploadResults(results) {
+        isUploading = false;
         const resultsContainer = document.getElementById('uploadResults');
         resultsContainer.style.display = 'block';
         resultsContainer.innerHTML = '<h6 class="mb-3">Результаты загрузки:</h6>';
