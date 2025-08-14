@@ -20,6 +20,7 @@ window.contextMenu = (function () {
                 menu.querySelector('[data-action="download"]').style.display = filesManager.contextItem.type === 'file' ? 'flex' : 'none';
                 menu.querySelector('[data-action="preview"]').style.display = filesManager.contextItem.type === 'file' ? 'flex' : 'none';
                 menu.querySelector('[data-action="edit"]').style.display = filesManager.contextItem.type === 'file' ? 'flex' : 'none';
+                menu.querySelector('[data-action="versions"]').style.display = filesManager.contextItem.type === 'file' ? 'flex' : 'none';
                 menu.querySelector('[data-action="access"]').style.display = 'flex';
                 menu.querySelector('[data-action="add-favorite"]').style.display = 'flex';
                 menu.querySelector('[data-action="delete"]').style.display = 'flex';
@@ -33,6 +34,7 @@ window.contextMenu = (function () {
                 menu.querySelector('[data-action="download"]').style.display = 'none';
                 menu.querySelector('[data-action="preview"]').style.display = 'none';
                 menu.querySelector('[data-action="edit"]').style.display = 'none';
+                menu.querySelector('[data-action="versions"]').style.display = 'none';
                 menu.querySelector('[data-action="access"]').style.display = 'none';
                 menu.querySelector('[data-action="add-favorite"]').style.display = 'none';
                 menu.querySelector('[data-action="delete"]').style.display = 'none';
@@ -98,6 +100,11 @@ window.contextMenu = (function () {
             case 'download':
                 if (type === 'file') {
                     filesManager.downloadFile(id);
+                }
+                break;
+            case 'versions':
+                if (type === 'file') {
+                    window.location.href = `/Files/${id}/Versions`;
                 }
                 break;
             case 'access':
