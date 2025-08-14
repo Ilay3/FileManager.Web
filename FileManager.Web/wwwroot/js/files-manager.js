@@ -297,10 +297,21 @@ class FilesManager {
             return;
         }
         try {
-            const response = await fetchWithProgress(`/api/files/${fileId}`, { method: 'DELETE' });
+            const response = await fetchWithProgress(`/api/files/${fileId}`, { method: 'DELETE', credentials: 'include' });
             if (response.ok) {
                 this.showNotification('Файл удалён', 'success');
-                setTimeout(() => location.reload(), 500);
+                const listItem = document.querySelector(`.explorer-item[data-id="${fileId}"]`);
+                if (listItem) {
+                    listItem.remove();
+                }
+                const treeNode = document.querySelector(`.tree-node[data-node-id="${fileId}"]`);
+                if (treeNode) {
+                    treeNode.remove();
+                }
+                this.selectedFiles.delete(fileId);
+                this.updateDownloadButton();
+            } else if (response.status === 401 || response.status === 403) {
+                this.showNotification('Недостаточно прав для удаления файла', 'error');
             } else {
                 const text = await response.text();
                 this.showNotification('Ошибка удаления файла: ' + text, 'error');
