@@ -495,6 +495,16 @@
             ${successCount > 0 ? '<button class="btn btn-success btn-sm" onclick="reloadPage()">Перейти к файлам</button>' : ''}
         `;
         resultsContainer.appendChild(summary);
+
+        selectedFiles = [];
+        document.getElementById('filesList').style.display = 'none';
+        document.getElementById('commentGroup').style.display = 'none';
+
+        const progressContainer = document.getElementById('uploadProgress');
+        progressContainer.style.display = 'none';
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('progressText').textContent = '0%';
+
         updateUploadButtonState();
     }
 
