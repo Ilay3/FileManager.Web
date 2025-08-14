@@ -77,7 +77,8 @@ class FilesManager {
         const response = await fetchWithProgress('/api/files/download-zip', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: Array.from(this.selectedFiles) })
+            body: JSON.stringify({ ids: Array.from(this.selectedFiles) }),
+            credentials: 'include'
         });
         if (response.ok) {
             const blob = await response.blob();
@@ -95,7 +96,8 @@ class FilesManager {
         const response = await fetchWithProgress('/api/files/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: Array.from(this.selectedFiles) })
+            body: JSON.stringify({ ids: Array.from(this.selectedFiles) }),
+            credentials: 'include'
         });
         if (response.ok) {
             this.showNotification('Файлы удалены', 'success');
@@ -141,7 +143,7 @@ class FilesManager {
 
     async loadFolderContents(folderId, container) {
         try {
-            const response = await fetchWithProgress(`/api/folders/${folderId}/contents`);
+            const response = await fetchWithProgress(`/api/folders/${folderId}/contents`, { credentials: 'include' });
             if (response.ok) {
                 const data = await response.json();
                 this.renderTreeChildren(data.children, container);
@@ -224,7 +226,7 @@ class FilesManager {
 
     async editFile(fileId, fileName) {
         try {
-            const response = await fetchWithProgress(`/api/files/${fileId}/edit`);
+            const response = await fetchWithProgress(`/api/files/${fileId}/edit`, { credentials: 'include' });
             const data = await response.json();
 
             if (data.hasActiveEditors && !data.canProceed) {
@@ -272,7 +274,7 @@ class FilesManager {
             const url = itemType === 'file'
                 ? `/api/favorites/files/${itemId}`
                 : `/api/favorites/folders/${itemId}`;
-            const response = await fetchWithProgress(url, { method: 'POST' });
+            const response = await fetchWithProgress(url, { method: 'POST', credentials: 'include' });
             if (response.ok) {
                 this.showNotification('Добавлено в избранное', 'success');
             } else {
@@ -294,7 +296,7 @@ class FilesManager {
             const url = itemType === 'file'
                 ? `/api/favorites/files/${itemId}`
                 : `/api/favorites/folders/${itemId}`;
-            const response = await fetchWithProgress(url, { method: 'DELETE' });
+            const response = await fetchWithProgress(url, { method: 'DELETE', credentials: 'include' });
             if (response.ok) {
                 this.showNotification('Удалено из избранного', 'success');
                 el.remove();
@@ -421,7 +423,8 @@ class FilesManager {
             const response = await fetchWithProgress('/api/folders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, parentId })
+                body: JSON.stringify({ name, parentId }),
+                credentials: 'include'
             });
             if (response.ok) {
                 this.showNotification('Папка создана', 'success');
@@ -440,7 +443,8 @@ class FilesManager {
             const response = await fetchWithProgress(`/api/folders/${folderId}/rename`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newName })
+                body: JSON.stringify({ name: newName }),
+                credentials: 'include'
             });
             if (response.ok) {
                 this.showNotification('Папка переименована', 'success');
@@ -457,7 +461,7 @@ class FilesManager {
     async deleteFolder(folderId, folderName) {
         if (!confirm(`Удалить папку "${folderName}"?`)) return;
         try {
-            const response = await fetchWithProgress(`/api/folders/${folderId}`, { method: 'DELETE' });
+            const response = await fetchWithProgress(`/api/folders/${folderId}`, { method: 'DELETE', credentials: 'include' });
             if (response.ok) {
                 this.showNotification('Папка удалена', 'success');
                 setTimeout(() => location.reload(), 500);
@@ -477,7 +481,8 @@ class FilesManager {
             const response = await fetchWithProgress(`/api/folders/${folderId}/move`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ newParentId: newParentId || null })
+                body: JSON.stringify({ newParentId: newParentId || null }),
+                credentials: 'include'
             });
             if (response.ok) {
                 this.showNotification('Папка перемещена', 'success');
@@ -507,7 +512,8 @@ class FilesManager {
             const response = await fetchWithProgress('/api/access/grant', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.stringify(body),
+                credentials: 'include'
             });
             if (response.ok) {
                 this.showNotification('Права назначены', 'success');
