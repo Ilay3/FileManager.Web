@@ -92,6 +92,7 @@
 <script>
     var selectedFiles = [];
     var availableFolders = @Html.Raw(foldersJson);
+    var isUploading = false;
 
     async function initUploadPage() {
         await refreshCsrfToken();
@@ -330,6 +331,8 @@
         }
 
         document.getElementById('uploadProgress').style.display = 'block';
+        isUploading = true;
+        updateUploadButtonState();
         document.getElementById('uploadBtn').disabled = true;
 
         const totalFiles = selectedFiles.length;
@@ -337,13 +340,16 @@
 
         async function uploadNext(index) {
             if (index >= totalFiles) {
+                isUploading = false;
                 showUploadResults(results);
                 return;
             }
 
             if (!await refreshCsrfToken()) {
+                isUploading = false;
                 hideLoader();
                 showNotification('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.', 'error');
+                updateUploadButtonState();
                 return;
             }
 
@@ -441,8 +447,10 @@
             };
 
             xhr.ontimeout = function () {
+                isUploading = false;
                 hideLoader();
                 showNotification('Время ожидания истекло, попробуйте ещё раз', 'error');
+                updateUploadButtonState();
             };
 
             xhr.send(formData);
@@ -452,8 +460,6 @@
     }
 
     function showUploadResults(results) {
-        document.getElementById('uploadBtn').disabled = false;
-
         const resultsContainer = document.getElementById('uploadResults');
         resultsContainer.style.display = 'block';
         resultsContainer.innerHTML = '<h6 class="mb-3">Результаты загрузки:</h6>';
@@ -489,12 +495,13 @@
             ${successCount > 0 ? '<button class="btn btn-success btn-sm" onclick="reloadPage()">Перейти к файлам</button>' : ''}
         `;
         resultsContainer.appendChild(summary);
+        updateUploadButtonState();
     }
 
     function updateUploadButtonState() {
         const btn = document.getElementById('uploadBtn');
         const folderId = document.getElementById('uploadFolderSelect')?.value;
-        btn.disabled = !folderId || selectedFiles.length === 0;
+        btn.disabled = isUploading || !folderId || selectedFiles.length === 0;
     }
 
     function formatFileSize(bytes) {

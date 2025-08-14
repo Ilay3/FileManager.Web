@@ -61,6 +61,7 @@
     window.selectedFiles = selectedFiles;
     var availableFolders = window.availableFolders || [];
     window.availableFolders = availableFolders;
+    var isUploading = false;
 
     async function refreshCsrfToken() {
         try {
@@ -316,22 +317,25 @@
     async function startUpload() {
         const folderId = document.getElementById('uploadFolderSelect').value;
         const comment = document.getElementById('uploadComment').value;
-
+        isUploading = true;
+        updateUploadButtonState();
+        document.getElementById('uploadBtn').disabled = true;
         showLoader();
         document.getElementById('uploadProgress').style.display = 'block';
-        document.getElementById('uploadBtn').disabled = true;
 
         const totalFiles = selectedFiles.length;
         const results = [];
 
         async function uploadNext(index) {
             if (index >= totalFiles) {
+                isUploading = false;
                 hideLoader();
                 showUploadResults(results);
                 return;
             }
 
             if (!await refreshCsrfToken()) {
+                isUploading = false;
                 hideLoader();
                 showUploadError('Не удалось обновить токен безопасности. Пожалуйста, перезагрузите страницу.');
                 return;
@@ -423,6 +427,7 @@
             };
 
             xhr.ontimeout = function () {
+                isUploading = false;
                 hideLoader();
                 showUploadError('Время ожидания истекло, попробуйте ещё раз');
             };
@@ -479,6 +484,7 @@
     // Отображение ошибки загрузки
     function showUploadError(message) {
         document.getElementById('uploadProgress').style.display = 'none';
+        isUploading = false;
         updateUploadButtonState();
 
         const resultsContainer = document.getElementById('uploadResults');
@@ -508,7 +514,8 @@
     // Состояние кнопки загрузки
     function updateUploadButtonState() {
         const btn = document.getElementById('uploadBtn');
-        btn.disabled = false;
+        const folderId = document.getElementById('uploadFolderSelect')?.value;
+        btn.disabled = isUploading || !folderId || selectedFiles.length === 0;
     }
 
     // Форматирование размера файла
