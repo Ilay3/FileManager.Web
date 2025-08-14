@@ -1,5 +1,5 @@
 window.showNotification = function (message, type = 'info') {
-    const container = document.getElementById('notificationContainer');
+    const container = document.getElementById('notification-container');
     if (!container) {
         return;
     }
