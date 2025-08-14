@@ -8,6 +8,7 @@ public interface IFilesRepository
     Task<Files?> GetByIdAsync(Guid id);
     Task<IEnumerable<Files>> GetByFolderIdAsync(Guid folderId);
     Task<IEnumerable<Files>> GetByUserIdAsync(Guid userId);
+    Task<Files?> GetByFolderIdAndNameAsync(Guid folderId, string name);
     Task<Files> CreateAsync(Files file);
     Task<Files> UpdateAsync(Files file);
     Task DeleteAsync(Guid id);
