@@ -77,8 +77,36 @@ public class FileUploadController : ControllerBase
         var options = await _settingsService.GetUploadSecurityOptionsAsync();
         var blocked = new HashSet<string>(options.BlockedExtensions.Select(e => e.ToLowerInvariant()));
         var quotaBytes = (long)options.UserQuotaMb * 1024 * 1024;
-
+        var fileMap = new Dictionary<(string FileName, long Size), IFormFile>();
+        var duplicates = new List<(string FileName, long Size)>();
         foreach (var file in files)
+        {
+            var key = (file.FileName, file.Length);
+            if (!fileMap.ContainsKey(key))
+            {
+                fileMap[key] = file;
+            }
+            else
+            {
+                duplicates.Add(key);
+            }
+        }
+
+        if (duplicates.Any())
+        {
+            var duplicateNames = duplicates
+                .Distinct()
+                .Select(d => $"{d.FileName} ({FormatFileSize(d.Size)})");
+            var resp = new
+            {
+                results = Array.Empty<object>(),
+                error = $"Обнаружены дублирующиеся файлы: {string.Join(", ", duplicateNames)}"
+            };
+            _logger.LogWarning("UploadFiles detected duplicates: {Duplicates}", duplicateNames);
+            return BadRequest(resp);
+        }
+
+        foreach (var file in fileMap.Values)
         {
             try
             {
