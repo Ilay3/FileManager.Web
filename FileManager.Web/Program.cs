@@ -1,18 +1,26 @@
-using FileManager.Infrastructure.Extensions; // ВАЖНО: добавить этот using
+using FileManager.Infrastructure.Extensions;
 using FileManager.Infrastructure.Data;
 using FileManager.Application.Services;
 using FileManager.Web.Middleware;
+
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http;
 
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.Extensions.Hosting.WindowsServices;
+using Microsoft.EntityFrameworkCore;
 
-// ВСЕ сервисы регистрируются одной строкой!
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory
+});
+
+builder.Host.UseWindowsService(o => o.ServiceName = "FileManager Service");
+
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// Настройка аутентификации
+// Аутентификация
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -52,14 +60,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         };
     });
 
-// Настройка авторизации
+// Авторизация
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy =>
-        policy.RequireClaim("IsAdmin", "True"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("IsAdmin", "True"));
 });
 
-// Add services to the container.
+// Razor + Controllers
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizePage("/Files/Index");
@@ -67,12 +74,10 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizePage("/Admin", "AdminOnly");
     options.Conventions.AuthorizePage("/Account/Profile");
 });
-
-// Добавляем поддержку контроллеров для API
 builder.Services.AddControllers();
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddLogging();
+
 builder.Services.Configure<FormOptions>(o =>
 {
     o.MultipartBodyLengthLimit = 1024L * 1024 * 1024; // 1 ГБ
@@ -80,14 +85,19 @@ builder.Services.Configure<FormOptions>(o =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// редирект на HTTPS — только если включено в конфиге
+var enforceHttps = app.Configuration.GetValue<bool>("EnforceHttps");
+if (enforceHttps)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -95,18 +105,17 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Middleware для отслеживания активности пользователей
+// Middleware активности пользователей
 app.UseUserActivity();
 
 app.MapRazorPages();
 app.MapControllers();
 
-// Инициализация базы данных
+// Инициализация БД
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var userService = scope.ServiceProvider.GetRequiredService<UserService>();
-
     try
     {
         await context.Database.MigrateAsync();
