@@ -44,6 +44,12 @@ public class FilesRepository : IFilesRepository
             .ToListAsync();
     }
 
+    public async Task<Files?> GetByFolderIdAndNameAsync(Guid folderId, string name)
+    {
+        return await _context.Files
+            .FirstOrDefaultAsync(f => f.FolderId == folderId && f.Name == name && !f.IsDeleted);
+    }
+
     public async Task<Files> CreateAsync(Files file)
     {
         _context.Files.Add(file);

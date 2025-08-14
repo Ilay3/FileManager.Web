@@ -75,10 +75,24 @@ public class FileUploadService
             // Определяем путь в Яндекс.Диске
             var yandexPath = $"{targetFolder.YandexPath}/{uniqueFileName}";
 
+            // Проверяем существование файла на Яндекс.Диске
+            if (await _yandexDiskService.FileExistsAsync(yandexPath))
+            {
+                throw new InvalidOperationException($"Файл '{uniqueFileName}' уже существует в целевой папке на Яндекс.Диске");
+            }
+
             // Загружаем файл на Яндекс.Диск
             using var stream = file.OpenReadStream();
             // Передаем полный путь как есть, без дополнительной обработки
             var uploadedPath = await _yandexDiskService.UploadFileAsync(stream, uniqueFileName, targetFolder.YandexPath);
+
+            // После загрузки проверяем наличие записи в БД, чтобы избежать дублей
+            if (await _filesRepository.GetByFolderIdAndNameAsync(targetFolder.Id, uniqueFileName) != null)
+            {
+                // Удаляем загруженный файл, чтобы не оставлять "пустышки" на диске
+                await _yandexDiskService.DeleteFileAsync(uploadedPath);
+                throw new InvalidOperationException($"Файл с именем '{uniqueFileName}' уже существует в базе данных");
+            }
 
             // Создаем запись о файле в БД
             var fileEntity = new Files
